@@ -6,7 +6,7 @@
 The site is static except for `/api/contact`, which runs on the Worker: it verifies the Turnstile token, then sends the message through Resend. Variables are listed in `.env.example`.
 
 - **Local:** copy `.env.example` to `.env` (gitignored) and fill it in. `pnpm dev` reads it.
-- **Production build** (Worker → Settings → Build → Build variables and secrets): `PUBLIC_TURNSTILE_SITE_KEY`.
+- **Production build:** needs nothing. The Turnstile site key is public, so it is committed as the default in `astro.config.mjs`. A `PUBLIC_TURNSTILE_SITE_KEY` build variable overrides it.
 - **Production runtime** (Worker → Settings → Variables and Secrets, type *Secret*, or `npx wrangler secret put <NAME>`): `TURNSTILE_SECRET_KEY`, `RESEND_API_KEY`, `CONTACT_TO_EMAIL`, `CONTACT_FROM_EMAIL`. Use secrets, not plain variables: plain dashboard variables are wiped on each deploy, and nothing belongs in `wrangler.jsonc` since the repo is on GitHub.
 
 Until the runtime secrets are set, the contact endpoint returns 500 and sends nothing.

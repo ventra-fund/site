@@ -10,7 +10,7 @@ interface Props {
 }
 
 // The site key is public (it is rendered into the HTML), so it is read at build time from
-// PUBLIC_TURNSTILE_SITE_KEY. The astro:env schema makes a missing key fail the build. See .env.example.
+// PUBLIC_TURNSTILE_SITE_KEY, falling back to the default in astro.config.mjs. See .env.example.
 const sitekey = PUBLIC_TURNSTILE_SITE_KEY;
 
 const {

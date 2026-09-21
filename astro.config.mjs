@@ -29,7 +29,9 @@ export default defineConfig({
   adapter: cloudflare({ imageService: "compile" }),
   env: {
     schema: {
-      PUBLIC_TURNSTILE_SITE_KEY: envField.string({ context: "client", access: "public" }),
+      // Public by nature (it is printed in the page HTML), so the production key is committed as the
+      // default. That lets CI build with no dashboard setup. Override it via .env or a build variable.
+      PUBLIC_TURNSTILE_SITE_KEY: envField.string({ context: "client", access: "public", default: "0x4AAAAAAE-lURqPrz_gvFzi" }),
       // Optional so a missing secret reaches the endpoint's own fail-closed check instead of throwing on import.
       TURNSTILE_SECRET_KEY: envField.string({ context: "server", access: "secret", optional: true }),
       RESEND_API_KEY: envField.string({ context: "server", access: "secret", optional: true }),
