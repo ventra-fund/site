@@ -1,0 +1,189 @@
+---
+import Layout from "@/layouts/Layout.astro";
+import Footer from "@/components/Footer.astro";
+import Turnstile from "@/components/Turnstile.astro";
+import { Button } from "@/ui/button";
+import { Checkbox } from "@/ui/checkbox";
+
+const inputClass = "h-10 rounded-lg border border-input bg-background px-3 text-base font-normal outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50";
+const fieldClass = "flex flex-col gap-1.5 text-sm font-medium";
+---
+<Layout>
+    <div class="w-full min-h-screen px-4 pt-30 pb-20">
+        <div class="mx-auto flex max-w-2xl flex-col gap-8">
+            <div class="flex flex-col gap-3">
+                <h1 class="text-3xl font-bold text-accent sm:text-5xl">Apply for funding</h1>
+            </div>
+
+            <form data-apply-form novalidate class="flex flex-col gap-8">
+                <div class="flex flex-col gap-5">
+                    <h2 class="text-lg font-semibold">Business & contact info</h2>
+
+                    <label class={fieldClass}>
+                        Legal business name
+                        <input name="legalBusinessName" type="text" required maxlength="200" class={inputClass} />
+                    </label>
+
+                    <label class={fieldClass}>
+                        DBA <span class="font-normal text-muted-foreground">(optional)</span>
+                        <input name="dba" type="text" maxlength="200" class={inputClass} />
+                    </label>
+
+                    <div class="grid grid-cols-1 gap-5 sm:grid-cols-2">
+                        <label class={fieldClass}>
+                            First name
+                            <input name="firstName" type="text" required maxlength="200" autocomplete="given-name" class={inputClass} />
+                        </label>
+                        <label class={fieldClass}>
+                            Last name
+                            <input name="lastName" type="text" required maxlength="200" autocomplete="family-name" class={inputClass} />
+                        </label>
+                    </div>
+
+                    <div class="grid grid-cols-1 gap-5 sm:grid-cols-2">
+                        <label class={fieldClass}>
+                            Mobile #
+                            <input name="mobile" type="tel" required maxlength="30" autocomplete="tel" class={inputClass} />
+                        </label>
+                        <label class={fieldClass}>
+                            Email
+                            <input name="email" type="email" required maxlength="254" autocomplete="email" class={inputClass} />
+                        </label>
+                    </div>
+
+                    <label class={fieldClass}>
+                        Monthly business revenue
+                        <input name="monthlyRevenue" type="number" inputmode="decimal" required min="0" step="1" placeholder="$" class={inputClass} />
+                    </label>
+                </div>
+
+                <div class="flex flex-col gap-5">
+                    <h2 class="text-lg font-semibold">Addresses</h2>
+
+                    <label class={fieldClass}>
+                        Home address
+                        <input name="homeAddress" type="text" required maxlength="300" autocomplete="street-address" class={inputClass} />
+                    </label>
+
+                    <label class={fieldClass}>
+                        Business address
+                        <input name="businessAddress" type="text" required maxlength="300" class={inputClass} />
+                    </label>
+
+                    <Checkbox id="ap-same-address" name="sameAsHome">Same as home address</Checkbox>
+                </div>
+
+                <div class="flex flex-col gap-5">
+                    <h2 class="text-lg font-semibold">Funding details</h2>
+
+                    <label class={fieldClass}>
+                        Business start date
+                        <input name="businessStartDate" type="date" required class={inputClass} />
+                    </label>
+
+                    <label class={fieldClass}>
+                        Business industry
+                        <input name="businessIndustry" type="text" required maxlength="200" placeholder="e.g. electrical" class={inputClass} />
+                    </label>
+
+                    <div class="grid grid-cols-1 gap-5 sm:grid-cols-2">
+                        <label class={fieldClass}>
+                            Estimated FICO score
+                            <input name="ficoScore" type="number" inputmode="numeric" required min="300" max="850" step="1" class={inputClass} />
+                        </label>
+                        <label class={fieldClass}>
+                            Requested funding amount
+                            <input name="fundingAmount" type="number" inputmode="decimal" required min="0" step="1" placeholder="$" class={inputClass} />
+                        </label>
+                    </div>
+                </div>
+
+                <Turnstile action="apply" />
+
+                <p data-apply-error hidden role="alert" class="text-sm text-destructive"></p>
+                <p data-apply-success hidden role="status" class="text-sm font-medium text-accent">Thanks, your application was submitted. We'll be in contact with next steps.</p>
+
+                <Button type="submit" size="lg" class="self-start" data-apply-submit data-label="Submit application" disabled>Checking security…</Button>
+            </form>
+        </div>
+    </div>
+    <Footer />
+</Layout>
+
+<script>
+    import { gateOnTurnstile, takeTurnstileToken } from '@/lib/turnstile';
+
+    const form = document.querySelector<HTMLFormElement>('[data-apply-form]');
+    if (form) {
+        const widget = form.querySelector('turnstile-widget');
+        const submitBtn = form.querySelector<HTMLButtonElement>('[data-apply-submit]')!;
+        const errorEl = form.querySelector<HTMLElement>('[data-apply-error]')!;
+        const successEl = form.querySelector<HTMLElement>('[data-apply-success]')!;
+
+        // Submit stays disabled until Turnstile verifies (invisible first, visible fallback after 5s).
+        if (widget) gateOnTurnstile({ widget, button: submitBtn });
+
+        // "Same as home address" mirrors the home address field into the business address field
+        // live, and locks it read-only so the two can't drift apart while checked.
+        const homeInput = form.querySelector<HTMLInputElement>('input[name="homeAddress"]')!;
+        const businessInput = form.querySelector<HTMLInputElement>('input[name="businessAddress"]')!;
+        const sameCheckbox = form.querySelector<HTMLInputElement>('#ap-same-address')!;
+        const syncBusinessAddress = () => { businessInput.value = homeInput.value; };
+        sameCheckbox.addEventListener('change', () => {
+            businessInput.readOnly = sameCheckbox.checked;
+            if (sameCheckbox.checked) syncBusinessAddress();
+        });
+        homeInput.addEventListener('input', () => { if (sameCheckbox.checked) syncBusinessAddress(); });
+
+        const showError = (msg: string) => { errorEl.textContent = msg; errorEl.hidden = false; };
+
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            errorEl.hidden = true;
+            successEl.hidden = true;
+
+            if (!form.reportValidity()) return;
+
+            const token = widget ? takeTurnstileToken(widget) : undefined;
+            if (!token) { showError('Please complete the security check and try again.'); return; }
+
+            const data = new FormData(form);
+            const field = (n: string) => String(data.get(n) ?? '').trim();
+
+            submitBtn.disabled = true;
+            try {
+                const res = await fetch('/api/apply', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        legalBusinessName: field('legalBusinessName'),
+                        dba: field('dba'),
+                        firstName: field('firstName'),
+                        lastName: field('lastName'),
+                        mobile: field('mobile'),
+                        email: field('email'),
+                        monthlyRevenue: Number(field('monthlyRevenue')),
+                        homeAddress: field('homeAddress'),
+                        businessAddress: field('businessAddress'),
+                        businessStartDate: field('businessStartDate'),
+                        businessIndustry: field('businessIndustry'),
+                        ficoScore: Number(field('ficoScore')),
+                        fundingAmount: Number(field('fundingAmount')),
+                        token,
+                    }),
+                });
+                if (!res.ok) throw new Error(String(res.status));
+                form.reset();
+                businessInput.readOnly = false;
+                successEl.hidden = false;
+            } catch {
+                showError('Something went wrong. Please try again.');
+            } finally {
+                // A Turnstile token is single-use: get a fresh one before the next attempt.
+                widget?.reset();
+                if (widget) gateOnTurnstile({ widget, button: submitBtn });
+                else submitBtn.disabled = false;
+            }
+        });
+    }
+</script>
