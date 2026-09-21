@@ -1,7 +1,7 @@
 ---
 import "@/styles/globals.css";
 import { Font } from "astro:assets";
-import { NavigationMenu, NavigationMenuContent, NavigationMenuIndicator, NavigationMenuItem, NavigationMenuLink, NavigationMenuList, NavigationMenuTrigger } from '@/ui/navigation-menu';
+import { NavigationMenu, NavigationMenuIndicator, NavigationMenuItem, NavigationMenuLink, NavigationMenuList } from '@/ui/navigation-menu';
 ---
 
 <!doctype html>
@@ -26,14 +26,10 @@ import { NavigationMenu, NavigationMenuContent, NavigationMenuIndicator, Navigat
               Home
             </NavigationMenuLink>
           </NavigationMenuItem>
-          <NavigationMenuItem value="products">
-            <NavigationMenuTrigger>Solutions</NavigationMenuTrigger>
-            <NavigationMenuContent>
-              <div>
-                <NavigationMenuLink data-astro-prefetch href="#">Revenue-Based Financing</NavigationMenuLink>
-                <NavigationMenuLink data-astro-prefetch href="#">Merchant Cash Advance</NavigationMenuLink>
-              </div>
-            </NavigationMenuContent>
+          <NavigationMenuItem>
+            <NavigationMenuLink data-astro-prefetch href="#" class="cn-navigation-menu-trigger group/navigation-menu-trigger inline-flex h-9 w-max items-center justify-center outline-none disabled:pointer-events-none">
+              Capital
+            </NavigationMenuLink>
           </NavigationMenuItem>
           <NavigationMenuItem>
             <NavigationMenuLink data-astro-prefetch href="#" class="cn-navigation-menu-trigger group/navigation-menu-trigger inline-flex h-9 w-max items-center justify-center outline-none disabled:pointer-events-none">
@@ -77,9 +73,7 @@ import { NavigationMenu, NavigationMenuContent, NavigationMenuIndicator, Navigat
           hidden
           class="absolute top-full right-0 mt-2 flex w-60 flex-col gap-0.5 rounded-md border-2 border-muted bg-background p-2 shadow-lg"
         >
-          <div class="px-3 pt-2 pb-1 text-sm font-medium text-muted-foreground">Solutions</div>
-          <a data-astro-prefetch href="#" class="rounded-sm px-3 py-2 pl-6 text-base hover:bg-muted">Revenue-Based Financing</a>
-          <a data-astro-prefetch href="#" class="rounded-sm px-3 py-2 pl-6 text-base hover:bg-muted">Merchant Cash Advance</a>
+          <a data-astro-prefetch href="#" class="rounded-sm px-3 py-2 text-base hover:bg-muted">Capital</a>
           <a data-astro-prefetch href="#" class="rounded-sm px-3 py-2 text-base hover:bg-muted">Apply</a>
           <a data-astro-prefetch href="/partner" class="rounded-sm px-3 py-2 text-base hover:bg-muted">Partner</a>
           <a data-astro-prefetch href="/contact" class="rounded-sm px-3 py-2 text-base hover:bg-muted">Contact</a>
