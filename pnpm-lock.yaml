@@ -14,6 +14,9 @@ importers:
       '@data-slot/navigation-menu':
         specifier: ^0.2.167
         version: 0.2.167
+      '@data-slot/select':
+        specifier: ^0.2.167
+        version: 0.2.167
       '@lucide/astro':
         specifier: ^1.47.0
         version: 1.47.0(astro@7.3.3(@emnapi/core@1.11.3)(@emnapi/runtime@1.11.3)(@types/node@26.6.2)(jiti@2.7.0)(yaml@2.9.1))
@@ -32,6 +35,9 @@ importers:
       clsx:
         specifier: ^2.1.1
         version: 2.1.1
+      free-email-domains:
+        specifier: ^1.12.4
+        version: 1.12.4
       quill:
         specifier: ^2.0.3
         version: 2.0.3
@@ -425,6 +431,9 @@ packages:
 
   '@data-slot/navigation-menu@0.2.167':
     resolution: {integrity: sha512-J9wAfxz6IxI+cRPDDju+yOhXOOoMd/4L57kG3Hn7c1/qrUx2PN7Vlp2zSQfKFmy0bZmShBPgVsZ2IMooFZd5Tg==}
+
+  '@data-slot/select@0.2.167':
+    resolution: {integrity: sha512-BtDUka19qrIT3zB1fTlGvxpSFbrezKHPnxbcxakZfHIKSJ5u5zLEd1W5BYK5pZ3RWzpX0DRTHvVMP7dv48Cd5Q==}
 
   '@dotenvx/dotenvx@1.75.1':
     resolution: {integrity: sha512-/BITOC9dmS/edY2zQwZNicQ059O6RKabtQfyEafV0nGtfYRNHYy1DIPiYVcov40+tob9hfmBnbR963dS+EQ1DQ==}
@@ -1991,6 +2000,10 @@ packages:
   forwarded@0.2.0:
     resolution: {integrity: sha512-buRG0fpBtRHSTCOASe6hD258tEubFoRLb4ZNA6NxMVHNw2gOcwHo9wyablzMzOA5z9xA9L1KNjk/Nt6MT9aYow==}
     engines: {node: '>= 0.6'}
+
+  free-email-domains@1.12.4:
+    resolution: {integrity: sha512-C5QOK7X5AMqQurTqvm0nmTVWhy+YKdwYDrl5r7YQz+fvwUFuwpMTgKAZ2CxtHkanN0w5ivsw+TyPnrmnNAtKzg==}
+    engines: {node: '>= 18'}
 
   fresh@2.0.0:
     resolution: {integrity: sha512-Rx/WycZ60HOaqLKAi6cHRKKI7zxWbJ31MhntmtwMoaTeF7XFH9hhBp8vITaMidfljRQ6eYWCKkaTK+ykVJHP2A==}
@@ -4099,6 +4112,10 @@ snapshots:
     dependencies:
       '@data-slot/core': 0.2.167
 
+  '@data-slot/select@0.2.167':
+    dependencies:
+      '@data-slot/core': 0.2.167
+
   '@dotenvx/dotenvx@1.75.1':
     dependencies:
       '@dotenvx/primitives': 0.8.0
@@ -5576,6 +5593,8 @@ snapshots:
       fetch-blob: 3.2.0
 
   forwarded@0.2.0: {}
+
+  free-email-domains@1.12.4: {}
 
   fresh@2.0.0: {}
 

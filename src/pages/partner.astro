@@ -1,0 +1,154 @@
+---
+// Minimal partner inquiry page: lenders, brokers, and service providers can send us a message.
+// There's no account to create and nothing to approve here, this is a contact form with a role
+// attached, not a signup flow. A business owner isn't a partner lead at all, so picking that
+// option hands off to /apply immediately instead of posting anything.
+import Layout from "@/layouts/Layout.astro";
+import Footer from "@/components/Footer.astro";
+import QuillEditor from "@/components/QuillEditor.astro";
+import Turnstile from "@/components/Turnstile.astro";
+import { Button } from "@/ui/button";
+import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/ui/select";
+---
+<Layout>
+    <div class="w-full min-h-screen px-4 pt-30 pb-20">
+        <div class="mx-auto flex max-w-2xl flex-col gap-8">
+            <div class="flex flex-col gap-3">
+                <h1 class="text-3xl font-bold text-accent sm:text-5xl">Partner with us</h1>
+                <p class="text-lg text-muted-foreground">Lenders, brokers, and service providers: tell us a bit about yourselves and what you're looking for.</p>
+            </div>
+
+            <form data-partner-form novalidate class="flex flex-col gap-5">
+                <div class="flex flex-col gap-1.5">
+                    <span id="pt-role-label" class="text-sm font-medium">I am a</span>
+                    {/* Deliberately not `required`: the generated hidden field starts empty, and a
+                        `required` select reports itself invalid the instant it mounts, which paints
+                        the trigger red before the visitor has done anything. Checked by hand on
+                        submit instead, same as the other friendly checks below. */}
+                    <Select id="pt-role" name="role" placeholder="Select one" class="w-full">
+                        {/* text-base to match the text inputs below; the component defaults to text-sm. */}
+                        <SelectTrigger id="pt-role-trigger" aria-labelledby="pt-role-label" class="w-full text-base">
+                            <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent class="w-(--anchor-width)">
+                            <SelectItem value="lender" class="text-base">Lender</SelectItem>
+                            <SelectItem value="broker" class="text-base">Broker</SelectItem>
+                            <SelectItem value="service_provider" class="text-base">Service provider</SelectItem>
+                            <SelectItem value="owner" class="text-base">Business owner looking for funding</SelectItem>
+                        </SelectContent>
+                    </Select>
+                </div>
+
+                <div class="grid grid-cols-1 gap-5 sm:grid-cols-2">
+                    <label class="flex flex-col gap-1.5 text-sm font-medium">
+                        Name
+                        <input name="name" type="text" required maxlength="200" autocomplete="name"
+                            class="h-10 rounded-lg border border-input bg-background px-3 text-base font-normal outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50" />
+                    </label>
+                    <label class="flex flex-col gap-1.5 text-sm font-medium">
+                        Business email
+                        <input name="email" type="email" required maxlength="254" autocomplete="email"
+                            placeholder="you@yourcompany.com"
+                            class="h-10 rounded-lg border border-input bg-background px-3 text-base font-normal outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50" />
+                    </label>
+                </div>
+
+                <div class="flex flex-col gap-1.5">
+                    <span class="text-sm font-medium">Message</span>
+                    <QuillEditor placeholder="Tell us about your company and what you're looking for." toolbar="open" />
+                </div>
+
+                <Turnstile action="partner" />
+
+                <p data-partner-error hidden role="alert" class="text-sm text-destructive"></p>
+                <p data-partner-success hidden role="status" class="text-sm font-medium text-accent">Thanks, your message was sent. We'll be in touch.</p>
+
+                <Button type="submit" size="lg" class="self-start" data-partner-submit data-label="Send message" disabled>Checking security…</Button>
+            </form>
+        </div>
+    </div>
+    <Footer />
+</Layout>
+
+<script>
+    import { gateOnTurnstile, takeTurnstileToken } from '@/lib/turnstile';
+
+    const form = document.querySelector<HTMLFormElement>('[data-partner-form]');
+    if (form) {
+        const roleSelect = document.getElementById('pt-role')!;
+        const editorEl = form.querySelector('[data-quill-editor]') as (HTMLElement & { quill?: any }) | null;
+        const widget = form.querySelector('turnstile-widget');
+        const submitBtn = form.querySelector<HTMLButtonElement>('[data-partner-submit]')!;
+        const errorEl = form.querySelector<HTMLElement>('[data-partner-error]')!;
+        const successEl = form.querySelector<HTMLElement>('[data-partner-success]')!;
+
+        // Submit stays disabled until Turnstile verifies (invisible first, visible fallback after 5s).
+        if (widget) gateOnTurnstile({ widget, button: submitBtn });
+
+        // A business owner isn't a partner lead: send them straight to the application, the same
+        // hand-off the home page's capital CTA makes, instead of letting this form collect a message
+        // that would just need to be redirected by hand later.
+        let role = '';
+        roleSelect.addEventListener('select:change', (e) => {
+            role = (e as CustomEvent<{ value: string }>).detail?.value ?? '';
+            if (role === 'owner') window.location.href = '/apply';
+        });
+
+        const showError = (msg: string) => { errorEl.textContent = msg; errorEl.hidden = false; };
+
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            errorEl.hidden = true;
+            successEl.hidden = true;
+
+            if (!form.reportValidity()) return;
+            // Not part of native validity (the select isn't `required`, see the comment on it above).
+            if (!role) { showError('Please select your role.'); return; }
+
+            const quill = editorEl?.quill;
+            // Friendly checks only. The limits that count are enforced by the zod schema in
+            // src/lib/partner-schema.ts on the server; keep the numbers here in step with it.
+            const text = quill?.getText().trim() ?? '';
+            if (!text) { showError('Please enter a message.'); return; }
+            if (text.length > 10_000) { showError('Your message is too long.'); return; }
+
+            const token = widget ? takeTurnstileToken(widget) : undefined;
+            if (!token) { showError('Please complete the security check and try again.'); return; }
+
+            const data = new FormData(form);
+            submitBtn.disabled = true;
+            try {
+                const res = await fetch('/api/partner', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        name: String(data.get('name') ?? '').trim(),
+                        email: String(data.get('email') ?? '').trim(),
+                        role: String(data.get('role') ?? ''),
+                        html: quill.getSemanticHTML(),
+                        token,
+                    }),
+                });
+                if (!res.ok) {
+                    const body = await res.json().catch(() => ({})) as { error?: string };
+                    if (body.error === 'invalid_body') {
+                        showError('Please use your business email address and try again.');
+                    } else {
+                        throw new Error(String(res.status));
+                    }
+                    return;
+                }
+                form.reset();
+                quill.setText('');
+                successEl.hidden = false;
+            } catch {
+                showError('Something went wrong. Please try again.');
+            } finally {
+                // A Turnstile token is single-use: get a fresh one before the next attempt.
+                widget?.reset();
+                if (widget) gateOnTurnstile({ widget, button: submitBtn });
+                else submitBtn.disabled = false;
+            }
+        });
+    }
+</script>
