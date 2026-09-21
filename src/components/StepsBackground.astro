@@ -1,0 +1,201 @@
+---
+// Grainy stepped bar chart used as a decorative hero background.
+// Colors come from the --chart-* / --background tokens in globals.css.
+const W = 2000;
+const H = 1144;
+const count = 14;
+const barWidth = W / count;
+// Slight irregularity so the staircase doesn't look perfectly linear.
+const jitter = [0, 20, -10, 30, -5, 15, -20, 10, 25, -15, 5, -25, 20, 0, -10, 15, -5, 0];
+// How far (in viewBox units) the bars continue below the first screen; generous so they fill tall/narrow viewports.
+const extend = 3 * H;
+const heightScale = 0.6;
+// How far (in viewBox units) each bar's top rises at the peak of its float.
+const floatAmount = 140;
+// Deterministic pseudo-random in [0, 1) so each bar gets its own rhythm without changing between builds.
+const rand = (n: number) => {
+  const v = Math.sin(n * 12.9898) * 43758.5453;
+  return v - Math.floor(v);
+};
+const bars = Array.from({ length: count }, (_, i) => {
+  const height = heightScale * (110 + ((H - 110) * i) / (count - 1) + jitter[i]);
+  const top = Math.max(0, H - height);
+  return {
+    x: i * barWidth,
+    top,
+    duration: 8 + rand(i + 1) * 6,
+    // Negative delay starts each bar mid-cycle so they're out of sync from the first frame
+    delay: -rand(i + 101) * 14,
+  };
+});
+---
+
+<div class:list={["isolate overflow-hidden bg-background", Astro.props.class]} aria-hidden="true" data-steps-bg>
+  <!-- The SVG covers the first screen; bars overflow below it into the rest of the section as solid color -->
+  <svg
+    class="absolute inset-x-0 top-0 w-full h-screen overflow-visible"
+    viewBox={`0 0 ${W} ${H}`}
+    preserveAspectRatio="xMaxYMax slice"
+    data-steps
+    xmlns="http://www.w3.org/2000/svg"
+  >
+    <defs>
+      <!-- Near-white top with a long, continuous fade (edges barely visible), aqua-shifted tint mid-way,
+           and a blue with a slight green lean at the bottom -->
+      <linearGradient id="step-light" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0" style="stop-color: color-mix(in oklab, var(--chart-1) 10%, var(--background))" />
+        <stop offset="0.6" style="stop-color: oklch(from var(--chart-2) l c calc(h - 30))" />
+        <stop offset="1" style="stop-color: oklch(from var(--chart-4) l c calc(h - 16))" />
+      </linearGradient>
+      <linearGradient id="step-dark" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0" style="stop-color: color-mix(in oklab, var(--chart-1) 18%, var(--background))" />
+        <stop offset="0.6" style="stop-color: oklch(from var(--chart-3) l c calc(h - 30))" />
+        <stop offset="1" style="stop-color: oklch(from var(--chart-5) l c calc(h - 16))" />
+      </linearGradient>
+    </defs>
+
+    {bars.map(({ x, top, duration, delay }, i) => (
+      <>
+      <!-- Solid continuation below the first screen, in the gradient's final color (starts 1 unit early to hide the seam) -->
+      <rect
+        x={x}
+        y={H - 1}
+        width={barWidth + 0.5}
+        height={extend + 1}
+        style={i % 2
+          ? "fill: oklch(from var(--chart-4) l c calc(h - 16))"
+          : "fill: oklch(from var(--chart-5) l c calc(h - 16))"}
+      />
+      <rect
+        x={x}
+        y={top}
+        width={barWidth + 0.5}
+        height={H - top}
+        fill={i % 2 ? "url(#step-light)" : "url(#step-dark)"}
+      >
+        <!-- SMIL rather than CSS transforms: Safari doesn't reliably animate var()-driven transforms on SVG elements -->
+        <animate
+          attributeName="y"
+          values={`${top};${top - floatAmount};${top}`}
+          dur={`${duration}s`}
+          begin={`${delay}s`}
+          repeatCount="indefinite"
+          calcMode="spline"
+          keyTimes="0;0.5;1"
+          keySplines="0.45 0 0.55 1;0.45 0 0.55 1"
+        />
+        <animate
+          attributeName="height"
+          values={`${H - top};${H - top + floatAmount};${H - top}`}
+          dur={`${duration}s`}
+          begin={`${delay}s`}
+          repeatCount="indefinite"
+          calcMode="spline"
+          keyTimes="0;0.5;1"
+          keySplines="0.45 0 0.55 1;0.45 0 0.55 1"
+        />
+      </rect>
+      </>
+    ))}
+  </svg>
+  <!-- The bars fade out to the page background starting at 80vh; the fade length is scroll-driven, ending at
+       30vh (at 110vh) so the section below is plain background once scrolled through. Done in CSS so it lines up exactly regardless of how the SVG is scaled. -->
+  <div class="unify absolute inset-x-0 top-[80vh] bottom-0"></div>
+  <!-- Marks the section below the first screen plus a 10vh transition band (100vh-110vh); used to measure scroll progress -->
+  <div class="absolute inset-x-0 top-[110vh] bottom-0" data-steps-lower></div>
+  <!-- Grain is a fixed bitmap tile sized in CSS px, so it looks the same at any zoom or viewport size.
+       Overlay blending leaves the white background untouched and only textures the bars. -->
+  <div class="grain absolute inset-0"></div>
+</div>
+
+<script>
+  // SMIL ignores CSS, so honor reduced-motion by pausing the SVG's animations.
+  if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+    document.querySelectorAll<SVGSVGElement>("svg[data-steps]").forEach((svg) => svg.pauseAnimations());
+  }
+
+  // Shrink the grain fade from FADE_START_VH to FADE_END_VH as the section below the first screen scrolls into view.
+  // Progress is measured from that section's own box (0 = its top at the viewport bottom,
+  // 1 = its bottom at the viewport bottom), so it keeps working if the section's height changes.
+  const FADE_START_VH = 40;
+  const FADE_END_VH = 10;
+  // The stripe-to-solid fade (starting at 80vh) also tightens with scroll: longer at first so the stripes
+  // carry a bit into the section, then 30vh (ending at 110vh) so the 10vh band below the first screen
+  // always keeps some gradient and everything below it is solid once fully scrolled.
+  // The grain fade's minimum of 10vh likewise ends at 110vh.
+  const UNIFY_START_VH = 60;
+  const UNIFY_END_VH = 30;
+
+  document.querySelectorAll<HTMLElement>("[data-steps-bg]").forEach((root) => {
+    const lower = root.querySelector<HTMLElement>("[data-steps-lower]");
+    const grain = root.querySelector<HTMLElement>(".grain");
+    const unify = root.querySelector<HTMLElement>(".unify");
+    if (!lower || !grain || !unify) return;
+
+    let frame = 0;
+    const update = () => {
+      frame = 0;
+      const rect = lower.getBoundingClientRect();
+      const progress = Math.min(1, Math.max(0, (window.innerHeight - rect.top) / rect.height));
+      const fade = FADE_START_VH + (FADE_END_VH - FADE_START_VH) * progress;
+      grain.style.setProperty("--grain-fade-length", `${fade}vh`);
+      const unifyFade = UNIFY_START_VH + (UNIFY_END_VH - UNIFY_START_VH) * progress;
+      unify.style.setProperty("--unify-fade-length", `${unifyFade}vh`);
+    };
+    const schedule = () => {
+      if (!frame) frame = requestAnimationFrame(update);
+    };
+
+    // Only track scroll while the section is on screen; update once on the way out so it settles at 0 or 1.
+    new IntersectionObserver(([entry]) => {
+      if (entry.isIntersecting) {
+        window.addEventListener("scroll", schedule, { passive: true });
+        window.addEventListener("resize", schedule);
+      } else {
+        window.removeEventListener("scroll", schedule);
+        window.removeEventListener("resize", schedule);
+      }
+      schedule();
+    }).observe(lower);
+  });
+</script>
+
+<style>
+  .unify {
+    /* The bars fade out to the page background (white) below the first screen */
+    background: var(--background);
+    /* Eased fade; --unify-fade-length is driven by scroll (see UNIFY_START_VH / UNIFY_END_VH in the script).
+       At its 30vh minimum it's fully opaque by the end of the 10vh band below the first screen. */
+    --unify-fade-length: 60vh;
+    --unify-fade: linear-gradient(
+      to bottom,
+      transparent,
+      rgb(0 0 0 / 0.15) calc(var(--unify-fade-length) * 0.2),
+      rgb(0 0 0 / 0.5) calc(var(--unify-fade-length) * 0.5),
+      rgb(0 0 0 / 0.85) calc(var(--unify-fade-length) * 0.8),
+      black var(--unify-fade-length)
+    );
+    -webkit-mask-image: var(--unify-fade);
+    mask-image: var(--unify-fade);
+  }
+
+  .grain {
+    background-image: url("/textures/grain.png");
+    background-size: 512px 512px;
+    mix-blend-mode: overlay;
+    opacity: 0.6;
+    /* Fade the grain out gradually below the first screen (eased stops so it has no visible start/end line).
+       --grain-fade-length is driven by scroll (see FADE_START_VH / FADE_END_VH in the script). */
+    --grain-fade-length: 40vh;
+    --grain-fade: linear-gradient(
+      to bottom,
+      black 100vh,
+      rgb(0 0 0 / 0.85) calc(100vh + var(--grain-fade-length) * 0.2),
+      rgb(0 0 0 / 0.5) calc(100vh + var(--grain-fade-length) * 0.5),
+      rgb(0 0 0 / 0.15) calc(100vh + var(--grain-fade-length) * 0.8),
+      transparent calc(100vh + var(--grain-fade-length))
+    );
+    -webkit-mask-image: var(--grain-fade);
+    mask-image: var(--grain-fade);
+  }
+</style>

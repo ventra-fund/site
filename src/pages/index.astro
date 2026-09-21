@@ -1,11 +1,14 @@
 ---
 import Layout from "@/layouts/Layout.astro";
+import StepsBackground from "@/components/StepsBackground.astro";
 import { Button } from "@/ui/button";
 ---
 
 <Layout>
 
-  <div class="w-full h-screen flex items-center justify-center">
-    <p>Site under construction</p>
+  <div class="relative isolate w-full h-[210vh] flex flex-col items-center overflow-hidden bg-white">
+    <StepsBackground class="absolute inset-0 -z-10 w-full h-full" />
+    <h1 class="text-center text-5xl pt-30 mx-auto">Working capital<br>built for small businesses</h1>
+    <p class="mx-auto text-center py-5 text-lg">Boost cash flow, inventory, operations, and more with Ventra Fund.</p>
   </div>
 </Layout>
