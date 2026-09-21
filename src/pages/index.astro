@@ -1,14 +1,295 @@
 ---
 import Layout from "@/layouts/Layout.astro";
 import StepsBackground from "@/components/StepsBackground.astro";
+import StepsAccent from "@/components/StepsAccent.astro";
+import { LinkGroup, LinkGroupTitle, LinkGroupList, LinkGroupItem } from '@/ui/link-group';
+import Star from "@/components/Star.astro";
+import Instagram from "@/components/Instagram.astro";
+import Facebook from "@/components/Facebook.astro";
+import LinkedIn from "@/components/LinkedIn.astro";
 import { Button } from "@/ui/button";
+import { BadgeDollarSign, ChevronLeft, ChevronRight, CircleDollarSign, ClipboardCheck, Quote, Sheet, ShieldCheck, ToolCase, Timer, TrendingUp, UsersRound, Wallet } from "@lucide/astro";
 ---
 
 <Layout>
 
-  <div class="relative isolate w-full h-[210vh] flex flex-col items-center overflow-hidden bg-white">
-    <StepsBackground class="absolute inset-0 -z-10 w-full h-full" />
-    <h1 class="text-center text-5xl pt-30 mx-auto">Working capital<br>built for small businesses</h1>
-    <p class="mx-auto text-center py-5 text-lg">Boost cash flow, inventory, operations, and more with Ventra Fund.</p>
+  <!-- The steps background spans 210vh behind both the hero and the content that follows it -->
+  <div class="relative isolate overflow-hidden bg-background">
+    <StepsBackground class="absolute inset-x-0 top-0 -z-10 w-full h-[210vh]" />
+    <div class="w-full h-[120vh] flex flex-col items-center mb-50 px-6">
+      <h1 class="text-center text-3xl sm:text-5xl pt-30 mx-auto">Working capital<br>built for small businesses</h1>
+      <p class="mx-auto text-center py-5 text-lg">Boost cash flow, inventory, operations, and more with Ventra Fund.</p>
+    </div>
+    
   </div>
+  <section class="mx-auto grid w-[calc(100%-2rem)] my-[4rem] grid-cols-1 md:min-h-176 md:grid-cols-[1fr_2fr] md:w-[calc(100%-8rem)]">
+    <img class="h-80 w-full bg-muted object-cover md:h-0 md:min-h-full" src="/media/businesswoman.webp" alt="Small business owner" width="600" height="900" loading="lazy" decoding="async" />
+    <div class="flex flex-col gap-8 bg-secondary px-6 py-12 md:px-16 md:py-20">
+      <h2 class="text-4xl font-bold text-accent md:text-5xl">Business financing to fuel your growth.</h2>
+      <p class="max-w-xl text-lg text-secondary-foreground">Apply for working capital with Ventra Fund to cover inventory, payroll, marketing, and more, all from one simple application.</p>
+      <ul class="flex flex-col gap-8">
+        <li class="flex items-center gap-6 text-lg font-semibold text-accent">
+          <BadgeDollarSign class="size-12 shrink-0" stroke-width={1.5} />
+          <span>Access competitive pricing and repayment terms</span>
+        </li>
+        <li class="flex items-center gap-6 text-lg font-semibold text-accent">
+          <ClipboardCheck class="size-12 shrink-0" stroke-width={1.5} />
+          <span>Apply in minutes without impacting your credit score</span>
+        </li>
+        <li class="flex items-center gap-6 text-lg font-semibold text-accent">
+          <Timer class="size-12 shrink-0" stroke-width={1.5} />
+          <span>Get a decision in as fast as 24 hours</span>
+        </li>
+      </ul>
+      <Button as="a" href="#" size="lg" class="mt-auto self-start">Explore business financing</Button>
+    </div>
+  </section>
+
+  <section class="mx-auto grid w-[calc(100%-2rem)] my-[4rem] grid-cols-1 md:min-h-176 md:grid-cols-[2fr_1fr] md:w-[calc(100%-8rem)]">
+    <img class="h-80 w-full bg-muted object-cover md:order-last md:h-0 md:min-h-full" src="/media/business-handshake.jpeg" alt="Business owners shaking hands" width="736" height="1306" loading="lazy" decoding="async" />
+    <div class="flex flex-col gap-8 bg-secondary px-6 py-12 md:px-16 md:py-20">
+      <h2 class="text-4xl font-bold text-accent md:text-5xl">Unlock funding that doesn’t hold you back.</h2>
+      <p class="max-w-xl text-lg text-secondary-foreground">Flexible working capital on terms that put your business first, with no strings attached.</p>
+      <ul class="flex flex-col gap-8">
+        <li class="flex items-center gap-6 text-lg font-semibold text-accent">
+          <Wallet class="size-12 shrink-0" stroke-width={1.5} />
+          <span>Use funds for anything your business needs - we trust you to know what’s best.</span>
+        </li>
+        <li class="flex items-center gap-6 text-lg font-semibold text-accent">
+          <ShieldCheck class="size-12 shrink-0" stroke-width={1.5} />
+          <span>No personal guarantee, so your personal assets aren’t on the line.</span>
+        </li>
+        <li class="flex items-center gap-6 text-lg font-semibold text-accent">
+          <TrendingUp class="size-12 shrink-0" stroke-width={1.5} />
+          <span>No prepayment fees because we don’t think you should be penalized for growth.</span>
+        </li>
+      </ul>
+      <Button as="a" href="#" size="lg" class="mt-auto self-start">Check eligibility</Button>
+    </div>
+  </section>
+
+  <section class="mx-auto grid w-[calc(100%-2rem)] my-[4rem] grid-cols-1 gap-10 bg-secondary px-6 py-12 md:w-[calc(100%-8rem)] md:gap-8 md:px-16 md:py-20 lg:grid-cols-3">
+      <div class="mx-auto flex max-w-sm flex-col items-center text-center">
+        <CircleDollarSign class="mb-3 size-8 text-foreground" stroke-width={1.5} />
+        <h3 class="text-lg font-extrabold text-foreground">Flat-fee pricing and competitive rates</h3>
+        <p class="mt-1 text-lg text-muted-foreground">Easy-to-understand terms so you know your true cost of capital.</p>
+      </div>
+      <div class="mx-auto flex max-w-sm flex-col items-center text-center">
+        <Sheet class="mb-3 size-8 text-foreground" stroke-width={1.5} />
+        <h3 class="text-lg font-extrabold text-foreground">Fixed weekly repayment schedule</h3>
+        <p class="mt-1 text-lg text-muted-foreground">Forecast your finances without the unpredictability of revenue-based payback.</p>
+      </div>
+      <div class="mx-auto flex max-w-sm flex-col items-center text-center">
+        <UsersRound class="mb-3 size-8 text-foreground" stroke-width={1.5} />
+        <h3 class="text-lg font-extrabold text-foreground">Long-term partnership</h3>
+        <p class="mt-1 text-lg text-muted-foreground">Consultation on how payments impact the business in various forecast cases.</p>
+      </div>
+  </section>
+
+  <section class="mx-auto w-[calc(100%-2rem)] my-[4rem] md:w-[calc(100%-8rem)]">
+    <h2 class="max-w-3xl text-4xl font-bold text-accent md:text-6xl mt-24">See why our customers love Ventra Fund.</h2>
+    <p class="mt-6 text-lg text-secondary-foreground">And why you will, too.</p>
+    <div class="mt-10 grid grid-cols-1 items-end gap-10 md:mt-6 md:grid-cols-[3fr_2fr]">
+      <figure class="relative isolate flex flex-col justify-end gap-10 self-stretch">
+        <StepsAccent class="absolute inset-0 -z-10 opacity-30" />
+        <Quote class="size-14 fill-primary text-primary" stroke-width={0} />
+        <blockquote class="max-w-2xl text-2xl text-accent md:text-3xl">
+          “I applied on a Tuesday night and the money was in my account by Friday. We stocked up for summer before our suppliers raised their prices, and I didn't have to touch our cash reserves.”
+        </blockquote>
+        <figcaption class="flex items-center gap-8 text-accent">
+          <div class="border-r border-border pr-8">
+            <p class="font-bold">Josh N.</p>
+            <p>Polar Bear Mechanical</p>
+          </div>
+          <div class="flex items-center gap-4">
+            <ToolCase class="size-10 shrink-0" stroke-width={1.5} />
+            <span>HVAC &amp; Refrigeration</span>
+          </div>
+        </figcaption>
+      </figure>
+      <img class="h-auto w-full bg-muted" src="/media/hvac.jpeg" alt="HVAC business owner" width="735" height="919" loading="lazy" decoding="async" />
+    </div>
+  </section>
+
+  <section class="bg-primary/10 py-20 md:py-28">
+    <div class="mx-auto w-[calc(100%-2rem)] md:w-[calc(100%-8rem)]">
+      <h2 class="text-4xl font-bold text-accent md:text-6xl">Read the latest from our customers.</h2>
+      <!-- Placeholder reviews and rating: replace with real review data before launch -->
+      <div class="mt-12 grid grid-cols-1 gap-6 lg:grid-cols-[1fr_3fr]">
+        <div class="flex flex-col justify-center gap-4 rounded-br-[5rem] bg-accent p-10 text-accent-foreground">
+          <p class="text-xl font-semibold">Excellent</p>
+          <div class="flex items-center gap-3">
+            <div class="flex gap-2" role="img" aria-label="Rated 4.9 out of 5">
+              {Array.from({ length: 5 }, () => (
+                <span class="grid size-10 place-items-center bg-primary text-primary-foreground"><Star class="size-6" aria-hidden="true" /></span>
+              ))}
+            </div>
+            <p class="text-2xl font-bold">4.9</p>
+          </div>
+          <p class="text-sm">Based on <strong>128</strong> reviews</p>
+          <img class="mt-2 h-8 w-auto self-start" src="/media/trustpilot.svg" alt="Trustpilot" width="140" height="34" loading="lazy" />
+        </div>
+        <div class="min-w-0" data-reviews>
+          <div class="flex snap-x snap-mandatory gap-6 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden" data-reviews-track>
+        <article class="flex shrink-0 basis-[85%] snap-start flex-col rounded-tr-[5rem] bg-background p-8 pr-12 sm:basis-[calc((100%-1.5rem)/2)] xl:basis-[calc((100%-3rem)/3)]">
+          <div class="mb-4 flex gap-0.5" role="img" aria-label="Rated 5 out of 5">
+            {Array.from({ length: 5 }, () => (
+              <span class="grid size-6 place-items-center bg-primary text-primary-foreground"><Star class="size-4" aria-hidden="true" /></span>
+            ))}
+          </div>
+          <h3 class="text-xl font-bold text-accent">Applied Monday, funded Wednesday</h3>
+          <p class="mt-4 line-clamp-3 text-accent">Had a big payroll week and an old tax bill land at the same time. Ventra covered both without the endless paperwork I expected. Now I just pay a fixed amount each week and it's easy to plan around.</p>
+          <hr class="mt-4 w-28 border-border" />
+          <p class="mt-4 text-sm font-bold text-accent">Sandra K.</p>
+        </article>
+        <article class="flex shrink-0 basis-[85%] snap-start flex-col rounded-tr-[5rem] bg-background p-8 pr-12 sm:basis-[calc((100%-1.5rem)/2)] xl:basis-[calc((100%-3rem)/3)]">
+          <div class="mb-4 flex gap-0.5" role="img" aria-label="Rated 5 out of 5">
+            {Array.from({ length: 5 }, () => (
+              <span class="grid size-6 place-items-center bg-primary text-primary-foreground"><Star class="size-4" aria-hidden="true" /></span>
+            ))}
+          </div>
+          <h3 class="text-xl font-bold text-accent">Finally a lender that answers the phone</h3>
+          <p class="mt-4 line-clamp-3 text-accent">Every other company kept us waiting for weeks or called back to resell us. The rep explained the flat fee upfront and helped schedule payments around our slower months.</p>
+          <hr class="mt-4 w-28 border-border" />
+          <p class="mt-4 text-sm font-bold text-accent">Marcus T.</p>
+        </article>
+        <article class="flex shrink-0 basis-[85%] snap-start flex-col rounded-tr-[5rem] bg-background p-8 pr-12 sm:basis-[calc((100%-1.5rem)/2)] xl:basis-[calc((100%-3rem)/3)]">
+          <div class="mb-4 flex gap-0.5" role="img" aria-label="Rated 4 out of 5">
+            {Array.from({ length: 4 }, () => (
+              <span class="grid size-6 place-items-center bg-primary text-primary-foreground"><Star class="size-4" aria-hidden="true" /></span>
+            ))}
+            {Array.from({ length: 1 }, () => (
+              <span class="grid size-6 place-items-center bg-muted text-muted-foreground"><Star class="size-4" aria-hidden="true" /></span>
+            ))}
+          </div>
+          <h3 class="text-xl font-bold text-accent">Good rates, honest terms</h3>
+          <p class="mt-4 line-clamp-3 text-accent">Funding cleared quickly for our inventory order and the weekly repayments are easy to budget. Took a day longer to hit our account than promised, but the true cost was clear from day one.</p>
+          <hr class="mt-4 w-28 border-border" />
+          <p class="mt-4 text-sm font-bold text-accent">Priya S.</p>
+        </article>
+        <article class="flex shrink-0 basis-[85%] snap-start flex-col rounded-tr-[5rem] bg-background p-8 pr-12 sm:basis-[calc((100%-1.5rem)/2)] xl:basis-[calc((100%-3rem)/3)]">
+          <div class="mb-4 flex gap-0.5" role="img" aria-label="Rated 5 out of 5">
+            {Array.from({ length: 5 }, () => (
+              <span class="grid size-6 place-items-center bg-primary text-primary-foreground"><Star class="size-4" aria-hidden="true" /></span>
+            ))}
+          </div>
+          <h3 class="text-xl font-bold text-accent">Kept our bakery running through summer</h3>
+          <p class="mt-4 line-clamp-3 text-accent">Our delivery van gave out right before our busiest season. Ventra approved us in 24 hours and we had a replacement on the road the next week. Can't recommend them enough.</p>
+          <hr class="mt-4 w-28 border-border" />
+          <p class="mt-4 text-sm font-bold text-accent">Dan &amp; Lyn M.</p>
+        </article>
+        <article class="flex shrink-0 basis-[85%] snap-start flex-col rounded-tr-[5rem] bg-background p-8 pr-12 sm:basis-[calc((100%-1.5rem)/2)] xl:basis-[calc((100%-3rem)/3)]">
+          <div class="mb-4 flex gap-0.5" role="img" aria-label="Rated 4 out of 5">
+            {Array.from({ length: 4 }, () => (
+              <span class="grid size-6 place-items-center bg-primary text-primary-foreground"><Star class="size-4" aria-hidden="true" /></span>
+            ))}
+            {Array.from({ length: 1 }, () => (
+              <span class="grid size-6 place-items-center bg-muted text-muted-foreground"><Star class="size-4" aria-hidden="true" /></span>
+            ))}
+          </div>
+          <h3 class="text-xl font-bold text-accent">Rescued a late-paying client's contract</h3>
+          <p class="mt-4 line-clamp-3 text-accent">A client paid late and we nearly missed payroll. The application took ten minutes and the decision came back the same day. Only downer is the fixed weekly payment day was a bit of a squeeze.</p>
+          <hr class="mt-4 w-28 border-border" />
+          <p class="mt-4 text-sm font-bold text-accent">Renee C.</p>
+        </article>
+          </div>
+          <div class="mt-6 flex items-center gap-6">
+            <button type="button" class="text-accent disabled:opacity-30" aria-label="Previous reviews" data-reviews-prev>
+              <ChevronLeft class="size-5" />
+            </button>
+            <div class="h-2 flex-1 overflow-hidden rounded-full bg-background">
+              <div class="h-full rounded-full bg-primary" data-reviews-thumb></div>
+            </div>
+            <button type="button" class="text-accent disabled:opacity-30" aria-label="Next reviews" data-reviews-next>
+              <ChevronRight class="size-5" />
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="py-20 md:py-28">
+    <div class="mx-auto w-[calc(100%-2rem)] md:w-[calc(100%-8rem)] flex flex-col gap-16 sm:flex-row sm:flex-wrap lg:flex-nowrap">
+      <LinkGroup>
+        <LinkGroupTitle>Company</LinkGroupTitle>
+        <LinkGroupList>
+          <LinkGroupItem><a href="/">Home</a></LinkGroupItem>
+          <LinkGroupItem><a href="#">Contact</a></LinkGroupItem>
+          <LinkGroupItem><a href="#">Partnerships</a></LinkGroupItem>
+        </LinkGroupList>
+      </LinkGroup>
+      <LinkGroup>
+        <LinkGroupTitle>Solutions</LinkGroupTitle>
+        <LinkGroupList>
+          <LinkGroupItem><a href="#">Revenue-based financing</a></LinkGroupItem>
+          <LinkGroupItem><a href="#">Merchant Cash Advance</a></LinkGroupItem>
+        </LinkGroupList>
+      </LinkGroup>
+      <LinkGroup>
+        <LinkGroupTitle>Social</LinkGroupTitle>
+        <LinkGroupList>
+          <LinkGroupItem><a href="#" class="inline-flex items-center gap-2"><Instagram class="size-5 shrink-0" />Instagram</a></LinkGroupItem>
+          <LinkGroupItem><a href="#" class="inline-flex items-center gap-2"><Facebook class="size-5 shrink-0" />Facebook</a></LinkGroupItem>
+          <LinkGroupItem><a href="#" class="inline-flex items-center gap-2"><LinkedIn class="size-5 shrink-0" />LinkedIn</a></LinkGroupItem>
+        </LinkGroupList>
+      </LinkGroup>
+      <div class="w-full">
+        <!-- Wordmark with the hero's grainy gradient: the gradient-filled letters, then the same shapes filled with the grain tile and overlay-blended on top -->
+        <svg class="isolate h-auto w-full" viewBox="0 0 433 74" role="img" aria-label="Ventra" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <linearGradient id="wordmark-gradient" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0" style="stop-color: oklch(from var(--chart-1) calc(l * 0.7) c h)" />
+              <stop offset="1" style="stop-color: oklch(from var(--chart-4) calc(l * 0.5) c h)" />
+            </linearGradient>
+            <pattern id="wordmark-grain" patternUnits="userSpaceOnUse" width="160" height="160">
+              <image href="/textures/grain.png" width="160" height="160" />
+            </pattern>
+            <g id="wordmark">
+            <path d="M48.64 0.511993H72.96L53.248 73.472H19.84L0 0.511993H24.448L36.224 57.6H36.864L48.64 0.511993Z" />
+            <path d="M78.76 0.511993H131.88V15.872H101.8V29.184H127.144V43.008H101.8V57.856H131.752V73.472H78.76V0.511993Z" />
+            <path d="M163.026 44.032V73.472H141.65V0.511993H163.282L182.61 29.952C185.511 34.304 187.73 37.9733 189.266 40.96H189.65V0.511993H210.898V73.472H189.138L169.298 42.752L163.538 34.048H163.154L163.026 44.032Z" />
+            <path d="M260.547 73.472H237.507V16.512H216.899V0.511993H281.155V16.512H260.547V73.472Z" />
+            <path d="M354.957 73.472H330.765L326.413 55.04C326.242 54.3573 325.944 53.2053 325.517 51.584C325.176 49.8773 324.749 48.64 324.237 47.872C323.725 47.0187 323 46.464 322.061 46.208C319.672 46.2933 316.173 46.336 311.565 46.336V73.472H288.525V1.152C298.85 0.384 308.493 0 317.453 0C325.56 0 332.13 0.682665 337.165 2.048C342.2 3.328 345.954 5.58933 348.429 8.832C350.989 11.9893 352.269 16.3413 352.269 21.888C352.269 27.0933 351.074 31.1893 348.685 34.176C346.296 37.0773 342.456 38.8267 337.165 39.424V40.192C340.152 40.448 342.626 41.4293 344.589 43.136C346.637 44.7573 348.002 46.848 348.685 49.408L354.957 73.472ZM311.565 31.872C312.333 31.9573 313.826 32 316.045 32C322.616 32 326.456 31.4453 327.565 30.336C328.589 29.312 329.101 26.9227 329.101 23.168C329.101 19.6693 328.162 17.28 326.285 16C324.493 14.72 321.506 14.08 317.325 14.08C316.386 14.08 314.466 14.1653 311.565 14.336V31.872Z" />
+            <path d="M405.015 57.472H383.767L379.927 73.472H356.375L379.927 0.511993H410.007L432.535 73.472H408.855L405.015 57.472ZM394.263 16.256L386.711 43.264H401.943L394.775 16.256H394.263Z" />
+            </g>
+          </defs>
+          <use href="#wordmark" fill="url(#wordmark-gradient)" />
+          <use href="#wordmark" fill="url(#wordmark-grain)" opacity="0.6" style="mix-blend-mode: overlay" />
+        </svg>
+      </div>
+    </div>
+  </section>
+
 </Layout>
+
+<script>
+  // Review carousel: arrows scroll by one card, the bar shows the visible share of the track and its position
+  document.querySelectorAll<HTMLElement>("[data-reviews]").forEach((root) => {
+    const track = root.querySelector<HTMLElement>("[data-reviews-track]")!;
+    const thumb = root.querySelector<HTMLElement>("[data-reviews-thumb]")!;
+    const prev = root.querySelector<HTMLButtonElement>("[data-reviews-prev]")!;
+    const next = root.querySelector<HTMLButtonElement>("[data-reviews-next]")!;
+
+    const update = () => {
+      const max = track.scrollWidth - track.clientWidth;
+      const visible = track.clientWidth / track.scrollWidth;
+      thumb.style.width = `${visible * 100}%`;
+      thumb.style.transform = `translateX(${max > 0 ? (track.scrollLeft / max) * (1 / visible - 1) * 100 : 0}%)`;
+      prev.disabled = track.scrollLeft <= 1;
+      next.disabled = track.scrollLeft >= max - 1;
+    };
+
+    const step = (dir: number) => {
+      const card = track.firstElementChild as HTMLElement;
+      const gap = parseFloat(getComputedStyle(track).columnGap) || 0;
+      track.scrollBy({ left: dir * (card.offsetWidth + gap), behavior: "smooth" });
+    };
+
+    prev.addEventListener("click", () => step(-1));
+    next.addEventListener("click", () => step(1));
+    track.addEventListener("scroll", update, { passive: true });
+    new ResizeObserver(update).observe(track);
+    update();
+  });
+</script>

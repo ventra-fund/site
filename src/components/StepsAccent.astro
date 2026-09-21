@@ -1,0 +1,91 @@
+---
+// Small grainy stepped bar chart used as a faint decorative backdrop behind content blocks.
+// A lighter cousin of StepsBackground: the gradient runs from the page background at the bottom
+// up to the hero's green-leaning blue at the top, so the shortest steps read white and the tallest read green.
+const W = 1200;
+const H = 800;
+const count = 10;
+const barWidth = W / count;
+// Slight irregularity so the staircase doesn't look perfectly linear.
+const jitter = [0, 20, -10, 30, -5, 15, -20, 10, 25, 0];
+// How far (in viewBox units) each bar's top rises at the peak of its float.
+const floatAmount = 60;
+// Deterministic pseudo-random in [0, 1) so each bar gets its own rhythm without changing between builds.
+const rand = (n: number) => {
+  const v = Math.sin(n * 12.9898) * 43758.5453;
+  return v - Math.floor(v);
+};
+const bars = Array.from({ length: count }, (_, i) => {
+  const height = 80 + ((H - floatAmount - 80) * i) / (count - 1) + jitter[i];
+  const top = Math.max(floatAmount, H - height);
+  return {
+    x: i * barWidth,
+    top,
+    duration: 8 + rand(i + 1) * 6,
+    // Negative delay starts each bar mid-cycle so they're out of sync from the first frame
+    delay: -rand(i + 101) * 14,
+  };
+});
+---
+
+<div class:list={["isolate overflow-hidden bg-background", Astro.props.class]} aria-hidden="true">
+  <svg class="absolute inset-0 size-full" viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none" data-steps xmlns="http://www.w3.org/2000/svg">
+    <defs>
+      <!-- userSpaceOnUse so the gradient spans the whole chart rather than each bar: short bars stay near white -->
+      <linearGradient id="accent-step-light" gradientUnits="userSpaceOnUse" x1="0" y1={H} x2="0" y2="0">
+        <stop offset="0" style="stop-color: var(--background)" />
+        <stop offset="0.5" style="stop-color: oklch(from var(--chart-2) l c calc(h - 30))" />
+        <stop offset="1" style="stop-color: oklch(from var(--chart-4) l c calc(h - 16))" />
+      </linearGradient>
+      <linearGradient id="accent-step-dark" gradientUnits="userSpaceOnUse" x1="0" y1={H} x2="0" y2="0">
+        <stop offset="0" style="stop-color: var(--background)" />
+        <stop offset="0.5" style="stop-color: oklch(from var(--chart-3) l c calc(h - 30))" />
+        <stop offset="1" style="stop-color: oklch(from var(--chart-5) l c calc(h - 16))" />
+      </linearGradient>
+    </defs>
+
+    {bars.map(({ x, top, duration, delay }, i) => (
+      <rect x={x} y={top} width={barWidth + 0.5} height={H - top} fill={i % 2 ? "url(#accent-step-light)" : "url(#accent-step-dark)"}>
+        <!-- SMIL rather than CSS transforms: Safari doesn't reliably animate var()-driven transforms on SVG elements -->
+        <animate
+          attributeName="y"
+          values={`${top};${top - floatAmount};${top}`}
+          dur={`${duration}s`}
+          begin={`${delay}s`}
+          repeatCount="indefinite"
+          calcMode="spline"
+          keyTimes="0;0.5;1"
+          keySplines="0.45 0 0.55 1;0.45 0 0.55 1"
+        />
+        <animate
+          attributeName="height"
+          values={`${H - top};${H - top + floatAmount};${H - top}`}
+          dur={`${duration}s`}
+          begin={`${delay}s`}
+          repeatCount="indefinite"
+          calcMode="spline"
+          keyTimes="0;0.5;1"
+          keySplines="0.45 0 0.55 1;0.45 0 0.55 1"
+        />
+      </rect>
+    ))}
+  </svg>
+  <!-- Same grain tile as the hero; overlay blending leaves the white untouched and only textures the bars -->
+  <div class="grain absolute inset-0"></div>
+</div>
+
+<script>
+  // SMIL ignores CSS, so honor reduced-motion by pausing the SVG's animations.
+  if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+    document.querySelectorAll<SVGSVGElement>("svg[data-steps]").forEach((svg) => svg.pauseAnimations());
+  }
+</script>
+
+<style>
+  .grain {
+    background-image: url("/textures/grain.png");
+    background-size: 512px 512px;
+    mix-blend-mode: overlay;
+    opacity: 0.6;
+  }
+</style>
