@@ -1,0 +1,54 @@
+---
+import "@/styles/globals.css";
+import { Font } from "astro:assets";
+import { NavigationMenu, NavigationMenuContent, NavigationMenuIndicator, NavigationMenuItem, NavigationMenuLink, NavigationMenuList, NavigationMenuTrigger } from '@/ui/navigation-menu';
+---
+
+<!doctype html>
+<html  lang="en">
+  <head>
+    <!-- bejamas:astro-fonts:start -->
+    <Font cssVariable="--font-sans" />
+    <Font cssVariable="--font-heading" />
+    <!-- bejamas:astro-fonts:end -->
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <meta name="generator" content={Astro.generator} />
+    <title>Ventra Fund</title>
+  </head>
+  <body>
+    <div class="fixed w-full">
+      <NavigationMenu class="w-fit mx-auto my-4 bg-background">
+        <NavigationMenuList>
+          <NavigationMenuItem>
+            <NavigationMenuLink href="/" class="cn-navigation-menu-trigger group/navigation-menu-trigger inline-flex h-9 w-max items-center justify-center outline-none disabled:pointer-events-none">
+              Home
+            </NavigationMenuLink>
+          </NavigationMenuItem>
+          <NavigationMenuItem value="products">
+            <NavigationMenuTrigger>Solutions</NavigationMenuTrigger>
+            <NavigationMenuContent>
+              <div>
+                <NavigationMenuLink href="#">Revenue-Based Financing</NavigationMenuLink>
+                <NavigationMenuLink href="#">Merchant Cash Advance</NavigationMenuLink>
+              </div>
+            </NavigationMenuContent>
+          </NavigationMenuItem>
+          <NavigationMenuItem>
+            <NavigationMenuLink href="#" class="cn-navigation-menu-trigger group/navigation-menu-trigger inline-flex h-9 w-max items-center justify-center outline-none disabled:pointer-events-none">
+              Apply
+            </NavigationMenuLink>
+          </NavigationMenuItem>
+          <NavigationMenuItem>
+            <NavigationMenuLink href="#" class="cn-navigation-menu-trigger group/navigation-menu-trigger inline-flex h-9 w-max items-center justify-center outline-none disabled:pointer-events-none">
+              Partnerships
+            </NavigationMenuLink>
+          </NavigationMenuItem>
+          <NavigationMenuIndicator />
+        </NavigationMenuList>
+      </NavigationMenu>
+    </div>
+    <slot />
+  </body>
+</html>
