@@ -18,8 +18,8 @@ import { NavigationMenu, NavigationMenuContent, NavigationMenuIndicator, Navigat
     <title>Ventra Fund</title>
   </head>
   <body>
-    <div class="fixed w-full z-99">
-      <NavigationMenu class="w-fit mx-auto my-4 bg-background z-99">
+    <div id="site-nav" class="fixed w-full z-99">
+      <NavigationMenu class="w-fit mx-auto my-4 bg-background z-99 rounded-md border-2 border-transparent transition-colors [.is-scrolled_&]:border-muted">
         <NavigationMenuList>
           <NavigationMenuItem>
             <NavigationMenuLink data-astro-prefetch href="/" class="cn-navigation-menu-trigger group/navigation-menu-trigger inline-flex h-9 w-max items-center justify-center outline-none disabled:pointer-events-none">
@@ -55,5 +55,13 @@ import { NavigationMenu, NavigationMenuContent, NavigationMenuIndicator, Navigat
       </NavigationMenu>
     </div>
     <slot />
+    <script>
+      const nav = document.getElementById("site-nav");
+      const updateScrolled = () => {
+        nav?.classList.toggle("is-scrolled", window.scrollY > 0);
+      };
+      updateScrolled();
+      window.addEventListener("scroll", updateScrolled, { passive: true });
+    </script>
   </body>
 </html>
