@@ -16,8 +16,28 @@ function isBusinessEmail(email: string): boolean {
   return !!domain && !FREE_EMAIL_DOMAINS.has(domain);
 }
 
-export const PARTNER_ROLES = ['lender', 'broker', 'service_provider'] as const;
+// Order matters here: the page's role dropdown and interest groups are both built by iterating
+// this list, broker first to match the default selection.
+export const PARTNER_ROLES = ['broker', 'lender', 'service_provider'] as const;
 export type PartnerRole = (typeof PARTNER_ROLES)[number];
+
+/** Per-role checkboxes, keyed by the value that travels in the request. The page renders these
+ *  straight from here, so the options shown to a visitor and the ones the server accepts can't
+ *  drift apart. */
+export const PARTNER_INTERESTS: Record<PartnerRole, { value: string; label: string }[]> = {
+  broker: [
+    { value: 'consistent_lender', label: "I'm looking for a consistent lender to fund my deals" },
+    { value: 'see_terms', label: 'I want to see your terms' },
+  ],
+  lender: [
+    { value: 'deal_flow', label: "I'm looking for deal flow from you" },
+    { value: 'off_criteria', label: "I'm sending out deals that don't fit our criteria" },
+  ],
+  service_provider: [
+    { value: 'fintech_services', label: "I'm looking to offer fintech/technology services" },
+    { value: 'sales_tools', label: "I'm looking to offer sales tools or services" },
+  ],
+};
 
 /** The fields a visitor types. */
 export const partnerFields = z.object({
@@ -29,6 +49,9 @@ export const partnerFields = z.object({
     z.email('Please enter a valid email address.').max(254, 'That email is too long.'),
   ).refine(isBusinessEmail, { message: 'Please use your business email address.' }),
   role: z.enum(PARTNER_ROLES),
+  // Optional: a visitor can leave every box unchecked. Cross-checked against the chosen role
+  // below, since each role has its own set of checkboxes.
+  interests: z.array(z.string().max(64)).max(10).default([]),
 });
 
 /** The message as plain text: what the visitor sees, and what the limit is measured against. */
@@ -43,6 +66,9 @@ export const partnerRequest = partnerFields.extend({
   // Raw editor HTML. Capped generously here; the real limit is `messageText` after sanitizing.
   html: z.string().min(1).max(MESSAGE_MAX_CHARS * 10),
   token: z.string().min(1).max(2048),
-});
+}).refine(
+  (data) => data.interests.every((v) => PARTNER_INTERESTS[data.role].some((o) => o.value === v)),
+  { message: 'Invalid interests for the selected role.', path: ['interests'] },
+);
 
 export type PartnerRequest = z.infer<typeof partnerRequest>;

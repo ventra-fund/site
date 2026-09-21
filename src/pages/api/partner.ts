@@ -1,6 +1,6 @@
 import type { APIRoute } from 'astro';
 import { CONTACT_FROM_EMAIL, CONTACT_TO_EMAIL, RESEND_API_KEY, TURNSTILE_SECRET_KEY } from 'astro:env/server';
-import { partnerRequest, messageText, type PartnerRole } from '@/lib/partner-schema';
+import { partnerRequest, messageText, PARTNER_INTERESTS, type PartnerRole } from '@/lib/partner-schema';
 import { escapeHtml, htmlToText, sanitizeHtml } from '@/lib/sanitize';
 
 // The only on-demand route besides /api/contact: everything else on the site is prerendered.
@@ -44,7 +44,7 @@ export const POST: APIRoute = async ({ request }) => {
   // The form runs friendly checks client-side, but anyone can POST here directly.
   const parsed = partnerRequest.safeParse(payload);
   if (!parsed.success) return json(400, { error: 'invalid_body', fields: parsed.error.issues.map((i) => i.path.join('.')) });
-  const { name: cleanName, email: cleanEmail, role, html, token } = parsed.data;
+  const { name: cleanName, email: cleanEmail, role, interests, html, token } = parsed.data;
 
   let safeHtml: string;
   try {
@@ -72,6 +72,14 @@ export const POST: APIRoute = async ({ request }) => {
   }
 
   const roleLabel = ROLE_LABELS[role];
+  const interestLabels = interests.map((v) => PARTNER_INTERESTS[role].find((o) => o.value === v)?.label ?? v);
+  const interestsHtml = interestLabels.length
+    ? `<p><strong>Interested in:</strong></p><ul>${interestLabels.map((l) => `<li>${escapeHtml(l)}</li>`).join('')}</ul>`
+    : '';
+  const interestsText = interestLabels.length
+    ? `Interested in:\n${interestLabels.map((l) => `- ${l}`).join('\n')}\n\n`
+    : '';
+
   const res = await fetch(RESEND_URL, {
     method: 'POST',
     headers: { Authorization: `Bearer ${RESEND_API_KEY}`, 'Content-Type': 'application/json' },
@@ -80,8 +88,8 @@ export const POST: APIRoute = async ({ request }) => {
       to: [CONTACT_TO_EMAIL],
       reply_to: cleanEmail,
       subject: `New partner inquiry (${roleLabel}) from ${cleanName}`,
-      html: `<p><strong>From:</strong> ${escapeHtml(cleanName)} &lt;${escapeHtml(cleanEmail)}&gt;</p><p><strong>Role:</strong> ${escapeHtml(roleLabel)}</p><hr>${safeHtml}`,
-      text: `From: ${cleanName} <${cleanEmail}>\nRole: ${roleLabel}\n\n${text}`,
+      html: `<p><strong>From:</strong> ${escapeHtml(cleanName)} &lt;${escapeHtml(cleanEmail)}&gt;</p><p><strong>Role:</strong> ${escapeHtml(roleLabel)}</p>${interestsHtml}<hr>${safeHtml}`,
+      text: `From: ${cleanName} <${cleanEmail}>\nRole: ${roleLabel}\n\n${interestsText}${text}`,
     }),
   });
   if (!res.ok) {

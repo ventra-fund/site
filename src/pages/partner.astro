@@ -9,6 +9,8 @@ import QuillEditor from "@/components/QuillEditor.astro";
 import Turnstile from "@/components/Turnstile.astro";
 import { Button } from "@/ui/button";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/ui/select";
+import { Checkbox } from "@/ui/checkbox";
+import { PARTNER_INTERESTS } from "@/lib/partner-schema";
 ---
 <Layout>
     <div class="w-full min-h-screen px-4 pt-30 pb-20">
@@ -25,18 +27,39 @@ import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@
                         `required` select reports itself invalid the instant it mounts, which paints
                         the trigger red before the visitor has done anything. Checked by hand on
                         submit instead, same as the other friendly checks below. */}
-                    <Select id="pt-role" name="role" placeholder="Select one" class="w-full">
+                    <Select id="pt-role" name="role" placeholder="Select one" defaultValue="broker" class="w-full">
                         {/* text-base to match the text inputs below; the component defaults to text-sm. */}
                         <SelectTrigger id="pt-role-trigger" aria-labelledby="pt-role-label" class="w-full text-base">
                             <SelectValue />
                         </SelectTrigger>
                         <SelectContent class="w-(--anchor-width)">
-                            <SelectItem value="lender" class="text-base">Lender</SelectItem>
                             <SelectItem value="broker" class="text-base">Broker</SelectItem>
+                            <SelectItem value="lender" class="text-base">Lender</SelectItem>
                             <SelectItem value="service_provider" class="text-base">Service provider</SelectItem>
                             <SelectItem value="owner" class="text-base">Business owner looking for funding</SelectItem>
                         </SelectContent>
                     </Select>
+                </div>
+
+                {/* One group per role, only the matching one shown; toggled by the role script
+                    below. Boxes are unchecked and hidden together on a role switch, so a stale
+                    answer from a role someone changed their mind about can never ride along. */}
+                <div data-interests class="flex flex-col gap-1.5">
+                    <span class="text-sm font-medium">What are you interested in?</span>
+                    {/* Broker starts visible: it's the Select's defaultValue below. */}
+                    {Object.entries(PARTNER_INTERESTS).map(([roleValue, options]) => (
+                        <div data-interest-group={roleValue} hidden={roleValue !== 'broker'} class="flex flex-col gap-2">
+                            {options.map((option) => (
+                                <Checkbox
+                                    id={`pt-interest-${roleValue}-${option.value}`}
+                                    name="interests"
+                                    value={option.value}
+                                >
+                                    {option.label}
+                                </Checkbox>
+                            ))}
+                        </div>
+                    ))}
                 </div>
 
                 <div class="grid grid-cols-1 gap-5 sm:grid-cols-2">
@@ -88,10 +111,24 @@ import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@
         // A business owner isn't a partner lead: send them straight to the application, the same
         // hand-off the home page's capital CTA makes, instead of letting this form collect a message
         // that would just need to be redirected by hand later.
-        let role = '';
+        const interestGroups = form.querySelectorAll<HTMLElement>('[data-interest-group]');
+        // Matches the Select's defaultValue (see the markup above) and the interest group that
+        // starts visible: select:change only fires on an actual change, never for the preset value.
+        let role = 'broker';
         roleSelect.addEventListener('select:change', (e) => {
             role = (e as CustomEvent<{ value: string }>).detail?.value ?? '';
             if (role === 'owner') window.location.href = '/apply';
+
+            // Only the selected role's checkboxes show, and the others are cleared with it: a box
+            // ticked before switching roles should never ride along as if it were an answer to a
+            // question the form no longer shows.
+            for (const group of interestGroups) {
+                const isMatch = group.dataset.interestGroup === role;
+                group.hidden = !isMatch;
+                if (!isMatch) {
+                    for (const box of group.querySelectorAll<HTMLInputElement>('input[type="checkbox"]')) box.checked = false;
+                }
+            }
         });
 
         const showError = (msg: string) => { errorEl.textContent = msg; errorEl.hidden = false; };
@@ -125,6 +162,7 @@ import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@
                         name: String(data.get('name') ?? '').trim(),
                         email: String(data.get('email') ?? '').trim(),
                         role: String(data.get('role') ?? ''),
+                        interests: data.getAll('interests').map(String),
                         html: quill.getSemanticHTML(),
                         token,
                     }),
@@ -140,6 +178,10 @@ import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@
                 }
                 form.reset();
                 quill.setText('');
+                // The Select's own reset restores its defaultValue ("broker") but doesn't re-fire
+                // select:change (see its adapter), so the interest groups won't follow it back.
+                role = 'broker';
+                for (const group of interestGroups) group.hidden = group.dataset.interestGroup !== role;
                 successEl.hidden = false;
             } catch {
                 showError('Something went wrong. Please try again.');
