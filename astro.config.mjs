@@ -1,5 +1,6 @@
 // @ts-check
-import { defineConfig, fontProviders } from "astro/config";
+import { defineConfig, envField, fontProviders } from "astro/config";
+import cloudflare from "@astrojs/cloudflare";
 
 import tailwindcss from "@tailwindcss/vite";
 
@@ -24,6 +25,18 @@ const BEJAMAS_ASTRO_FONTS = [
 // https://astro.build/config
 export default defineConfig({
   fonts: BEJAMAS_ASTRO_FONTS,
+  // Pages stay prerendered; only routes with `prerender = false` (the contact API) run on the Worker.
+  adapter: cloudflare({ imageService: "compile" }),
+  env: {
+    schema: {
+      PUBLIC_TURNSTILE_SITE_KEY: envField.string({ context: "client", access: "public" }),
+      // Optional so a missing secret reaches the endpoint's own fail-closed check instead of throwing on import.
+      TURNSTILE_SECRET_KEY: envField.string({ context: "server", access: "secret", optional: true }),
+      RESEND_API_KEY: envField.string({ context: "server", access: "secret", optional: true }),
+      CONTACT_TO_EMAIL: envField.string({ context: "server", access: "secret", optional: true }),
+      CONTACT_FROM_EMAIL: envField.string({ context: "server", access: "secret", optional: true }),
+    },
+  },
   integrations: [],
   vite: {
     plugins: [tailwindcss()],

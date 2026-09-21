@@ -67,6 +67,8 @@ import { Button } from "@/ui/button";
 
             const quill = editorEl?.quill;
             if (!form.reportValidity()) return;
+            // Friendly checks only. The limits that count are enforced by the zod schema in
+            // src/lib/contact-schema.ts on the server; keep the numbers here in step with it.
             const text = quill?.getText().trim() ?? '';
             if (!text) { showError('Please enter a message.'); return; }
             if (text.length > 10_000) { showError('Your message is too long.'); return; }

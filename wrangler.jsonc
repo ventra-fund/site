@@ -1,8 +1,14 @@
 {
 	"name": "ventra-fund",
+	"main": "@astrojs/cloudflare/entrypoints/server",
 	// Set this to today's date
 	"compatibility_date": "2026-09-20",
+	"compatibility_flags": ["nodejs_compat"],
 	"assets": {
-		"directory": "./dist"
+		"directory": "./dist",
+		"binding": "ASSETS"
+	},
+	"observability": {
+		"enabled": true
 	}
 }

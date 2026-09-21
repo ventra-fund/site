@@ -1,4 +1,6 @@
 ---
+import { PUBLIC_TURNSTILE_SITE_KEY } from 'astro:env/client';
+
 interface Props {
   id?: string;
   action?: string;
@@ -8,11 +10,8 @@ interface Props {
 }
 
 // The site key is public (it is rendered into the HTML), so it is read at build time from
-// PUBLIC_TURNSTILE_SITE_KEY. See .env.example.
-const sitekey = import.meta.env.PUBLIC_TURNSTILE_SITE_KEY;
-if (!sitekey) {
-  console.warn('[turnstile] PUBLIC_TURNSTILE_SITE_KEY is not set; the widget will not render. See .env.example.');
-}
+// PUBLIC_TURNSTILE_SITE_KEY. The astro:env schema makes a missing key fail the build. See .env.example.
+const sitekey = PUBLIC_TURNSTILE_SITE_KEY;
 
 const {
   id,
