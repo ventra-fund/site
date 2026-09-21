@@ -1,0 +1,139 @@
+---
+import Layout from "@/layouts/Layout.astro";
+---
+
+<Layout>
+  
+
+  <svg
+    data-fillets
+    class="text-muted-foreground pointer-events-none"
+    style="position: fixed; top: 0; right: 0; height: 100vh; width: 18rem;"
+    aria-hidden="true"
+    fill="none"
+    stroke="currentColor"
+    stroke-width="1.5"
+  >
+    <line x1="68%" y1="0%" x2="68%" y2="100%" />
+    <line x1="6%" y1="50%" x2="100%" y2="50%" />
+    <line x1="6%" y1="50%" x2="100%" y2="10%" />
+    <line x1="6%" y1="50%" x2="100%" y2="90%" />
+  </svg>
+
+  <svg
+    data-fillets
+    class="text-muted-foreground pointer-events-none"
+    style="position: fixed; top: 0; left: 0; height: 100vh; width: 18rem; transform: scaleX(-1);"
+    aria-hidden="true"
+    fill="none"
+    stroke="currentColor"
+    stroke-width="1.5"
+  >
+    <line x1="68%" y1="0%" x2="68%" y2="100%" />
+    <line x1="6%" y1="50%" x2="100%" y2="50%" />
+    <line x1="6%" y1="50%" x2="100%" y2="10%" />
+    <line x1="6%" y1="50%" x2="100%" y2="90%" />
+  </svg>
+  
+  <div class="relative w-full h-screen overflow-hidden flex items-center justify-center">
+    <p class="bg-background p-4">404: Page not found</p>
+  </div>
+</Layout>
+
+<script>
+  // Fills every acute angle where lines cross with a concave, rounded web.
+  // Line coordinates are percentages, so the angles depend on the rendered
+  // size — the fillets are recomputed in pixels whenever the SVG resizes.
+  const RADIUS = 6;
+  const EPS = 1e-6;
+
+  type Ray = { angle: number; length: number };
+
+  function drawFillets(svg: SVGSVGElement) {
+    svg.querySelector("[data-fillet-layer]")?.remove();
+
+    const segments = [...svg.querySelectorAll("line")].map((line) => ({
+      x1: line.x1.baseVal.value,
+      y1: line.y1.baseVal.value,
+      x2: line.x2.baseVal.value,
+      y2: line.y2.baseVal.value,
+    }));
+
+    // Rays leaving each intersection point, keyed by the rounded point.
+    const junctions = new Map<string, { x: number; y: number; rays: Ray[] }>();
+
+    const addRay = (junction: { rays: Ray[] }, dx: number, dy: number) => {
+      const length = Math.hypot(dx, dy);
+      if (length < EPS) return;
+      const angle = Math.atan2(dy, dx);
+      if (junction.rays.some((r) => Math.abs(r.angle - angle) < EPS)) return;
+      junction.rays.push({ angle, length });
+    };
+
+    for (let i = 0; i < segments.length; i++) {
+      for (let j = i + 1; j < segments.length; j++) {
+        const a = segments[i];
+        const b = segments[j];
+        const rx = a.x2 - a.x1, ry = a.y2 - a.y1;
+        const sx = b.x2 - b.x1, sy = b.y2 - b.y1;
+        const denom = rx * sy - ry * sx;
+        if (Math.abs(denom) < EPS) continue;
+
+        const t = ((b.x1 - a.x1) * sy - (b.y1 - a.y1) * sx) / denom;
+        const u = ((b.x1 - a.x1) * ry - (b.y1 - a.y1) * rx) / denom;
+        if (t < -EPS || t > 1 + EPS || u < -EPS || u > 1 + EPS) continue;
+
+        const x = a.x1 + t * rx;
+        const y = a.y1 + t * ry;
+        const key = `${Math.round(x)},${Math.round(y)}`;
+        const junction = junctions.get(key) ?? { x, y, rays: [] };
+        junctions.set(key, junction);
+
+        for (const s of [a, b]) {
+          addRay(junction, s.x1 - x, s.y1 - y);
+          addRay(junction, s.x2 - x, s.y2 - y);
+        }
+      }
+    }
+
+    const layer = document.createElementNS("http://www.w3.org/2000/svg", "g");
+    layer.dataset.filletLayer = "";
+    layer.setAttribute("fill", "currentColor");
+    layer.setAttribute("stroke", "none");
+
+    for (const { x, y, rays } of junctions.values()) {
+      rays.sort((p, q) => p.angle - q.angle);
+
+      rays.forEach((from, index) => {
+        const to = rays[(index + 1) % rays.length];
+        let sector = to.angle - from.angle;
+        if (sector <= 0) sector += Math.PI * 2;
+        if (sector >= Math.PI / 2 - EPS) return;
+
+        const half = sector / 2;
+        const distance = Math.min(
+          RADIUS / Math.tan(half),
+          Math.min(from.length, to.length) * 0.9,
+        );
+        const radius = distance * Math.tan(half);
+        const ax = x + distance * Math.cos(from.angle);
+        const ay = y + distance * Math.sin(from.angle);
+        const bx = x + distance * Math.cos(to.angle);
+        const by = y + distance * Math.sin(to.angle);
+
+        const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
+        path.setAttribute(
+          "d",
+          `M${x},${y} L${ax},${ay} A${radius},${radius} 0 0 0 ${bx},${by} Z`,
+        );
+        layer.append(path);
+      });
+    }
+
+    svg.append(layer);
+  }
+
+  document.querySelectorAll<SVGSVGElement>("svg[data-fillets]").forEach((svg) => {
+    new ResizeObserver(() => drawFillets(svg)).observe(svg);
+  });
+</script>
