@@ -19,7 +19,7 @@ import { NavigationMenu, NavigationMenuContent, NavigationMenuIndicator, Navigat
   </head>
   <body>
     <div id="site-nav" class="fixed w-full z-99">
-      <NavigationMenu class="w-fit mx-auto my-4 bg-background z-99 rounded-md border-2 border-transparent transition-colors [.is-scrolled_&]:border-muted">
+      <NavigationMenu class="hidden sm:flex w-fit mx-auto my-4 bg-background z-99 rounded-md border-2 border-transparent transition-colors [.is-scrolled_&]:border-muted">
         <NavigationMenuList>
           <NavigationMenuItem>
             <NavigationMenuLink data-astro-prefetch href="/" class="cn-navigation-menu-trigger group/navigation-menu-trigger inline-flex h-9 w-max items-center justify-center outline-none disabled:pointer-events-none">
@@ -53,6 +53,38 @@ import { NavigationMenu, NavigationMenuContent, NavigationMenuIndicator, Navigat
           <NavigationMenuIndicator />
         </NavigationMenuList>
       </NavigationMenu>
+
+      <div class="sm:hidden fixed top-4 inset-x-4 z-99 flex items-center justify-between rounded-md border-2 border-muted bg-background px-2">
+        <a data-astro-prefetch href="/" class="px-3 py-2 text-lg font-medium">
+          Home
+        </a>
+
+        <button
+          id="mobile-nav-toggle"
+          type="button"
+          aria-expanded="false"
+          aria-controls="mobile-nav-menu"
+          aria-label="Toggle navigation menu"
+          class="group flex h-9 w-9 flex-col items-center justify-center gap-1.5"
+        >
+          <span class="block h-0.5 w-5 rounded-full bg-foreground transition-transform duration-200 group-aria-expanded:translate-y-2 group-aria-expanded:rotate-45"></span>
+          <span class="block h-0.5 w-5 rounded-full bg-foreground transition-opacity duration-200 group-aria-expanded:opacity-0"></span>
+          <span class="block h-0.5 w-5 rounded-full bg-foreground transition-transform duration-200 group-aria-expanded:-translate-y-2 group-aria-expanded:-rotate-45"></span>
+        </button>
+
+        <div
+          id="mobile-nav-menu"
+          hidden
+          class="absolute top-full right-0 mt-2 flex w-60 flex-col gap-0.5 rounded-md border-2 border-muted bg-background p-2 shadow-lg"
+        >
+          <div class="px-3 pt-2 pb-1 text-sm font-medium text-muted-foreground">Solutions</div>
+          <a data-astro-prefetch href="#" class="rounded-sm px-3 py-2 pl-6 text-base hover:bg-muted">Revenue-Based Financing</a>
+          <a data-astro-prefetch href="#" class="rounded-sm px-3 py-2 pl-6 text-base hover:bg-muted">Merchant Cash Advance</a>
+          <a data-astro-prefetch href="#" class="rounded-sm px-3 py-2 text-base hover:bg-muted">Apply</a>
+          <a data-astro-prefetch href="/partner" class="rounded-sm px-3 py-2 text-base hover:bg-muted">Partner</a>
+          <a data-astro-prefetch href="/contact" class="rounded-sm px-3 py-2 text-base hover:bg-muted">Contact</a>
+        </div>
+      </div>
     </div>
     <slot />
     <script>
@@ -62,6 +94,34 @@ import { NavigationMenu, NavigationMenuContent, NavigationMenuIndicator, Navigat
       };
       updateScrolled();
       window.addEventListener("scroll", updateScrolled, { passive: true });
+
+      const mobileToggle = document.getElementById("mobile-nav-toggle");
+      const mobileMenu = document.getElementById("mobile-nav-menu");
+      const closeMobileMenu = () => {
+        mobileToggle?.setAttribute("aria-expanded", "false");
+        mobileMenu?.setAttribute("hidden", "");
+      };
+      mobileToggle?.addEventListener("click", () => {
+        const isOpen = mobileToggle.getAttribute("aria-expanded") === "true";
+        mobileToggle.setAttribute("aria-expanded", String(!isOpen));
+        mobileMenu?.toggleAttribute("hidden", isOpen);
+      });
+      mobileMenu?.addEventListener("click", (event) => {
+        if ((event.target as HTMLElement).closest("a")) closeMobileMenu();
+      });
+      document.addEventListener("click", (event) => {
+        if (
+          mobileMenu &&
+          !mobileMenu.hasAttribute("hidden") &&
+          !mobileMenu.contains(event.target as Node) &&
+          !mobileToggle?.contains(event.target as Node)
+        ) {
+          closeMobileMenu();
+        }
+      });
+      document.addEventListener("keydown", (event) => {
+        if (event.key === "Escape") closeMobileMenu();
+      });
     </script>
   </body>
 </html>
