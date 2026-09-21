@@ -2,11 +2,8 @@
 import Layout from "@/layouts/Layout.astro";
 import StepsBackground from "@/components/StepsBackground.astro";
 import StepsAccent from "@/components/StepsAccent.astro";
-import { LinkGroup, LinkGroupTitle, LinkGroupList, LinkGroupItem } from '@/ui/link-group';
 import Star from "@/components/Star.astro";
-import Instagram from "@/components/Instagram.astro";
-import Facebook from "@/components/Facebook.astro";
-import LinkedIn from "@/components/LinkedIn.astro";
+import Footer from "@/components/Footer.astro";
 import { Button } from "@/ui/button";
 import { BadgeDollarSign, ChevronLeft, ChevronRight, CircleDollarSign, ClipboardCheck, Quote, Sheet, ShieldCheck, ToolCase, Timer, TrendingUp, UsersRound, Wallet } from "@lucide/astro";
 ---
@@ -209,57 +206,7 @@ import { BadgeDollarSign, ChevronLeft, ChevronRight, CircleDollarSign, Clipboard
     </div>
   </section>
 
-  <section class="py-20 md:py-28">
-    <div class="mx-auto w-[calc(100%-2rem)] md:w-[calc(100%-8rem)] flex flex-col gap-16 sm:flex-row sm:flex-wrap lg:flex-nowrap">
-      <LinkGroup>
-        <LinkGroupTitle>Company</LinkGroupTitle>
-        <LinkGroupList>
-          <LinkGroupItem><a href="/">Home</a></LinkGroupItem>
-          <LinkGroupItem><a href="#">Contact</a></LinkGroupItem>
-          <LinkGroupItem><a href="#">Partnerships</a></LinkGroupItem>
-        </LinkGroupList>
-      </LinkGroup>
-      <LinkGroup>
-        <LinkGroupTitle>Solutions</LinkGroupTitle>
-        <LinkGroupList>
-          <LinkGroupItem><a href="#">Revenue-based financing</a></LinkGroupItem>
-          <LinkGroupItem><a href="#">Merchant Cash Advance</a></LinkGroupItem>
-        </LinkGroupList>
-      </LinkGroup>
-      <LinkGroup>
-        <LinkGroupTitle>Social</LinkGroupTitle>
-        <LinkGroupList>
-          <LinkGroupItem><a href="#" class="inline-flex items-center gap-2"><Instagram class="size-5 shrink-0" />Instagram</a></LinkGroupItem>
-          <LinkGroupItem><a href="#" class="inline-flex items-center gap-2"><Facebook class="size-5 shrink-0" />Facebook</a></LinkGroupItem>
-          <LinkGroupItem><a href="#" class="inline-flex items-center gap-2"><LinkedIn class="size-5 shrink-0" />LinkedIn</a></LinkGroupItem>
-        </LinkGroupList>
-      </LinkGroup>
-      <div class="w-full">
-        <!-- Wordmark with the hero's grainy gradient: the gradient-filled letters, then the same shapes filled with the grain tile and overlay-blended on top -->
-        <svg class="isolate h-auto w-full" viewBox="0 0 433 74" role="img" aria-label="Ventra" xmlns="http://www.w3.org/2000/svg">
-          <defs>
-            <linearGradient id="wordmark-gradient" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0" style="stop-color: oklch(from var(--chart-1) calc(l * 0.7) c h)" />
-              <stop offset="1" style="stop-color: oklch(from var(--chart-4) calc(l * 0.5) c h)" />
-            </linearGradient>
-            <pattern id="wordmark-grain" patternUnits="userSpaceOnUse" width="160" height="160">
-              <image href="/textures/grain.png" width="160" height="160" />
-            </pattern>
-            <g id="wordmark">
-            <path d="M48.64 0.511993H72.96L53.248 73.472H19.84L0 0.511993H24.448L36.224 57.6H36.864L48.64 0.511993Z" />
-            <path d="M78.76 0.511993H131.88V15.872H101.8V29.184H127.144V43.008H101.8V57.856H131.752V73.472H78.76V0.511993Z" />
-            <path d="M163.026 44.032V73.472H141.65V0.511993H163.282L182.61 29.952C185.511 34.304 187.73 37.9733 189.266 40.96H189.65V0.511993H210.898V73.472H189.138L169.298 42.752L163.538 34.048H163.154L163.026 44.032Z" />
-            <path d="M260.547 73.472H237.507V16.512H216.899V0.511993H281.155V16.512H260.547V73.472Z" />
-            <path d="M354.957 73.472H330.765L326.413 55.04C326.242 54.3573 325.944 53.2053 325.517 51.584C325.176 49.8773 324.749 48.64 324.237 47.872C323.725 47.0187 323 46.464 322.061 46.208C319.672 46.2933 316.173 46.336 311.565 46.336V73.472H288.525V1.152C298.85 0.384 308.493 0 317.453 0C325.56 0 332.13 0.682665 337.165 2.048C342.2 3.328 345.954 5.58933 348.429 8.832C350.989 11.9893 352.269 16.3413 352.269 21.888C352.269 27.0933 351.074 31.1893 348.685 34.176C346.296 37.0773 342.456 38.8267 337.165 39.424V40.192C340.152 40.448 342.626 41.4293 344.589 43.136C346.637 44.7573 348.002 46.848 348.685 49.408L354.957 73.472ZM311.565 31.872C312.333 31.9573 313.826 32 316.045 32C322.616 32 326.456 31.4453 327.565 30.336C328.589 29.312 329.101 26.9227 329.101 23.168C329.101 19.6693 328.162 17.28 326.285 16C324.493 14.72 321.506 14.08 317.325 14.08C316.386 14.08 314.466 14.1653 311.565 14.336V31.872Z" />
-            <path d="M405.015 57.472H383.767L379.927 73.472H356.375L379.927 0.511993H410.007L432.535 73.472H408.855L405.015 57.472ZM394.263 16.256L386.711 43.264H401.943L394.775 16.256H394.263Z" />
-            </g>
-          </defs>
-          <use href="#wordmark" fill="url(#wordmark-gradient)" />
-          <use href="#wordmark" fill="url(#wordmark-grain)" opacity="0.6" style="mix-blend-mode: overlay" />
-        </svg>
-      </div>
-    </div>
-  </section>
+  <Footer />
 
 </Layout>
 

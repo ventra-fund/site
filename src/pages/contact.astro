@@ -1,0 +1,104 @@
+---
+import Layout from "@/layouts/Layout.astro";
+import Footer from "@/components/Footer.astro";
+import QuillEditor from "@/components/QuillEditor.astro";
+import Turnstile from "@/components/Turnstile.astro";
+import { Button } from "@/ui/button";
+---
+<Layout>
+    <div class="w-full min-h-screen px-4 pt-30 pb-20">
+        <div class="mx-auto flex max-w-2xl flex-col gap-8">
+            <div class="flex flex-col gap-3">
+                <h1 class="text-3xl font-bold text-accent sm:text-5xl">Contact us</h1>
+                <p class="text-lg text-muted-foreground">Questions about financing with Ventra Fund? Send us a message and we'll get back to you. Otherwise, call us at (###) ###-####</p>
+            </div>
+
+            <form data-contact-form novalidate class="flex flex-col gap-5">
+                <div class="grid grid-cols-1 gap-5 sm:grid-cols-2">
+                    <label class="flex flex-col gap-1.5 text-sm font-medium">
+                        Name
+                        <input name="name" type="text" required maxlength="200" autocomplete="name"
+                            class="h-10 rounded-lg border border-input bg-background px-3 text-base font-normal outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50" />
+                    </label>
+                    <label class="flex flex-col gap-1.5 text-sm font-medium">
+                        Email
+                        <input name="email" type="email" required maxlength="254" autocomplete="email"
+                            class="h-10 rounded-lg border border-input bg-background px-3 text-base font-normal outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50" />
+                    </label>
+                </div>
+
+                <div class="flex flex-col gap-1.5">
+                    <span class="text-sm font-medium">Message</span>
+                    <QuillEditor placeholder="How can we help?" toolbar="open" class="[&_.ql-editor]:min-h-40" />
+                </div>
+
+                <Turnstile />
+
+                <p data-contact-error hidden role="alert" class="text-sm text-destructive"></p>
+                <p data-contact-success hidden role="status" class="text-sm font-medium text-accent">Thanks, your message was sent. We'll be in touch.</p>
+
+                <Button type="submit" size="lg" class="self-start" data-contact-submit data-label="Send message" disabled>Checking security…</Button>
+            </form>
+        </div>
+    </div>
+    <Footer />
+</Layout>
+
+<script>
+    import { gateOnTurnstile, takeTurnstileToken } from '@/lib/turnstile';
+
+    const form = document.querySelector<HTMLFormElement>('[data-contact-form]');
+    if (form) {
+        const editorEl = form.querySelector('[data-quill-editor]') as (HTMLElement & { quill?: any }) | null;
+        const widget = form.querySelector('turnstile-widget');
+        const submitBtn = form.querySelector<HTMLButtonElement>('[data-contact-submit]')!;
+        const errorEl = form.querySelector<HTMLElement>('[data-contact-error]')!;
+        const successEl = form.querySelector<HTMLElement>('[data-contact-success]')!;
+
+        // Submit stays disabled until Turnstile verifies (invisible first, visible fallback after 5s).
+        if (widget) gateOnTurnstile({ widget, button: submitBtn });
+
+        const showError = (msg: string) => { errorEl.textContent = msg; errorEl.hidden = false; };
+
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            errorEl.hidden = true;
+            successEl.hidden = true;
+
+            const quill = editorEl?.quill;
+            if (!form.reportValidity()) return;
+            const text = quill?.getText().trim() ?? '';
+            if (!text) { showError('Please enter a message.'); return; }
+            if (text.length > 10_000) { showError('Your message is too long.'); return; }
+
+            const token = widget ? takeTurnstileToken(widget) : undefined;
+            if (!token) { showError('Please complete the security check and try again.'); return; }
+
+            const data = new FormData(form);
+            submitBtn.disabled = true;
+            try {
+                const res = await fetch('/api/contact', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        name: String(data.get('name') ?? '').trim(),
+                        email: String(data.get('email') ?? '').trim(),
+                        html: quill.getSemanticHTML(),
+                        token,
+                    }),
+                });
+                if (!res.ok) throw new Error(String(res.status));
+                form.reset();
+                quill.setText('');
+                successEl.hidden = false;
+            } catch {
+                showError('Something went wrong. Please try again.');
+            } finally {
+                // A Turnstile token is single-use: get a fresh one before the next attempt.
+                widget?.reset();
+                if (widget) gateOnTurnstile({ widget, button: submitBtn });
+                else submitBtn.disabled = false;
+            }
+        });
+    }
+</script>

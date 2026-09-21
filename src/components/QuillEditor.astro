@@ -1,0 +1,340 @@
+---
+import ChevronDown from '@lucide/astro/icons/chevron-down';
+
+import boldSvg from 'quill/assets/icons/bold.svg?raw';
+import italicSvg from 'quill/assets/icons/italic.svg?raw';
+import underlineSvg from 'quill/assets/icons/underline.svg?raw';
+import listOrderedSvg from 'quill/assets/icons/list-ordered.svg?raw';
+import listBulletSvg from 'quill/assets/icons/list-bullet.svg?raw';
+import linkSvg from 'quill/assets/icons/link.svg?raw';
+import cleanSvg from 'quill/assets/icons/clean.svg?raw';
+
+interface Props {
+  placeholder?: string;
+  class?: string;
+  /** Editor surface colour. Defaults to the muted `bg-secondary` box. */
+  surface?: string;
+  /** `toggle` (default): toolbar hidden behind a "Formatting" button. `open`: toolbar shown, no toggle. */
+  toolbar?: 'toggle' | 'open';
+}
+
+const { placeholder = '', class: className, surface = 'bg-secondary', toolbar = 'toggle' } = Astro.props;
+const toolbarOpen = toolbar === 'open';
+// The row beside the editor holds the Formatting toggle and whatever the caller slots in. With the
+// toolbar already open and nothing slotted (the partner sign-up's VC note, which has no send
+// button), it would be an empty padded box taking a line of its own on small screens.
+const hasActionsRow = !toolbarOpen || Astro.slots.has('actions');
+---
+
+<div data-quill-root class:list={["w-full rounded-md overflow-hidden", surface, className]}>
+  <div data-toolbar-row class:list={[!toolbarOpen && "hidden"]}>
+    <div data-quill-toolbar class="ql-snow border-b border-border">
+      <span class="ql-formats">
+        <button class="ql-bold" type="button" title="Bold" aria-label="Bold">
+          <Fragment set:html={boldSvg} />
+        </button>
+        <button class="ql-italic" type="button" title="Italic" aria-label="Italic">
+          <Fragment set:html={italicSvg} />
+        </button>
+        <button class="ql-underline" type="button" title="Underline" aria-label="Underline">
+          <Fragment set:html={underlineSvg} />
+        </button>
+      </span>
+      <span class="ql-formats">
+        <button class="ql-list" value="ordered" type="button" title="Numbered List" aria-label="Numbered List">
+          <Fragment set:html={listOrderedSvg} />
+        </button>
+        <button class="ql-list" value="bullet" type="button" title="Bullet List" aria-label="Bullet List">
+          <Fragment set:html={listBulletSvg} />
+        </button>
+      </span>
+      <span class="ql-formats">
+        <button class="ql-link" type="button" title="Link" aria-label="Link">
+          <Fragment set:html={linkSvg} />
+        </button>
+        <button class="ql-clean" type="button" title="Clear Formatting" aria-label="Clear Formatting">
+          <Fragment set:html={cleanSvg} />
+        </button>
+      </span>
+    </div>
+  </div>
+  <div class="flex flex-wrap sm:flex-nowrap">
+    <div class="w-full min-w-0 sm:flex-1">
+      <div data-quill-editor data-placeholder={placeholder}></div>
+    </div>
+    {hasActionsRow && (
+      <div class="flex items-center gap-2 px-1.5 pb-1.5 whitespace-nowrap sm:self-end max-sm:w-full justify-end">
+        {!toolbarOpen && (
+          <button data-formatting-toggle type="button" class="inline-flex items-center gap-1 rounded-md text-muted-foreground text-xs font-medium h-8 px-3 hover:bg-secondary-foreground/10 transition-colors">
+            Formatting <ChevronDown data-formatting-chevron size={13} class="transition-transform duration-200" />
+          </button>
+        )}
+        <slot name="actions" />
+      </div>
+    )}
+  </div>
+
+  <!-- Link popover (preview + edit modes): moved to document.body by JS to escape overflow clipping -->
+  <div data-link-popover class="hidden fixed z-50 flex items-center gap-1 rounded-lg border border-border bg-popover text-popover-foreground shadow-lg px-1 py-1">
+    <a data-link-href href="#" target="_blank" rel="noopener noreferrer"
+       class="px-2 py-1 text-sm text-primary hover:underline max-w-[240px] truncate"></a>
+    <input data-link-input type="url" placeholder="https://"
+       class="hidden h-7 w-52 bg-transparent px-2 text-sm text-foreground outline-none" />
+    <div class="w-px h-4 bg-border mx-0.5 shrink-0"></div>
+    <button data-link-action class="px-2 py-1 text-xs rounded hover:bg-muted transition-colors whitespace-nowrap">Edit</button>
+    <button data-link-remove class="hidden px-2 py-1 text-xs rounded hover:bg-muted text-destructive transition-colors whitespace-nowrap">Remove</button>
+  </div>
+</div>
+
+<style is:global>
+  .ql-toolbar.ql-snow,
+  .ql-container.ql-snow,
+  .ql-editor {
+    border: none !important;
+    box-shadow: none !important;
+    outline: none !important;
+    background: transparent !important;
+  }
+  .ql-tooltip {
+    display: none !important;
+  }
+
+  /* Editor text */
+  .ql-editor {
+    color: var(--foreground) !important;
+  }
+
+  /* Placeholder */
+  .ql-editor.ql-blank::before {
+    color: color-mix(in oklch, var(--foreground) 40%, transparent) !important;
+    font-style: normal !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+  }
+
+  /* Toolbar icon SVGs */
+  [data-quill-toolbar] .ql-stroke {
+    stroke: var(--foreground) !important;
+  }
+  [data-quill-toolbar] .ql-fill {
+    fill: var(--foreground) !important;
+  }
+  [data-quill-toolbar] .ql-thin.ql-stroke {
+    stroke-width: 1 !important;
+  }
+
+  /* Active / pressed state */
+  [data-quill-toolbar] button.ql-active {
+    background: color-mix(in oklch, var(--primary) 15%, transparent) !important;
+    border-radius: 4px;
+  }
+  [data-quill-toolbar] button.ql-active .ql-stroke,
+  [data-quill-toolbar] button:hover .ql-stroke {
+    stroke: var(--primary) !important;
+  }
+  [data-quill-toolbar] button.ql-active .ql-fill,
+  [data-quill-toolbar] button:hover .ql-fill {
+    fill: var(--primary) !important;
+  }
+
+  [data-quill-toolbar] button svg {
+    width: 18px;
+    height: 18px;
+    display: block;
+  }
+</style>
+
+<script>
+  import Quill from 'quill';
+  import 'quill/dist/quill.snow.css';
+
+  // Multi-instance: the component's script is bundled once, so wire every editor on the page.
+  // All element lookups are scoped to each instance's [data-quill-root] so several editors can
+  // coexist.
+  function normalizeUrl(url: string): string {
+    if (!url) return url;
+    if (/^https?:\/\//i.test(url)) return url;
+    if (url.startsWith('//')) return `https:${url}`;
+    return `https://${url}`;
+  }
+
+  function initQuillEditor(root: HTMLElement) {
+    let savedRange: { index: number; length: number } | null = null;
+
+    const editorEl = root.querySelector('[data-quill-editor]') as HTMLElement;
+    const toolbarEl = root.querySelector('[data-quill-toolbar]') as HTMLElement;
+    const placeholder = editorEl.dataset.placeholder ?? '';
+
+    const quill = new Quill(editorEl, {
+      theme: 'snow',
+      placeholder,
+      modules: {
+        toolbar: {
+          container: toolbarEl,
+          handlers: {
+            link(value: boolean) {
+              savedRange = quill.getSelection();
+              if (value) {
+                const format = savedRange ? quill.getFormat(savedRange) : {};
+                const existingUrl = typeof format.link === 'string' ? format.link : '';
+                const linkBtn = toolbarEl.querySelector('.ql-link') as HTMLElement;
+                showPopoverInsert(linkBtn, existingUrl);
+              } else {
+                if (savedRange) quill.setSelection(savedRange.index, savedRange.length);
+                quill.format('link', false);
+              }
+            },
+          },
+        },
+      },
+    });
+
+    // Expose quill instance for other scripts (e.g. the contact form) in the same root
+    (editorEl as any).quill = quill;
+    editorEl.dispatchEvent(new CustomEvent('quill:ready', { bubbles: false }));
+
+    // ── Formatting toolbar toggle ─────────────────────────────────────────────
+    // Absent when the editor renders with toolbar="open" (toolbar always visible, no toggle).
+
+    const toolbarRow = root.querySelector('[data-toolbar-row]') as HTMLElement;
+    const toggleBtn = root.querySelector('[data-formatting-toggle]') as HTMLElement | null;
+    const chevron = root.querySelector('[data-formatting-chevron]') as HTMLElement | null;
+
+    if (toggleBtn) {
+      const syncChevron = () => {
+        if (chevron) chevron.style.transform = toolbarRow.classList.contains('hidden') ? 'rotate(180deg)' : '';
+      };
+      syncChevron();
+      toggleBtn.addEventListener('click', () => {
+        toolbarRow.classList.toggle('hidden');
+        syncChevron();
+      });
+    }
+
+    // ── Link popover (unified preview + edit) ────────────────────────────────
+
+    const linkPopover = root.querySelector('[data-link-popover]') as HTMLElement;
+    const linkPopoverHrefEl = linkPopover.querySelector('[data-link-href]') as HTMLAnchorElement;
+    const linkUrlInput = linkPopover.querySelector('[data-link-input]') as HTMLInputElement;
+    const linkActionBtn = linkPopover.querySelector('[data-link-action]') as HTMLButtonElement;
+    const linkRemoveBtn = linkPopover.querySelector('[data-link-remove]') as HTMLButtonElement;
+    document.body.appendChild(linkPopover);
+
+    let isEditing = false;
+
+    function positionPopover(anchorEl: Element) {
+      const rect = anchorEl.getBoundingClientRect();
+      let left = rect.left;
+      const top = rect.bottom + 6;
+      requestAnimationFrame(() => {
+        const pw = linkPopover.offsetWidth;
+        if (left + pw > window.innerWidth - 8) left = window.innerWidth - pw - 8;
+        linkPopover.style.left = `${left}px`;
+        linkPopover.style.top = `${top}px`;
+      });
+    }
+
+    function hideLinkPopover() {
+      linkPopover.classList.add('hidden');
+      isEditing = false;
+    }
+
+    function applyLink() {
+      const url = normalizeUrl(linkUrlInput.value.trim());
+      if (savedRange && url) {
+        requestAnimationFrame(() => {
+          quill.setSelection(savedRange!.index, savedRange!.length);
+          quill.format('link', url);
+        });
+      }
+      hideLinkPopover();
+    }
+
+    function enterEditMode(existingUrl: string) {
+      isEditing = true;
+      linkUrlInput.value = existingUrl;
+      linkPopoverHrefEl.classList.add('hidden');
+      linkUrlInput.classList.remove('hidden');
+      linkActionBtn.textContent = 'Apply';
+      requestAnimationFrame(() => { linkUrlInput.focus(); linkUrlInput.select(); });
+    }
+
+    // Open in preview mode: called when clicking an existing link in the editor
+    function showPopoverPreview(linkEl: HTMLAnchorElement) {
+      isEditing = false;
+      const url = normalizeUrl(linkEl.getAttribute('href') ?? '');
+      linkPopoverHrefEl.href = url;
+      linkPopoverHrefEl.textContent = url;
+      linkPopoverHrefEl.classList.remove('hidden');
+      linkUrlInput.classList.add('hidden');
+      linkActionBtn.textContent = 'Edit';
+      linkRemoveBtn.classList.remove('hidden');
+      linkPopover.classList.remove('hidden');
+      positionPopover(linkEl);
+    }
+
+    // Open directly in edit mode: called from the toolbar link button
+    function showPopoverInsert(anchorEl: Element, existingUrl = '') {
+      isEditing = true;
+      linkUrlInput.value = existingUrl;
+      linkPopoverHrefEl.classList.add('hidden');
+      linkUrlInput.classList.remove('hidden');
+      linkActionBtn.textContent = 'Apply';
+      linkRemoveBtn.classList.toggle('hidden', !existingUrl);
+      linkPopover.classList.remove('hidden');
+      positionPopover(anchorEl);
+      requestAnimationFrame(() => { linkUrlInput.focus(); linkUrlInput.select(); });
+    }
+
+    // "Edit" → enter edit mode in place; "Apply" → apply the link
+    linkActionBtn.addEventListener('click', () => {
+      if (isEditing) {
+        applyLink();
+      } else {
+        const blot = quill.scroll.find(
+          quill.root.querySelector(`a[href="${CSS.escape(linkPopoverHrefEl.getAttribute('href') ?? '')}"]`) as Node
+        );
+        if (blot) {
+          savedRange = { index: quill.getIndex(blot as any), length: (blot as any).length() };
+        }
+        enterEditMode(linkPopoverHrefEl.href);
+      }
+    });
+
+    linkRemoveBtn.addEventListener('click', () => {
+      const linkEl = quill.root.querySelector(`a[href="${CSS.escape(linkPopoverHrefEl.getAttribute('href') ?? '')}"]`);
+      if (linkEl) {
+        const blot = quill.scroll.find(linkEl as Node) as any;
+        if (blot) quill.formatText(quill.getIndex(blot), blot.length(), 'link', false);
+      }
+      hideLinkPopover();
+    });
+
+    linkUrlInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') { e.preventDefault(); applyLink(); }
+      if (e.key === 'Escape') { e.preventDefault(); hideLinkPopover(); }
+    });
+
+    quill.root.addEventListener('click', (e) => {
+      const link = (e.target as HTMLElement).closest('a');
+      if (link) { e.preventDefault(); showPopoverPreview(link as HTMLAnchorElement); }
+    });
+
+    document.addEventListener('click', (e) => {
+      if (
+        !linkPopover.contains(e.target as Node) &&
+        !(e.target as HTMLElement).closest('a') &&
+        !toolbarEl.contains(e.target as Node)
+      ) {
+        hideLinkPopover();
+      }
+    });
+
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') hideLinkPopover();
+    });
+  }
+
+  document.querySelectorAll<HTMLElement>('[data-quill-root]').forEach(initQuillEditor);
+</script>
