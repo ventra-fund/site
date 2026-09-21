@@ -16,9 +16,16 @@ interface Props {
   surface?: string;
   /** `toggle` (default): toolbar hidden behind a "Formatting" button. `open`: toolbar shown, no toggle. */
   toolbar?: 'toggle' | 'open';
+  /**
+   * Min-height class applied directly to the editor surface, reserved before Quill mounts so the
+   * page doesn't jitter once JS loads and Quill fills it in. Since `.ql-editor` is `height: 100%`
+   * of its container, sizing the (pre-existing) container itself is enough — no need to also
+   * target `.ql-editor`.
+   */
+  minHeight?: string;
 }
 
-const { placeholder = '', class: className, surface = 'bg-secondary', toolbar = 'toggle' } = Astro.props;
+const { placeholder = '', class: className, surface = 'bg-secondary', toolbar = 'toggle', minHeight = 'min-h-40' } = Astro.props;
 const toolbarOpen = toolbar === 'open';
 // The row beside the editor holds the Formatting toggle and whatever the caller slots in. With the
 // toolbar already open and nothing slotted (the partner sign-up's VC note, which has no send
@@ -28,7 +35,7 @@ const hasActionsRow = !toolbarOpen || Astro.slots.has('actions');
 
 <div data-quill-root class:list={["w-full rounded-md overflow-hidden", surface, className]}>
   <div data-toolbar-row class:list={[!toolbarOpen && "hidden"]}>
-    <div data-quill-toolbar class="ql-snow border-b border-border">
+    <div data-quill-toolbar class="ql-toolbar ql-snow border-b border-border">
       <span class="ql-formats">
         <button class="ql-bold" type="button" title="Bold" aria-label="Bold">
           <Fragment set:html={boldSvg} />
@@ -60,7 +67,7 @@ const hasActionsRow = !toolbarOpen || Astro.slots.has('actions');
   </div>
   <div class="flex flex-wrap sm:flex-nowrap">
     <div class="w-full min-w-0 sm:flex-1">
-      <div data-quill-editor data-placeholder={placeholder}></div>
+      <div data-quill-editor data-placeholder={placeholder} class:list={[minHeight]}></div>
     </div>
     {hasActionsRow && (
       <div class="flex items-center gap-2 px-1.5 pb-1.5 whitespace-nowrap sm:self-end max-sm:w-full justify-end">
