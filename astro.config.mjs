@@ -42,6 +42,15 @@ export default defineConfig({
   integrations: [],
   vite: {
     plugins: [tailwindcss()],
+    // `free-email-domains` is only reachable via the /partner route, not from the SSR entrypoint's
+    // static import graph. Without this, the Cloudflare adapter's workerd dev runner discovers it
+    // lazily on the first request to /partner, which forces a mid-session dep re-optimization and
+    // crashes the runner (stale deps_ssr filenames -> ELIFECYCLE 143). See withastro/astro#17921.
+    ssr: {
+      optimizeDeps: {
+        include: ["free-email-domains"],
+      },
+    },
   },
   prefetch: {
     defaultStrategy: 'viewport'
