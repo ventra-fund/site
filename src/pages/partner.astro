@@ -94,7 +94,7 @@ import { PARTNER_INTERESTS } from "@/lib/partner-schema";
 </Layout>
 
 <script>
-    import { gateOnTurnstile, takeTurnstileToken } from '@/lib/turnstile';
+    import { gateOnFirstInteraction, gateOnTurnstile, takeTurnstileToken } from '@/lib/turnstile';
 
     const form = document.querySelector<HTMLFormElement>('[data-partner-form]');
     if (form) {
@@ -105,8 +105,9 @@ import { PARTNER_INTERESTS } from "@/lib/partner-schema";
         const errorEl = form.querySelector<HTMLElement>('[data-partner-error]')!;
         const successEl = form.querySelector<HTMLElement>('[data-partner-success]')!;
 
-        // Submit stays disabled until Turnstile verifies (invisible first, visible fallback after 5s).
-        if (widget) gateOnTurnstile({ widget, button: submitBtn });
+        // Turnstile is only fetched once the user touches the form; from then on submit stays disabled
+        // until it verifies (invisible first, visible fallback after 5s).
+        if (widget) gateOnFirstInteraction({ form, widget, button: submitBtn });
 
         // A business owner isn't a partner lead: send them straight to the application, the same
         // hand-off the home page's capital CTA makes, instead of letting this form collect a message

@@ -1,15 +1,22 @@
 ---
 import "@/styles/globals.css";
 import { Font } from "astro:assets";
-import { NavigationMenu, NavigationMenuIndicator, NavigationMenuItem, NavigationMenuLink, NavigationMenuList } from '@/ui/navigation-menu';
+
+const navLinks: [href: string, label: string][] = [
+  ["/", "Home"],
+  ["/capital", "Capital"],
+  ["/apply", "Apply"],
+  ["/partner", "Partner"],
+  ["/contact", "Contact"],
+];
 ---
 
 <!doctype html>
 <html  lang="en">
   <head>
     <!-- bejamas:astro-fonts:start -->
-    <Font cssVariable="--font-sans" />
-    <Font cssVariable="--font-heading" />
+    <!-- Weights/styles are restricted on purpose; see the FONT WEIGHTS note in astro.config.mjs. -->
+    <Font cssVariable="--font-sans" preload />
     <!-- bejamas:astro-fonts:end -->
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width" />
@@ -19,36 +26,18 @@ import { NavigationMenu, NavigationMenuIndicator, NavigationMenuItem, Navigation
   </head>
   <body>
     <div id="site-nav" class="fixed w-full z-99">
-      <NavigationMenu class="hidden sm:flex w-fit mx-auto my-4 bg-background z-99 rounded-md border-2 border-transparent transition-colors [.is-scrolled_&]:border-muted">
-        <NavigationMenuList>
-          <NavigationMenuItem>
-            <NavigationMenuLink data-astro-prefetch href="/" class="cn-navigation-menu-trigger group/navigation-menu-trigger inline-flex h-9 w-max items-center justify-center outline-none disabled:pointer-events-none">
-              Home
-            </NavigationMenuLink>
-          </NavigationMenuItem>
-          <NavigationMenuItem>
-            <NavigationMenuLink data-astro-prefetch href="/capital" class="cn-navigation-menu-trigger group/navigation-menu-trigger inline-flex h-9 w-max items-center justify-center outline-none disabled:pointer-events-none">
-              Capital
-            </NavigationMenuLink>
-          </NavigationMenuItem>
-          <NavigationMenuItem>
-            <NavigationMenuLink data-astro-prefetch href="/apply" class="cn-navigation-menu-trigger group/navigation-menu-trigger inline-flex h-9 w-max items-center justify-center outline-none disabled:pointer-events-none">
-              Apply
-            </NavigationMenuLink>
-          </NavigationMenuItem>
-          <NavigationMenuItem>
-            <NavigationMenuLink data-astro-prefetch href="/partner" class="cn-navigation-menu-trigger group/navigation-menu-trigger inline-flex h-9 w-max items-center justify-center outline-none disabled:pointer-events-none">
-              Partner
-            </NavigationMenuLink>
-          </NavigationMenuItem>
-           <NavigationMenuItem>
-            <NavigationMenuLink data-astro-prefetch href="/contact" class="cn-navigation-menu-trigger group/navigation-menu-trigger inline-flex h-9 w-max items-center justify-center outline-none disabled:pointer-events-none">
-              Contact
-            </NavigationMenuLink>
-          </NavigationMenuItem>
-          <NavigationMenuIndicator />
-        </NavigationMenuList>
-      </NavigationMenu>
+      <!-- Plain links on purpose: the nav has no dropdowns, so it needs no menu JS. -->
+      <nav class="hidden sm:flex w-fit mx-auto my-4 bg-background z-99 rounded-md border-2 border-transparent transition-colors [.is-scrolled_&]:border-muted">
+        <ul class="flex list-none items-center">
+          {navLinks.map(([href, label]) => (
+            <li>
+              <a data-astro-prefetch href={href} class="inline-flex h-9 items-center rounded-sm px-4 text-lg transition-all outline-none hover:bg-muted hover:text-accent focus:bg-muted focus:text-accent focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-1">
+                {label}
+              </a>
+            </li>
+          ))}
+        </ul>
+      </nav>
 
       <div class="sm:hidden fixed top-4 inset-x-4 z-99 flex items-center justify-between rounded-md border-2 border-muted bg-background px-2">
         <a data-astro-prefetch href="/" class="px-3 py-2 text-lg font-medium">
@@ -73,10 +62,9 @@ import { NavigationMenu, NavigationMenuIndicator, NavigationMenuItem, Navigation
           hidden
           class="absolute top-full right-0 mt-2 flex w-60 flex-col gap-0.5 rounded-md border-2 border-muted bg-background p-2 shadow-lg"
         >
-          <a data-astro-prefetch href="/capital" class="rounded-sm px-3 py-2 text-base hover:bg-muted">Capital</a>
-          <a data-astro-prefetch href="#" class="rounded-sm px-3 py-2 text-base hover:bg-muted">Apply</a>
-          <a data-astro-prefetch href="/partner" class="rounded-sm px-3 py-2 text-base hover:bg-muted">Partner</a>
-          <a data-astro-prefetch href="/contact" class="rounded-sm px-3 py-2 text-base hover:bg-muted">Contact</a>
+          {navLinks.slice(1).map(([href, label]) => (
+            <a data-astro-prefetch href={href} class="rounded-sm px-3 py-2 text-base hover:bg-muted">{label}</a>
+          ))}
         </div>
       </div>
     </div>

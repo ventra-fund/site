@@ -45,7 +45,7 @@ import { Button } from "@/ui/button";
 </Layout>
 
 <script>
-    import { gateOnTurnstile, takeTurnstileToken } from '@/lib/turnstile';
+    import { gateOnFirstInteraction, gateOnTurnstile, takeTurnstileToken } from '@/lib/turnstile';
 
     const form = document.querySelector<HTMLFormElement>('[data-contact-form]');
     if (form) {
@@ -55,8 +55,9 @@ import { Button } from "@/ui/button";
         const errorEl = form.querySelector<HTMLElement>('[data-contact-error]')!;
         const successEl = form.querySelector<HTMLElement>('[data-contact-success]')!;
 
-        // Submit stays disabled until Turnstile verifies (invisible first, visible fallback after 5s).
-        if (widget) gateOnTurnstile({ widget, button: submitBtn });
+        // Turnstile is only fetched once the user touches the form; from then on submit stays disabled
+        // until it verifies (invisible first, visible fallback after 5s).
+        if (widget) gateOnFirstInteraction({ form, widget, button: submitBtn });
 
         const showError = (msg: string) => { errorEl.textContent = msg; errorEl.hidden = false; };
 

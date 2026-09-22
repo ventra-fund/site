@@ -119,6 +119,27 @@ export function gateOnTurnstile(opts: { widget: TurnstileWidget; button: MaybeEl
 }
 
 /**
+ * `gateOnTurnstile`, but only once the user first touches the form. Until then nothing is fetched
+ * from challenges.cloudflare.com, so the page's initial load carries no third-party script. Both
+ * `focusin` (keyboard, and clicks into inputs/contenteditables) and `pointerdown` (Safari doesn't
+ * focus buttons on click) count as touching; `pointerdown` also fires before `click`, so a
+ * submit-first user still sees the button disable before it could submit.
+ */
+export function gateOnFirstInteraction(opts: { form: HTMLElement; widget: TurnstileWidget; button: MaybeEl }): void {
+  const { form, ...gate } = opts;
+  let started = false;
+  const start = () => {
+    if (started) return;
+    started = true;
+    form.removeEventListener('focusin', start);
+    form.removeEventListener('pointerdown', start);
+    gateOnTurnstile(gate);
+  };
+  form.addEventListener('focusin', start);
+  form.addEventListener('pointerdown', start);
+}
+
+/**
  * Read the widget's current token. If none is present yet, silently reset + remount so the next
  * attempt gets a fresh challenge, and return undefined. Callers treat undefined as "not ready".
  */

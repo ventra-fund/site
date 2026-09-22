@@ -5,6 +5,27 @@ import cloudflare from "@astrojs/cloudflare";
 import tailwindcss from "@tailwindcss/vite";
 
 // bejamas:astro-fonts:start
+// ┌─────────────────────────────────────────────────────────────────────────────────────────────┐
+// │ FONT WEIGHTS / STYLES ARE DELIBERATELY RESTRICTED HERE. READ BEFORE USING A NEW ONE.        │
+// │                                                                                             │
+// │ Only what the site actually uses is downloaded:                                             │
+// │   • weights 400–800 (a single variable-font file per family; covers `font-normal`,          │
+// │     `font-medium`, `font-semibold`, `font-bold`, `font-extrabold`)                          │
+// │   • style `normal` only (no italic files are shipped)                                       │
+// │                                                                                             │
+// │ Anything outside that range is NOT a real face: the browser will silently synthesize it     │
+// │ (faux-bold / faux-italic / faux-thin) and it will look wrong. If you need e.g. `italic`,    │
+// │ `font-light` (300) or `font-black` (900), widen `weights` / add `"italic"` to `styles`      │
+// │ below — and know that each addition is another font file on every page.                    │
+// │ The `<Font>` tag in src/layouts/Layout.astro `preload`s the face; keep that.                │
+// │                                                                                             │
+// │ Inter is the only family. A separate heading font (Raleway, `--font-heading`) used to be    │
+// │ configured here but nothing in the site applied `font-heading`, so it was pure download.   │
+// │ To add one back: add a second entry here with `cssVariable: "--font-heading"`, a matching   │
+// │ `<Font cssVariable="--font-heading" preload />` in Layout.astro, and DON'T redeclare        │
+// │ `--font-heading` in src/styles/globals.css `:root` — that stylesheet loads after Astro's    │
+// │ inline font CSS and would override the generated family name with a non-existent one.      │
+// └─────────────────────────────────────────────────────────────────────────────────────────────┘
 /** @type {NonNullable<import("astro").AstroUserConfig["fonts"]>} */
 const BEJAMAS_ASTRO_FONTS = [
   {
@@ -12,12 +33,8 @@ const BEJAMAS_ASTRO_FONTS = [
     name: "Inter",
     cssVariable: "--font-sans",
     subsets: ["latin"],
-  },
-  {
-    provider: fontProviders.google(),
-    name: "Raleway",
-    cssVariable: "--font-heading",
-    subsets: ["latin"],
+    weights: ["400 800"],
+    styles: ["normal"],
   },
 ];
 // bejamas:astro-fonts:end

@@ -41,8 +41,14 @@ const {
     data-slot="select-item-indicator"
     class="pointer-events-none absolute right-2 flex size-4 items-center justify-center"
   >
-    <span class="hidden items-center justify-center group-data-[selected]/item:inline-flex">
-      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" class="size-4"><path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 6L9 17l-5-5"/></svg>
-    </span>
+    <span aria-hidden="true" class="select-item-check hidden size-4 bg-current group-data-[selected]/item:block"></span>
   </span>
 </div>
+
+<style is:global>
+  /* One shared mask instead of an inline check SVG per option (a long list, e.g. years, would
+     otherwise repeat the same ~300 bytes of markup a hundred times). Painted with currentColor. */
+  .select-item-check {
+    mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='none' stroke='black' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M20 6L9 17l-5-5'/%3E%3C/svg%3E") center / contain no-repeat;
+  }
+</style>

@@ -112,7 +112,7 @@ const fieldClass = "flex flex-col gap-1.5 text-sm font-medium";
 </Layout>
 
 <script>
-    import { gateOnTurnstile, takeTurnstileToken } from '@/lib/turnstile';
+    import { gateOnFirstInteraction, gateOnTurnstile, takeTurnstileToken } from '@/lib/turnstile';
 
     const form = document.querySelector<HTMLFormElement>('[data-apply-form]');
     if (form) {
@@ -121,8 +121,9 @@ const fieldClass = "flex flex-col gap-1.5 text-sm font-medium";
         const errorEl = form.querySelector<HTMLElement>('[data-apply-error]')!;
         const successEl = form.querySelector<HTMLElement>('[data-apply-success]')!;
 
-        // Submit stays disabled until Turnstile verifies (invisible first, visible fallback after 5s).
-        if (widget) gateOnTurnstile({ widget, button: submitBtn });
+        // Turnstile is only fetched once the user touches the form; from then on submit stays disabled
+        // until it verifies (invisible first, visible fallback after 5s).
+        if (widget) gateOnFirstInteraction({ form, widget, button: submitBtn });
 
         // "Same as home address" mirrors the home address field into the business address field
         // live, and locks it read-only so the two can't drift apart while checked.

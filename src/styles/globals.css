@@ -6,7 +6,7 @@
 
 @theme inline {
   --font-sans: var(--font-sans);
-  --font-heading: var(--font-heading);
+  /* Fonts (and why there is only one) are configured in astro.config.mjs — see the note there. */
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
@@ -38,7 +38,6 @@
 }
 
 :root {
-  --font-heading: 'Raleway Variable', sans-serif;
   --background: oklch(1 0 0);
   --foreground: oklch(0.141 0.005 285.823);
   --card: oklch(1 0 0);
@@ -114,9 +113,6 @@
   }
   body {
     @apply bg-background text-foreground;
-  }
-  .cn-font-heading {
-    @apply font-heading;
   }
   html {
     @apply font-sans;
