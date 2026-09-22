@@ -44,13 +44,13 @@ const bars = Array.from({ length: count }, (_, i) => {
            and a blue with a slight green lean at the bottom -->
       <linearGradient id="step-light" x1="0" y1="0" x2="0" y2="1">
         <stop offset="0" style="stop-color: color-mix(in oklab, var(--chart-1) 10%, var(--background))" />
-        <stop offset="0.6" style="stop-color: oklch(from var(--chart-2) l c calc(h - 30))" />
-        <stop offset="1" style="stop-color: oklch(from var(--chart-4) l c calc(h - 16))" />
+        <stop offset="0.6" style="stop-color: var(--chart-2); stop-color: oklch(from var(--chart-2) l c calc(h - 30))" />
+        <stop offset="1" style="stop-color: var(--chart-4); stop-color: oklch(from var(--chart-4) l c calc(h - 16))" />
       </linearGradient>
       <linearGradient id="step-dark" x1="0" y1="0" x2="0" y2="1">
         <stop offset="0" style="stop-color: color-mix(in oklab, var(--chart-1) 18%, var(--background))" />
-        <stop offset="0.6" style="stop-color: oklch(from var(--chart-3) l c calc(h - 30))" />
-        <stop offset="1" style="stop-color: oklch(from var(--chart-5) l c calc(h - 16))" />
+        <stop offset="0.6" style="stop-color: var(--chart-3); stop-color: oklch(from var(--chart-3) l c calc(h - 30))" />
+        <stop offset="1" style="stop-color: var(--chart-5); stop-color: oklch(from var(--chart-5) l c calc(h - 16))" />
       </linearGradient>
     </defs>
 
@@ -64,8 +64,8 @@ const bars = Array.from({ length: count }, (_, i) => {
         width={barWidth + 0.5}
         height={extend + 1}
         style={i % 2
-          ? "fill: oklch(from var(--chart-4) l c calc(h - 16))"
-          : "fill: oklch(from var(--chart-5) l c calc(h - 16))"}
+          ? "fill: var(--chart-4); fill: oklch(from var(--chart-4) l c calc(h - 16))"
+          : "fill: var(--chart-5); fill: oklch(from var(--chart-5) l c calc(h - 16))"}
       />
       <rect
         x={x}
@@ -100,9 +100,7 @@ const bars = Array.from({ length: count }, (_, i) => {
     ))}
     </g>
   </svg>
-  <!-- Grain is a fixed bitmap tile sized in CSS px, so it looks the same at any zoom or viewport size.
-       Overlay blending leaves the white background untouched and only textures the bars.
-       It sits below the white fade layer so the fade covers the grain along with the bars. -->
+  <!-- Grain tile (`.grain` in globals.css). It sits below the white fade layer so the fade covers the grain along with the bars. -->
   <div class="grain absolute inset-0"></div>
   <!-- The bars fade out to the page background starting at 80vh; the fade length is scroll-driven, ending at
        30vh (at 110vh) so the section below is plain background once scrolled through. Done in CSS so it lines up exactly regardless of how the SVG is scaled. -->
@@ -112,10 +110,8 @@ const bars = Array.from({ length: count }, (_, i) => {
 </div>
 
 <script>
-  // SMIL ignores CSS, so honor reduced-motion by pausing the SVG's animations.
-  if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
-    document.querySelectorAll<SVGSVGElement>("svg[data-steps]").forEach((svg) => svg.pauseAnimations());
-  }
+  import { pauseSmilForReducedMotion } from "@/lib/reduced-motion";
+  pauseSmilForReducedMotion("svg[data-steps]");
 
   // Shrink the grain fade from FADE_START_VH to FADE_END_VH as the section below the first screen scrolls into view.
   // Progress is measured from that section's own box (0 = its top at the viewport bottom,
@@ -194,11 +190,8 @@ const bars = Array.from({ length: count }, (_, i) => {
     mask-image: var(--unify-fade);
   }
 
+  /* The tile itself is the shared `.grain` rule in globals.css; only the scroll-driven fade is added here. */
   .grain {
-    background-image: url("/textures/grain.png");
-    background-size: 512px 512px;
-    mix-blend-mode: overlay;
-    opacity: 0.6;
     /* Fade the grain out gradually below the first screen (eased stops so it has no visible start/end line).
        --grain-fade-length is driven by scroll (see FADE_START_VH / FADE_END_VH in the script). */
     --grain-fade-length: 40vh;

@@ -1,7 +1,7 @@
 {
 	"name": "ventra-fund",
 	"main": "@astrojs/cloudflare/entrypoints/server",
-	// Set this to today's date
+	// Workers runtime behaviour is pinned to this date; bump it deliberately when adopting newer runtime changes.
 	"compatibility_date": "2026-09-20",
 	"compatibility_flags": ["nodejs_compat"],
 	"assets": {

@@ -11,6 +11,8 @@ import cleanSvg from 'quill/assets/icons/clean.svg?raw';
 
 interface Props {
   placeholder?: string;
+  /** id of the visible label text; applied to the editable region so assistive tech announces it. */
+  labelledby?: string;
   class?: string;
   /** Editor surface colour. Defaults to the muted `bg-secondary` box. */
   surface?: string;
@@ -25,7 +27,7 @@ interface Props {
   minHeight?: string;
 }
 
-const { placeholder = '', class: className, surface = 'bg-secondary', toolbar = 'toggle', minHeight = 'min-h-40' } = Astro.props;
+const { placeholder = '', labelledby, class: className, surface = 'bg-secondary', toolbar = 'toggle', minHeight = 'min-h-40' } = Astro.props;
 const toolbarOpen = toolbar === 'open';
 // The row beside the editor holds the Formatting toggle and whatever the caller slots in. With the
 // toolbar already open and nothing slotted (the partner sign-up's VC note, which has no send
@@ -67,7 +69,7 @@ const hasActionsRow = !toolbarOpen || Astro.slots.has('actions');
   </div>
   <div class="flex flex-wrap sm:flex-nowrap">
     <div class="w-full min-w-0 sm:flex-1">
-      <div data-quill-editor data-placeholder={placeholder} class:list={[minHeight]}></div>
+      <div data-quill-editor data-placeholder={placeholder} data-labelledby={labelledby} class:list={[minHeight]}></div>
     </div>
     {hasActionsRow && (
       <div class="flex items-center gap-2 px-1.5 pb-1.5 whitespace-nowrap sm:self-end max-sm:w-full justify-end">
@@ -88,8 +90,8 @@ const hasActionsRow = !toolbarOpen || Astro.slots.has('actions');
     <input data-link-input type="url" placeholder="https://"
        class="hidden h-7 w-52 bg-transparent px-2 text-sm text-foreground outline-none" />
     <div class="w-px h-4 bg-border mx-0.5 shrink-0"></div>
-    <button data-link-action class="px-2 py-1 text-xs rounded hover:bg-muted transition-colors whitespace-nowrap">Edit</button>
-    <button data-link-remove class="hidden px-2 py-1 text-xs rounded hover:bg-muted text-destructive transition-colors whitespace-nowrap">Remove</button>
+    <button type="button" data-link-action class="px-2 py-1 text-xs rounded hover:bg-muted transition-colors whitespace-nowrap">Edit</button>
+    <button type="button" data-link-remove class="hidden px-2 py-1 text-xs rounded hover:bg-muted text-destructive transition-colors whitespace-nowrap">Remove</button>
   </div>
 </div>
 
@@ -197,6 +199,12 @@ const hasActionsRow = !toolbarOpen || Astro.slots.has('actions');
       },
     });
 
+    // Quill only sets contenteditable on its root; nothing tells assistive tech what the region is
+    // or which visible text labels it. Invisible to everyone else.
+    quill.root.setAttribute('role', 'textbox');
+    quill.root.setAttribute('aria-multiline', 'true');
+    if (editorEl.dataset.labelledby) quill.root.setAttribute('aria-labelledby', editorEl.dataset.labelledby);
+
     // Expose quill instance for other scripts (e.g. the contact form) in the same root
     (editorEl as any).quill = quill;
     editorEl.dispatchEvent(new CustomEvent('quill:ready', { bubbles: false }));
@@ -229,6 +237,9 @@ const hasActionsRow = !toolbarOpen || Astro.slots.has('actions');
     document.body.appendChild(linkPopover);
 
     let isEditing = false;
+    // The anchor the preview popover was opened for. Edit/Remove act on this exact element, so
+    // two links with the same URL can't be confused for each other.
+    let activeLink: HTMLAnchorElement | null = null;
 
     function positionPopover(anchorEl: Element) {
       const rect = anchorEl.getBoundingClientRect();
@@ -245,6 +256,7 @@ const hasActionsRow = !toolbarOpen || Astro.slots.has('actions');
     function hideLinkPopover() {
       linkPopover.classList.add('hidden');
       isEditing = false;
+      activeLink = null;
     }
 
     function applyLink() {
@@ -270,6 +282,7 @@ const hasActionsRow = !toolbarOpen || Astro.slots.has('actions');
     // Open in preview mode: called when clicking an existing link in the editor
     function showPopoverPreview(linkEl: HTMLAnchorElement) {
       isEditing = false;
+      activeLink = linkEl;
       const url = normalizeUrl(linkEl.getAttribute('href') ?? '');
       linkPopoverHrefEl.href = url;
       linkPopoverHrefEl.textContent = url;
@@ -299,9 +312,7 @@ const hasActionsRow = !toolbarOpen || Astro.slots.has('actions');
       if (isEditing) {
         applyLink();
       } else {
-        const blot = quill.scroll.find(
-          quill.root.querySelector(`a[href="${CSS.escape(linkPopoverHrefEl.getAttribute('href') ?? '')}"]`) as Node
-        );
+        const blot = activeLink ? quill.scroll.find(activeLink) : null;
         if (blot) {
           savedRange = { index: quill.getIndex(blot as any), length: (blot as any).length() };
         }
@@ -310,10 +321,12 @@ const hasActionsRow = !toolbarOpen || Astro.slots.has('actions');
     });
 
     linkRemoveBtn.addEventListener('click', () => {
-      const linkEl = quill.root.querySelector(`a[href="${CSS.escape(linkPopoverHrefEl.getAttribute('href') ?? '')}"]`);
-      if (linkEl) {
-        const blot = quill.scroll.find(linkEl as Node) as any;
+      if (activeLink) {
+        const blot = quill.scroll.find(activeLink) as any;
         if (blot) quill.formatText(quill.getIndex(blot), blot.length(), 'link', false);
+      } else if (savedRange) {
+        // Opened from the toolbar on an existing link: the selection is what we know.
+        quill.formatText(savedRange.index, savedRange.length, 'link', false);
       }
       hideLinkPopover();
     });

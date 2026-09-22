@@ -2,9 +2,7 @@
 import Layout from "@/layouts/Layout.astro";
 ---
 
-<Layout>
-  
-
+<Layout title="Page not found">
   <svg
     data-fillets
     class="text-muted-foreground pointer-events-none"
@@ -35,9 +33,9 @@ import Layout from "@/layouts/Layout.astro";
     <line x1="6%" y1="50%" x2="100%" y2="90%" />
   </svg>
   
-  <div class="relative w-full h-screen overflow-hidden flex items-center justify-center">
-    <p class="bg-background p-4">404: Page not found</p>
-  </div>
+  <main class="relative w-full h-screen overflow-hidden flex items-center justify-center">
+    <h1 class="bg-background p-4 text-base font-normal">404: Page not found</h1>
+  </main>
 </Layout>
 
 <script>

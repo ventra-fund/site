@@ -41,10 +41,15 @@ export async function sanitizeHtml(html: string): Promise<string> {
     })
     .onDocument({
       comments(comment) { comment.remove(); },
-      // Text is already entity-encoded by Quill; only stray angle brackets need escaping.
+      // Text is already entity-encoded by Quill; only stray angle brackets need escaping. Quill's
+      // getSemanticHTML() also turns every space into `&nbsp;`, which stops mail clients from
+      // wrapping long lines, so those go back to plain spaces.
       text(chunk) {
-        if (chunk.removed || !/[<>]/.test(chunk.text)) return;
-        chunk.replace(chunk.text.replace(/</g, '&lt;').replace(/>/g, '&gt;'), { html: true });
+        if (chunk.removed || !/[<>]|&nbsp;/.test(chunk.text)) return;
+        chunk.replace(
+          chunk.text.replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/&nbsp;/g, ' '),
+          { html: true },
+        );
       },
     });
   return rewriter.transform(new Response(html)).text();

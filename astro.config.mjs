@@ -39,14 +39,16 @@ const BEJAMAS_ASTRO_FONTS = [
 ];
 // bejamas:astro-fonts:end
 
-// `astro dev`/`astro build`/`astro preview` is always the literal CLI invocation, so this is a
+// The subcommand is always argv[2] (`astro dev`/`astro build`/`astro preview`), so this is a
 // reliable way to tell them apart (defineConfig itself has no function form in this Astro version).
-const isDevCommand = process.argv.slice(2).includes("dev");
+// Checked by position rather than `includes("dev")` so an argument that happens to be named "dev"
+// (an output dir, say) can't switch the adapter off.
+const isDevCommand = process.argv[2] === "dev";
 
 // https://astro.build/config
 export default defineConfig({
   fonts: BEJAMAS_ASTRO_FONTS,
-  // Pages stay prerendered; only routes with `prerender = false` (the contact/partner APIs) run on
+  // Pages stay prerendered; only routes with `prerender = false` (the apply/contact/partner APIs) run on
   // the Worker. Skip the adapter for `astro dev`: its workerd dev runner has a nasty upstream bug
   // (withastro/astro#17921) where a package only reachable from an on-demand route gets discovered
   // lazily and crashes the dev server. Nothing here touches Cloudflare-specific runtime bindings

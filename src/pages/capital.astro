@@ -2,19 +2,22 @@
 import Layout from "@/layouts/Layout.astro";
 import Footer from "@/components/Footer.astro";
 import { Button } from "@/ui/button";
-import { fundingProducts } from "@/data/funding-products";
+import { fundingProducts, minimumRequirements, type FundingProduct } from "@/data/funding-products";
 import { Gauge, CircleDollarSign, Calendar } from "@lucide/astro";
 
 const tableRows = [
-  { label: "Amount", key: "amount" },
-  { label: "Time to Fund", key: "timeToFund" },
-  { label: "Term Length", key: "termLength" },
-  { label: "Repayment", key: "repayment" },
-  { label: "Rate / Cost", key: "rateCost" },
-] as const;
+  { label: "Amount", value: (p: FundingProduct) => p.amount },
+  { label: "Time to Fund", value: (p: FundingProduct) => p.timeToFund },
+  { label: "Term Length", value: (p: FundingProduct) => p.termLength },
+  { label: "Repayment", value: (p: FundingProduct) => p.repayment },
+  { label: "Rate / Cost", value: (p: FundingProduct) => p.rateCost },
+  { label: "Min. Credit Score", value: (p: FundingProduct) => p.requirements.creditScore },
+  { label: "Min. Monthly Revenue", value: (p: FundingProduct) => p.requirements.monthlyRevenue },
+  { label: "Min. Time in Business", value: (p: FundingProduct) => p.requirements.timeInBusiness },
+];
 ---
 
-<Layout>
+<Layout title="Business financing options">
   <main class="mx-auto w-[calc(100%-2rem)] max-w-6xl px-0 pt-30 pb-20 md:w-[calc(100%-8rem)]">
     <div class="flex flex-col gap-3">
       <h1 class="text-3xl font-bold text-accent sm:text-5xl">Business financing options</h1>
@@ -25,9 +28,9 @@ const tableRows = [
       <table class="w-full border-collapse text-sm">
         <thead>
           <tr>
-            <th class="text-left pr-3 py-2 md:py-3 lg:py-6 whitespace-nowrap"></th>
+            <td class="pr-3 py-2 md:py-3 lg:py-6 whitespace-nowrap"></td>
             {fundingProducts.map((p) => (
-              <th class="text-left pr-3 py-2 md:py-3 lg:py-6 border-b border-border">
+              <th scope="col" class="text-left pr-3 py-2 md:py-3 lg:py-6 border-b border-border">
                 <span class="block text-sm text-muted-foreground">{p.category}</span>
                 <span class="text-base text-foreground">{p.title}</span>
               </th>
@@ -35,11 +38,11 @@ const tableRows = [
           </tr>
         </thead>
         <tbody>
-          {tableRows.map(({ label, key }) => (
+          {tableRows.map(({ label, value }) => (
             <tr class="border-t border-border">
-              <td class="pr-3 py-2 md:py-3 lg:py-6 text-xs font-semibold uppercase tracking-widest text-muted-foreground whitespace-nowrap">{label}</td>
+              <th scope="row" class="text-left pr-3 py-2 md:py-3 lg:py-6 text-xs font-semibold uppercase tracking-widest text-muted-foreground whitespace-nowrap">{label}</th>
               {fundingProducts.map((p) => (
-                <td class="pr-3 py-2 md:py-3 lg:py-6 text-foreground">{p[key]}</td>
+                <td class="pr-3 py-2 md:py-3 lg:py-6 text-foreground">{value(p)}</td>
               ))}
             </tr>
           ))}
@@ -61,7 +64,7 @@ const tableRows = [
                   <h2 class="text-[clamp(1rem,4.5vw,1.25rem)] font-bold text-foreground">{product.title}</h2>
                 </div>
               </div>
-              <p class="text-md text-muted-foreground">{product.description}</p>
+              <p class="text-base text-muted-foreground">{product.description}</p>
               <hr class="border-border" />
               <div class="grid grid-cols-2 gap-4">
                 <div>
@@ -80,6 +83,10 @@ const tableRows = [
                   <span class="block text-xs font-semibold uppercase tracking-widest text-muted-foreground mb-1">Repayment</span>
                   <span class="text-sm font-semibold text-foreground">{product.repayment}</span>
                 </div>
+                <div>
+                  <span class="block text-xs font-semibold uppercase tracking-widest text-muted-foreground mb-1">Rate / Cost</span>
+                  <span class="text-sm font-semibold text-foreground">{product.rateCost}</span>
+                </div>
               </div>
               <hr class="border-border" />
               <div class="flex items-center justify-between gap-3 bg-secondary p-3">
@@ -94,7 +101,7 @@ const tableRows = [
                 <div class="flex flex-col gap-2">
                   <span class="text-sm text-muted-foreground">{product.category}</span>
                   <h2 class="text-xl font-bold text-foreground">{product.title}</h2>
-                  <p class="text-md text-muted-foreground">{product.description}</p>
+                  <p class="text-base text-muted-foreground">{product.description}</p>
                 </div>
               </div>
               <div class="w-px self-stretch bg-border shrink-0"></div>
@@ -115,6 +122,7 @@ const tableRows = [
     </div>
 
     <section class="mt-20 bg-secondary w-full py-16 px-6 md:px-10 rounded-xl">
+      {/* The loosest requirement across every product above, derived in funding-products.ts so this can't drift from the table. */}
       <h2 class="mb-12 text-3xl sm:text-4xl font-bold text-accent text-center">Minimum requirements</h2>
       <div class="max-w-4xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-8">
         <div class="flex items-center gap-4">
@@ -123,7 +131,7 @@ const tableRows = [
           </div>
           <div>
             <p class="text-xs font-semibold uppercase tracking-widest text-muted-foreground">Credit Score</p>
-            <p class="text-2xl font-bold text-foreground">450</p>
+            <p class="text-2xl font-bold text-foreground">{minimumRequirements.creditScore}</p>
           </div>
         </div>
         <div class="flex items-center gap-4">
@@ -132,7 +140,7 @@ const tableRows = [
           </div>
           <div>
             <p class="text-xs font-semibold uppercase tracking-widest text-muted-foreground">Monthly Revenue</p>
-            <p class="text-2xl font-bold text-foreground">$5k+</p>
+            <p class="text-2xl font-bold text-foreground">{minimumRequirements.monthlyRevenue}</p>
           </div>
         </div>
         <div class="flex items-center gap-4">
@@ -141,7 +149,7 @@ const tableRows = [
           </div>
           <div>
             <p class="text-xs font-semibold uppercase tracking-widest text-muted-foreground">Time in Business</p>
-            <p class="text-2xl font-bold text-foreground">6+ months</p>
+            <p class="text-2xl font-bold text-foreground">{minimumRequirements.timeInBusiness}</p>
           </div>
         </div>
       </div>

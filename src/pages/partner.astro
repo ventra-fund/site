@@ -8,12 +8,16 @@ import Footer from "@/components/Footer.astro";
 import QuillEditor from "@/components/QuillEditor.astro";
 import Turnstile from "@/components/Turnstile.astro";
 import { Button } from "@/ui/button";
+import { Input } from "@/ui/input";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/ui/select";
 import { Checkbox } from "@/ui/checkbox";
 import { PARTNER_INTERESTS } from "@/lib/partner-schema";
+
+// Mirrors the server's z.email(): the browser's own type="email" check would pass "me@localhost".
+const EMAIL_PATTERN = "[^@\\s]+@[^@\\s]+\\.[^@\\s]{2,}";
 ---
-<Layout>
-    <div class="w-full min-h-screen px-4 pt-30 pb-20">
+<Layout title="Partner with us">
+    <main class="w-full min-h-screen px-4 pt-30 pb-20">
         <div class="mx-auto flex max-w-2xl flex-col gap-8">
             <div class="flex flex-col gap-3">
                 <h1 class="text-3xl font-bold text-accent sm:text-5xl">Partner with us</h1>
@@ -32,7 +36,7 @@ import { PARTNER_INTERESTS } from "@/lib/partner-schema";
                         <SelectTrigger id="pt-role-trigger" aria-labelledby="pt-role-label" class="w-full text-base">
                             <SelectValue />
                         </SelectTrigger>
-                        <SelectContent class="w-(--anchor-width)">
+                        <SelectContent>
                             <SelectItem value="broker" class="text-base">Broker</SelectItem>
                             <SelectItem value="lender" class="text-base">Lender</SelectItem>
                             <SelectItem value="service_provider" class="text-base">Service provider</SelectItem>
@@ -65,20 +69,17 @@ import { PARTNER_INTERESTS } from "@/lib/partner-schema";
                 <div class="grid grid-cols-1 gap-5 sm:grid-cols-2">
                     <label class="flex flex-col gap-1.5 text-sm font-medium">
                         Name
-                        <input name="name" type="text" required maxlength="200" autocomplete="name"
-                            class="h-10 rounded-lg border border-input bg-background px-3 text-base font-normal outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50" />
+                        <Input name="name" type="text" required maxlength="200" autocomplete="name" />
                     </label>
                     <label class="flex flex-col gap-1.5 text-sm font-medium">
                         Business email
-                        <input name="email" type="email" required maxlength="254" autocomplete="email"
-                            placeholder="you@yourcompany.com"
-                            class="h-10 rounded-lg border border-input bg-background px-3 text-base font-normal outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50" />
+                        <Input name="email" type="email" required maxlength="254" pattern={EMAIL_PATTERN} autocomplete="email" placeholder="you@yourcompany.com" />
                     </label>
                 </div>
 
                 <div class="flex flex-col gap-1.5">
-                    <span class="text-sm font-medium">Message</span>
-                    <QuillEditor placeholder="Tell us about your company and what you're looking for." toolbar="open" />
+                    <span id="pt-message-label" class="text-sm font-medium">Message</span>
+                    <QuillEditor placeholder="Tell us about your company and what you're looking for." labelledby="pt-message-label" toolbar="open" />
                 </div>
 
                 <Turnstile action="partner" />
@@ -89,12 +90,13 @@ import { PARTNER_INTERESTS } from "@/lib/partner-schema";
                 <Button type="submit" size="lg" class="self-start" data-partner-submit data-label="Send message" disabled>Checking security…</Button>
             </form>
         </div>
-    </div>
+    </main>
     <Footer />
 </Layout>
 
 <script>
-    import { gateOnFirstInteraction, gateOnTurnstile, takeTurnstileToken } from '@/lib/turnstile';
+    import { gateOnFirstInteraction } from '@/lib/turnstile';
+    import { setupValidation, showMessage, submitJson, validateForm } from '@/lib/form';
 
     const form = document.querySelector<HTMLFormElement>('[data-partner-form]');
     if (form) {
@@ -104,10 +106,11 @@ import { PARTNER_INTERESTS } from "@/lib/partner-schema";
         const submitBtn = form.querySelector<HTMLButtonElement>('[data-partner-submit]')!;
         const errorEl = form.querySelector<HTMLElement>('[data-partner-error]')!;
         const successEl = form.querySelector<HTMLElement>('[data-partner-success]')!;
+        const showError = (msg: string) => showMessage(errorEl, msg);
 
         // Turnstile is only fetched once the user touches the form; from then on submit stays disabled
         // until it verifies (invisible first, visible fallback after 5s).
-        if (widget) gateOnFirstInteraction({ form, widget, button: submitBtn });
+        if (widget) gateOnFirstInteraction({ form, widget, button: submitBtn, onError: showError });
 
         // A business owner isn't a partner lead: send them straight to the application, the same
         // hand-off the home page's capital CTA makes, instead of letting this form collect a message
@@ -116,82 +119,62 @@ import { PARTNER_INTERESTS } from "@/lib/partner-schema";
         // Matches the Select's defaultValue (see the markup above) and the interest group that
         // starts visible: select:change only fires on an actual change, never for the preset value.
         let role = 'broker';
-        roleSelect.addEventListener('select:change', (e) => {
-            role = (e as CustomEvent<{ value: string }>).detail?.value ?? '';
-            if (role === 'owner') window.location.href = '/apply';
-
-            // Only the selected role's checkboxes show, and the others are cleared with it: a box
-            // ticked before switching roles should never ride along as if it were an answer to a
-            // question the form no longer shows.
+        const showGroupFor = (value: string) => {
             for (const group of interestGroups) {
-                const isMatch = group.dataset.interestGroup === role;
+                const isMatch = group.dataset.interestGroup === value;
                 group.hidden = !isMatch;
+                // Only the selected role's checkboxes show, and the others are cleared with it: a box
+                // ticked before switching roles should never ride along as if it were an answer to a
+                // question the form no longer shows.
                 if (!isMatch) {
                     for (const box of group.querySelectorAll<HTMLInputElement>('input[type="checkbox"]')) box.checked = false;
                 }
             }
+        };
+        roleSelect.addEventListener('select:change', (e) => {
+            role = (e as CustomEvent<{ value: string }>).detail?.value ?? '';
+            if (role === 'owner') window.location.href = '/apply';
+            showGroupFor(role);
         });
 
-        const showError = (msg: string) => { errorEl.textContent = msg; errorEl.hidden = false; };
+        setupValidation(form);
 
         form.addEventListener('submit', async (e) => {
             e.preventDefault();
             errorEl.hidden = true;
             successEl.hidden = true;
 
-            if (!form.reportValidity()) return;
+            if (!validateForm(form, errorEl)) return;
             // Not part of native validity (the select isn't `required`, see the comment on it above).
-            if (!role) { showError('Please select your role.'); return; }
+            if (!role) { showError('Please select your role.'); document.getElementById('pt-role-trigger')?.focus(); return; }
 
             const quill = editorEl?.quill;
             // Friendly checks only. The limits that count are enforced by the zod schema in
             // src/lib/partner-schema.ts on the server; keep the numbers here in step with it.
             const text = quill?.getText().trim() ?? '';
-            if (!text) { showError('Please enter a message.'); return; }
-            if (text.length > 10_000) { showError('Your message is too long.'); return; }
-
-            const token = widget ? takeTurnstileToken(widget) : undefined;
-            if (!token) { showError('Please complete the security check and try again.'); return; }
+            if (!text) { showError('Please enter a message.'); quill?.focus(); return; }
+            if (text.length > 10_000) { showError('Your message is too long.'); quill?.focus(); return; }
 
             const data = new FormData(form);
-            submitBtn.disabled = true;
-            try {
-                const res = await fetch('/api/partner', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        name: String(data.get('name') ?? '').trim(),
-                        email: String(data.get('email') ?? '').trim(),
-                        role: String(data.get('role') ?? ''),
-                        interests: data.getAll('interests').map(String),
-                        html: quill.getSemanticHTML(),
-                        token,
-                    }),
-                });
-                if (!res.ok) {
-                    const body = await res.json().catch(() => ({})) as { error?: string };
-                    if (body.error === 'invalid_body') {
-                        showError('Please use your business email address and try again.');
-                    } else {
-                        throw new Error(String(res.status));
-                    }
-                    return;
-                }
-                form.reset();
-                quill.setText('');
-                // The Select's own reset restores its defaultValue ("broker") but doesn't re-fire
-                // select:change (see its adapter), so the interest groups won't follow it back.
-                role = 'broker';
-                for (const group of interestGroups) group.hidden = group.dataset.interestGroup !== role;
-                successEl.hidden = false;
-            } catch {
-                showError('Something went wrong. Please try again.');
-            } finally {
-                // A Turnstile token is single-use: get a fresh one before the next attempt.
-                widget?.reset();
-                if (widget) gateOnTurnstile({ widget, button: submitBtn });
-                else submitBtn.disabled = false;
-            }
+            await submitJson({
+                form, widget, button: submitBtn, errorEl, successEl,
+                url: '/api/partner',
+                body: () => ({
+                    name: String(data.get('name') ?? '').trim(),
+                    email: String(data.get('email') ?? '').trim(),
+                    role: String(data.get('role') ?? ''),
+                    interests: data.getAll('interests').map(String),
+                    html: quill.getSemanticHTML(),
+                }),
+                onSuccess: () => {
+                    form.reset();
+                    quill.setText('');
+                    // The Select's own reset restores its defaultValue ("broker") but doesn't re-fire
+                    // select:change (see its adapter), so the interest groups won't follow it back.
+                    role = 'broker';
+                    showGroupFor(role);
+                },
+            });
         });
     }
 </script>

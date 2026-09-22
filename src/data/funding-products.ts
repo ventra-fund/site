@@ -103,3 +103,16 @@ export const fundingProducts: FundingProduct[] = [
     },
   },
 ];
+
+// The loosest requirement across all products, for the "Minimum requirements" summary on the
+// capital page. Derived here so the summary can't drift from the per-product figures above.
+const firstNumber = (s: string) => Number(s.match(/[\d.]+/)?.[0] ?? Infinity);
+const months = (s: string) => (/year/i.test(s) ? 12 : 1) * firstNumber(s);
+const minBy = <T,>(items: T[], score: (item: T) => number) =>
+  items.reduce((best, item) => (score(item) < score(best) ? item : best));
+
+export const minimumRequirements = {
+  creditScore: minBy(fundingProducts, (p) => firstNumber(p.requirements.creditScore)).requirements.creditScore,
+  monthlyRevenue: minBy(fundingProducts, (p) => firstNumber(p.requirements.monthlyRevenue)).requirements.monthlyRevenue,
+  timeInBusiness: minBy(fundingProducts, (p) => months(p.requirements.timeInBusiness)).requirements.timeInBusiness,
+};

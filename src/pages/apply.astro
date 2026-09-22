@@ -5,12 +5,17 @@ import Turnstile from "@/components/Turnstile.astro";
 import DateField from "@/components/DateField.astro";
 import { Button } from "@/ui/button";
 import { Checkbox } from "@/ui/checkbox";
+import { Input } from "@/ui/input";
 
-const inputClass = "h-10 rounded-lg border border-input bg-background px-3 text-base font-normal outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 aria-invalid:border-destructive aria-invalid:ring-3 aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40";
+// Client-side constraints below (minlength/pattern/max) mirror src/lib/apply-schema.ts so a
+// visitor hears about a problem before submitting, not from a 400 afterwards. Keep them in step.
 const fieldClass = "flex flex-col gap-1.5 text-sm font-medium";
+// Requires a dotted domain, like the server's z.email(); the browser's own type="email" check
+// would happily pass "me@localhost".
+const EMAIL_PATTERN = "[^@\\s]+@[^@\\s]+\\.[^@\\s]{2,}";
 ---
-<Layout>
-    <div class="w-full min-h-screen px-4 pt-30 pb-20">
+<Layout title="Apply for funding">
+    <main class="w-full min-h-screen px-4 pt-30 pb-20">
         <div class="mx-auto flex max-w-2xl flex-col gap-8">
             <div class="flex flex-col gap-3">
                 <h1 class="text-3xl font-bold text-accent sm:text-5xl">Apply for funding</h1>
@@ -22,39 +27,39 @@ const fieldClass = "flex flex-col gap-1.5 text-sm font-medium";
 
                     <label class={fieldClass}>
                         Legal business name
-                        <input name="legalBusinessName" type="text" required maxlength="200" class={inputClass} />
+                        <Input name="legalBusinessName" type="text" required maxlength="300" autocomplete="organization" />
                     </label>
 
                     <label class={fieldClass}>
                         <span>DBA <span class="font-normal text-muted-foreground">(optional)</span></span>
-                        <input name="dba" type="text" maxlength="200" class={inputClass} />
+                        <Input name="dba" type="text" maxlength="200" />
                     </label>
 
                     <div class="grid grid-cols-1 gap-5 sm:grid-cols-2">
                         <label class={fieldClass}>
                             First name
-                            <input name="firstName" type="text" required maxlength="200" autocomplete="given-name" class={inputClass} />
+                            <Input name="firstName" type="text" required maxlength="200" autocomplete="given-name" />
                         </label>
                         <label class={fieldClass}>
                             Last name
-                            <input name="lastName" type="text" required maxlength="200" autocomplete="family-name" class={inputClass} />
+                            <Input name="lastName" type="text" required maxlength="200" autocomplete="family-name" />
                         </label>
                     </div>
 
                     <div class="grid grid-cols-1 gap-5 sm:grid-cols-2">
                         <label class={fieldClass}>
                             Mobile #
-                            <input name="mobile" type="tel" required maxlength="30" autocomplete="tel" class={inputClass} />
+                            <Input name="mobile" type="tel" required minlength="7" maxlength="30" autocomplete="tel" />
                         </label>
                         <label class={fieldClass}>
                             Email
-                            <input name="email" type="email" required maxlength="254" autocomplete="email" class={inputClass} />
+                            <Input name="email" type="email" required maxlength="254" pattern={EMAIL_PATTERN} autocomplete="email" />
                         </label>
                     </div>
 
                     <label class={fieldClass}>
                         Monthly business revenue
-                        <input name="monthlyRevenue" type="number" inputmode="decimal" required min="0" step="1" placeholder="$" class={inputClass} />
+                        <Input name="monthlyRevenue" type="number" inputmode="numeric" required min="0" max="1000000000" step="1" placeholder="$" />
                     </label>
                 </div>
 
@@ -63,12 +68,12 @@ const fieldClass = "flex flex-col gap-1.5 text-sm font-medium";
 
                     <label class={fieldClass}>
                         Home address
-                        <input name="homeAddress" type="text" required maxlength="300" autocomplete="street-address" class={inputClass} />
+                        <Input name="homeAddress" type="text" required maxlength="300" autocomplete="street-address" />
                     </label>
 
                     <label class={fieldClass}>
                         Business address
-                        <input name="businessAddress" type="text" required maxlength="300" class={inputClass} />
+                        <Input name="businessAddress" type="text" required maxlength="300" />
                     </label>
 
                     <Checkbox id="ap-same-address" name="sameAsHome">Same as home address</Checkbox>
@@ -79,22 +84,22 @@ const fieldClass = "flex flex-col gap-1.5 text-sm font-medium";
 
                     <label class={fieldClass}>
                         Business start date
-                        <DateField name="businessStartDate" required />
+                        <DateField name="businessStartDate" required maxToday />
                     </label>
 
                     <label class={fieldClass}>
                         Business industry
-                        <input name="businessIndustry" type="text" required maxlength="200" placeholder="e.g. electrical" class={inputClass} />
+                        <Input name="businessIndustry" type="text" required maxlength="200" placeholder="e.g. electrical" />
                     </label>
 
                     <div class="grid grid-cols-1 gap-5 sm:grid-cols-2">
                         <label class={fieldClass}>
                             Estimated FICO score
-                            <input name="ficoScore" type="number" inputmode="numeric" required min="300" max="850" step="1" class={inputClass} />
+                            <Input name="ficoScore" type="number" inputmode="numeric" required min="300" max="850" step="1" />
                         </label>
                         <label class={fieldClass}>
                             Requested funding amount
-                            <input name="fundingAmount" type="number" inputmode="decimal" required min="0" step="1" placeholder="$" class={inputClass} />
+                            <Input name="fundingAmount" type="number" inputmode="numeric" required min="0" max="1000000000" step="1" placeholder="$" />
                         </label>
                     </div>
                 </div>
@@ -107,12 +112,13 @@ const fieldClass = "flex flex-col gap-1.5 text-sm font-medium";
                 <Button type="submit" size="lg" class="self-start" data-apply-submit data-label="Submit application" disabled>Checking security…</Button>
             </form>
         </div>
-    </div>
+    </main>
     <Footer />
 </Layout>
 
 <script>
-    import { gateOnFirstInteraction, gateOnTurnstile, takeTurnstileToken } from '@/lib/turnstile';
+    import { gateOnFirstInteraction } from '@/lib/turnstile';
+    import { setupValidation, showMessage, submitJson, validateForm } from '@/lib/form';
 
     const form = document.querySelector<HTMLFormElement>('[data-apply-form]');
     if (form) {
@@ -120,10 +126,11 @@ const fieldClass = "flex flex-col gap-1.5 text-sm font-medium";
         const submitBtn = form.querySelector<HTMLButtonElement>('[data-apply-submit]')!;
         const errorEl = form.querySelector<HTMLElement>('[data-apply-error]')!;
         const successEl = form.querySelector<HTMLElement>('[data-apply-success]')!;
+        const showError = (msg: string) => showMessage(errorEl, msg);
 
         // Turnstile is only fetched once the user touches the form; from then on submit stays disabled
         // until it verifies (invisible first, visible fallback after 5s).
-        if (widget) gateOnFirstInteraction({ form, widget, button: submitBtn });
+        if (widget) gateOnFirstInteraction({ form, widget, button: submitBtn, onError: showError });
 
         // "Same as home address" mirrors the home address field into the business address field
         // live, and locks it read-only so the two can't drift apart while checked.
@@ -137,77 +144,41 @@ const fieldClass = "flex flex-col gap-1.5 text-sm font-medium";
         });
         homeInput.addEventListener('input', () => { if (sameCheckbox.checked) syncBusinessAddress(); });
 
-        const showError = (msg: string) => { errorEl.textContent = msg; errorEl.hidden = false; };
-
-        // Every invalid field gets a red ring so a visitor can see everything that needs fixing at
-        // a glance, instead of the browser's one-at-a-time tooltip — which is suppressed below so
-        // the ring is the only cue. Constraint checking itself (required/type/min/max/custom
-        // validity) still runs exactly as before; only the popup UI is turned off. A field clears
-        // its own ring the moment it becomes valid again, live, as they retype.
-        const validatedInputs = Array.from(form.querySelectorAll<HTMLInputElement>('input:not([type="hidden"])'));
-        for (const el of validatedInputs) {
-            el.addEventListener('invalid', (e) => e.preventDefault());
-            el.addEventListener('input', () => { if (el.checkValidity()) el.removeAttribute('aria-invalid'); });
-        }
-        const markInvalidFields = () => {
-            // Tailwind's `aria-invalid:` variant matches `[aria-invalid="true"]` specifically, not
-            // just the attribute's presence — setAttribute here, not toggleAttribute (which would
-            // set it to "" and never match).
-            for (const el of validatedInputs) {
-                if (el.checkValidity()) el.removeAttribute('aria-invalid');
-                else el.setAttribute('aria-invalid', 'true');
-            }
-        };
+        // Every invalid field gets a red ring (plus a hidden per-field message for screen readers)
+        // and the alert below the form sums it up, instead of the browser's one-at-a-time tooltip.
+        setupValidation(form);
 
         form.addEventListener('submit', async (e) => {
             e.preventDefault();
             errorEl.hidden = true;
             successEl.hidden = true;
 
-            const valid = form.reportValidity();
-            markInvalidFields();
-            if (!valid) return;
-
-            const token = widget ? takeTurnstileToken(widget) : undefined;
-            if (!token) { showError('Please complete the security check and try again.'); return; }
+            if (!validateForm(form, errorEl)) return;
 
             const data = new FormData(form);
             const field = (n: string) => String(data.get(n) ?? '').trim();
 
-            submitBtn.disabled = true;
-            try {
-                const res = await fetch('/api/apply', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        legalBusinessName: field('legalBusinessName'),
-                        dba: field('dba'),
-                        firstName: field('firstName'),
-                        lastName: field('lastName'),
-                        mobile: field('mobile'),
-                        email: field('email'),
-                        monthlyRevenue: Number(field('monthlyRevenue')),
-                        homeAddress: field('homeAddress'),
-                        businessAddress: field('businessAddress'),
-                        businessStartDate: field('businessStartDate'),
-                        businessIndustry: field('businessIndustry'),
-                        ficoScore: Number(field('ficoScore')),
-                        fundingAmount: Number(field('fundingAmount')),
-                        token,
-                    }),
-                });
-                if (!res.ok) throw new Error(String(res.status));
+            await submitJson({
+                form, widget, button: submitBtn, errorEl, successEl,
+                url: '/api/apply',
+                body: () => ({
+                    legalBusinessName: field('legalBusinessName'),
+                    dba: field('dba'),
+                    firstName: field('firstName'),
+                    lastName: field('lastName'),
+                    mobile: field('mobile'),
+                    email: field('email'),
+                    monthlyRevenue: Number(field('monthlyRevenue')),
+                    homeAddress: field('homeAddress'),
+                    businessAddress: field('businessAddress'),
+                    businessStartDate: field('businessStartDate'),
+                    businessIndustry: field('businessIndustry'),
+                    ficoScore: Number(field('ficoScore')),
+                    fundingAmount: Number(field('fundingAmount')),
+                }),
                 // Leave the submitted values in place instead of clearing the form: the visitor can
                 // see exactly what they sent, and re-submitting isn't blocked if they want to.
-                successEl.hidden = false;
-            } catch {
-                showError('Something went wrong. Please try again.');
-            } finally {
-                // A Turnstile token is single-use: get a fresh one before the next attempt.
-                widget?.reset();
-                if (widget) gateOnTurnstile({ widget, button: submitBtn });
-                else submitBtn.disabled = false;
-            }
+            });
         });
     }
 </script>

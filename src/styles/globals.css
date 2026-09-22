@@ -61,7 +61,8 @@
   --chart-3: oklch(0.609 0.126 221.723);
   --chart-4: oklch(0.52 0.105 223.128);
   --chart-5: oklch(0.45 0.085 224.283);
-  --radius: 0;
+  /* A length, not a bare 0: the radius-* scale above is calc()-derived and `0 - 2px` is invalid CSS. */
+  --radius: 0px;
   --sidebar: oklch(0.985 0 0);
   --sidebar-foreground: oklch(0.141 0.005 285.823);
   --sidebar-primary: oklch(0.609 0.126 221.723);
@@ -104,7 +105,7 @@
   --sidebar-accent-foreground: oklch(0.985 0 0);
   --sidebar-border: oklch(1 0 0 / 10%);
   --sidebar-ring: oklch(0.552 0.016 285.938);
-  --radius: 0;
+  --radius: 0px;
 }
 
 @layer base {
@@ -116,5 +117,16 @@
   }
   html {
     @apply font-sans;
+  }
+}
+
+@layer components {
+  /* Grain tile shared by the stepped-bar backdrops (StepsBackground, StepsAccent). A fixed bitmap
+     sized in CSS px so it looks the same at any zoom; overlay blending leaves white untouched. */
+  .grain {
+    background-image: url("/textures/grain.png");
+    background-size: 512px 512px;
+    mix-blend-mode: overlay;
+    opacity: 0.6;
   }
 }

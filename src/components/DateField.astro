@@ -1,25 +1,30 @@
 ---
 // A styled date input backed by the Cally web components (<calendar-date>), used instead of the
 // browser's native date input for a look that matches the rest of the form. Typable: a visitor can
-// type MM/DD/YYYY directly, or open the dropdown (via the calendar icon, or just by typing) and
-// pick a day. Either way the value that travels to the server is a hidden field holding an ISO
-// date string (YYYY-MM-DD) — what Cally's `value` already is, and what the zod schema expects.
-import { Popover, PopoverTrigger, PopoverContent } from "@/ui/popover";
+// type MM/DD/YYYY directly (digits alone are fine too, slashes are filled in as they go, so the
+// numeric keypad on phones works), or open the dropdown (via the calendar icon, by clicking into
+// the field, by typing, or with the down arrow) and pick a day. Either way the value that travels
+// to the server is a hidden field holding an ISO date string (YYYY-MM-DD) — what Cally's `value`
+// already is, and what the zod schema expects.
+import { Popover, PopoverContent } from "@/ui/popover";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/ui/select";
 import { Calendar, ChevronLeft, ChevronRight } from "@lucide/astro";
 import { cn } from "@/lib/utils";
+import { inputClass } from "@/ui/input";
 
 interface Props {
   name: string;
   id?: string;
   min?: string;
   max?: string;
+  /** Reject anything after today. Evaluated in the browser, so it stays right however stale the build is. */
+  maxToday?: boolean;
   placeholder?: string;
   required?: boolean;
   class?: string;
 }
 
-const { name, id = name, min, max, placeholder = "MM/DD/YYYY", required = false, class: className = "" } = Astro.props;
+const { name, id = name, min, max, maxToday = false, placeholder = "MM/DD/YYYY", required = false, class: className = "" } = Astro.props;
 
 const MONTH_NAMES = [
   "January", "February", "March", "April", "May", "June",
@@ -35,7 +40,7 @@ const YEAR_MAX = now.getFullYear();
 const YEARS = Array.from({ length: YEAR_MAX - YEAR_MIN + 1 }, (_, i) => YEAR_MAX - i);
 ---
 
-<Popover id={`${id}-popover`} data-date-field class="relative block w-full">
+<Popover id={`${id}-popover`} data-date-field data-max-today={maxToday ? "" : undefined} class="relative block w-full">
   {/* The typable field, and the only labelable control here: a <label> wrapping this component
       focuses it first, same as any other text input on the form. Left outside the popover trigger
       on purpose (see the script below) so clicking or typing in it never toggles the dropdown shut.
@@ -48,18 +53,22 @@ const YEARS = Array.from({ length: YEAR_MAX - YEAR_MIN + 1 }, (_, i) => YEAR_MAX
     placeholder={placeholder}
     required={required}
     data-date-input
-    class={cn(
-      "h-10 w-full rounded-lg border border-input bg-background px-3 pr-10 text-base font-normal outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 aria-invalid:border-destructive aria-invalid:ring-3 aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40",
-      className,
-    )}
+    class={cn(inputClass, "pr-10", className)}
   />
   <input type="hidden" name={name} data-date-value />
 
-  <PopoverTrigger asChild class="absolute inset-y-0 right-0 flex items-center pr-3">
-    <button type="button" data-date-icon aria-label="Open calendar" class="text-muted-foreground outline-none hover:text-foreground focus-visible:text-foreground">
-      <Calendar class="size-4" />
-    </button>
-  </PopoverTrigger>
+  {/* The popover trigger is the icon button itself (data-slot goes straight on it, no wrapper),
+      so the library's aria-expanded/aria-controls land on a real button and focus can return to
+      it when the dropdown closes. */}
+  <button
+    type="button"
+    data-slot="popover-trigger"
+    data-date-icon
+    aria-label="Open calendar"
+    class="absolute inset-y-0 right-0 flex items-center pr-3 text-muted-foreground outline-none hover:text-foreground focus-visible:text-foreground"
+  >
+    <Calendar class="size-4" />
+  </button>
 
   <PopoverContent align="end" class="w-auto p-2">
     {/* Cally's default previous/next buttons fall back to the plain words "Previous"/"Next", which
@@ -141,10 +150,11 @@ const YEARS = Array.from({ length: YEAR_MAX - YEAR_MIN + 1 }, (_, i) => YEAR_MAX
   import "cally";
 
   const DATE_RE = /^(\d{1,2})\/(\d{1,2})\/(\d{4})$/;
+  const DIGITS_RE = /^(\d{2})(\d{2})(\d{4})$/;
 
-  /** "MM/DD/YYYY" text -> ISO date, or null if it isn't a real, fully-typed date yet. */
+  /** "MM/DD/YYYY" (or bare "MMDDYYYY") text -> ISO date, or null if it isn't a real, fully-typed date yet. */
   function parseTyped(text: string): string | null {
-    const match = text.trim().match(DATE_RE);
+    const match = text.trim().match(DATE_RE) ?? text.trim().match(DIGITS_RE);
     if (!match) return null;
     const [, mm, dd, yyyy] = match;
     const month = Number(mm), day = Number(dd), year = Number(yyyy);
@@ -158,16 +168,37 @@ const YEARS = Array.from({ length: YEAR_MAX - YEAR_MIN + 1 }, (_, i) => YEAR_MAX
     return `${Number(m)}/${Number(d)}/${y}`;
   }
 
+  function localTodayIso(): string {
+    const d = new Date();
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+  }
+
+  /** Slashes after the 2nd and 4th digit: "0105" -> "01/05", "010520" -> "01/05/20". */
+  function maskDigits(digits: string): string {
+    const d = digits.slice(0, 8);
+    if (d.length > 4) return `${d.slice(0, 2)}/${d.slice(2, 4)}/${d.slice(4)}`;
+    if (d.length > 2) return `${d.slice(0, 2)}/${d.slice(2)}`;
+    return d;
+  }
+  // Only values already in the masked shape (or still bare digits) get re-masked. "1/5/2020"
+  // typed with single-digit parts is left exactly as typed.
+  const MASKABLE_RE = /^(\d{0,2}|\d{2}\/\d{0,2}|\d{2}\/\d{2}\/\d{0,4})$/;
+
   for (const field of document.querySelectorAll<HTMLElement>("[data-date-field]")) {
     const input = field.querySelector<HTMLInputElement>("[data-date-input]")!;
     const hiddenInput = field.querySelector<HTMLInputElement>("[data-date-value]")!;
-    const picker = field.querySelector("calendar-date") as HTMLElement & { value: string };
+    const picker = field.querySelector("calendar-date") as HTMLElement & { value: string; min: string; max: string };
+
+    if (field.hasAttribute("data-max-today")) picker.max = localTodayIso();
+    const maxIso = () => picker.getAttribute("max") ?? "";
+    const minIso = () => picker.getAttribute("min") ?? "";
 
     // The month/year Selects in the header don't know how to move the calendar themselves — they
     // dispatch `focusday` (bubbling, detail: a native Date), the same event Cally's own built-in
     // month/year pickers use internally to change the visible page. Listening for it back on the
     // calendar keeps the Selects in sync with the prev/next arrows and keyboard nav too, not just
     // with themselves, since all three paths funnel through this one event.
+    const focusDay = (date: Date) => picker.dispatchEvent(new CustomEvent("focusday", { bubbles: true, detail: date }));
     const monthSelect = field.querySelector<HTMLElement>("[data-date-month-select]");
     const yearSelect = field.querySelector<HTMLElement>("[data-date-year-select]");
     if (monthSelect && yearSelect) {
@@ -201,39 +232,70 @@ const YEARS = Array.from({ length: YEAR_MAX - YEAR_MIN + 1 }, (_, i) => YEAR_MAX
         // Keep the same day of month where possible (Cally's own select-year does the same), only
         // clamping it back when the target month is shorter (e.g. Jan 31 -> Feb).
         const day = Math.min(focusedDay, daysInMonth(year, month));
-        picker.dispatchEvent(new CustomEvent("focusday", { bubbles: true, detail: new Date(year, month - 1, day) }));
+        focusDay(new Date(year, month - 1, day));
       };
       monthSelect.addEventListener("select:change", () => { if (!syncing) goToSelectedMonthYear(); });
       yearSelect.addEventListener("select:change", () => { if (!syncing) goToSelectedMonthYear(); });
     }
 
+    // Open state, as reported by the popover itself. Needed because the library restores focus
+    // to whatever was focused when the popover opened (usually this input) as it closes, so the
+    // dropdown must never be opened from a plain `focus` event: that would reopen it on every
+    // close. It opens on deliberate actions instead — click, typing, or the down arrow.
+    let isOpen = false;
+    field.addEventListener("popover:change", (e) => { isOpen = !!(e as CustomEvent<{ open: boolean }>).detail?.open; });
+
     const close = () => field.dispatchEvent(new CustomEvent("popover:set", { detail: { open: false } }));
 
     // Opening the popover auto-focuses the first focusable thing inside it (a calendar nav/day
-    // button), same as any other popover here — but this one opens as a side effect of focusing
-    // the text input, and that steal would bounce focus right back out, forcing a second click
+    // button), same as any other popover here — but this one opens as a side effect of using the
+    // text input, and that steal would bounce focus right back out, forcing a second click
     // before typing actually lands. Reclaim focus on the next frame, after the library's own.
     const openKeepingFocus = () => {
+      if (isOpen) return;
       field.dispatchEvent(new CustomEvent("popover:set", { detail: { open: true } }));
       requestAnimationFrame(() => { if (document.activeElement !== input) input.focus(); });
     };
 
     // `required` alone only catches an empty field; typed text that doesn't parse into a real date
-    // ("13/40/2026") needs its own custom validity so the browser's own constraint checks (and the
-    // page's red-ring styling, which keys off the same aria-invalid the browser sets) catch it too.
+    // ("13/40/2026"), or one outside min/max, needs its own custom validity so the browser's own
+    // constraint checks (and the page's red-ring styling, which keys off the same aria-invalid the
+    // form script sets) catch it too.
     const syncValidity = () => {
-      input.setCustomValidity(input.value.trim() && !parseTyped(input.value) ? "Enter a valid date (MM/DD/YYYY)." : "");
+      const text = input.value.trim();
+      const iso = parseTyped(text);
+      let message = "";
+      if (text && !iso) message = "Enter a valid date (MM/DD/YYYY).";
+      else if (iso && maxIso() && iso > maxIso()) message = "The date can't be in the future.";
+      else if (iso && minIso() && iso < minIso()) message = "That date is too early.";
+      input.setCustomValidity(message);
+      return message ? null : iso;
     };
+
+    input.addEventListener("click", openKeepingFocus);
+    input.addEventListener("keydown", (e) => {
+      if (e.key === "ArrowDown" && !isOpen) { e.preventDefault(); openKeepingFocus(); }
+    });
 
     // Typing opens the dropdown so the calendar can track along; a complete, valid date syncs the
     // hidden field and the calendar's selection right away, without waiting for blur.
-    input.addEventListener("focus", openKeepingFocus);
-    input.addEventListener("input", () => {
+    input.addEventListener("input", (e) => {
+      const ev = e as InputEvent;
+      // Fill in the slashes while digits are being added (never while deleting, and never over a
+      // slash the visitor typed themselves).
+      if (ev.inputType?.startsWith("insert") && ev.data !== "/" && MASKABLE_RE.test(input.value)) {
+        const masked = maskDigits(input.value.replace(/\D/g, ""));
+        if (masked !== input.value) input.value = masked;
+      }
       openKeepingFocus();
-      syncValidity();
-      const iso = parseTyped(input.value);
+      const iso = syncValidity();
       hiddenInput.value = iso ?? "";
-      if (iso) picker.value = iso;
+      if (iso) {
+        picker.value = iso;
+        // `value` alone only moves the visible month until the calendar has been navigated once;
+        // after that Cally keeps its own focused date, so point it at the typed day explicitly.
+        focusDay(new Date(`${iso}T00:00:00`));
+      }
     });
 
     // Picking a day writes the field back in the same MM/DD/YYYY shape someone would've typed.
@@ -248,6 +310,7 @@ const YEARS = Array.from({ length: YEAR_MAX - YEAR_MIN + 1 }, (_, i) => YEAR_MAX
       input.value = "";
       hiddenInput.value = "";
       picker.value = "";
+      input.setCustomValidity("");
     });
   }
 </script>

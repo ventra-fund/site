@@ -2,6 +2,15 @@
 import "@/styles/globals.css";
 import { Font } from "astro:assets";
 
+interface Props {
+  /** Page-specific part of the <title>; the site name is appended. Omit on the home page. */
+  title?: string;
+}
+
+const { title } = Astro.props;
+const SITE_NAME = "Ventra Fund";
+const pageTitle = title ? `${title} | ${SITE_NAME}` : SITE_NAME;
+
 const navLinks: [href: string, label: string][] = [
   ["/", "Home"],
   ["/capital", "Capital"],
@@ -9,29 +18,32 @@ const navLinks: [href: string, label: string][] = [
   ["/partner", "Partner"],
   ["/contact", "Contact"],
 ];
+// Trailing-slash-insensitive so "/apply/" still marks the Apply link as current.
+const currentPath = Astro.url.pathname.replace(/\/+$/, "") || "/";
+const isCurrent = (href: string) => href === currentPath;
 ---
 
 <!doctype html>
-<html  lang="en">
+<html lang="en">
   <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
     <!-- bejamas:astro-fonts:start -->
     <!-- Weights/styles are restricted on purpose; see the FONT WEIGHTS note in astro.config.mjs. -->
     <Font cssVariable="--font-sans" preload />
     <!-- bejamas:astro-fonts:end -->
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="generator" content={Astro.generator} />
-    <title>Ventra Fund</title>
+    <title>{pageTitle}</title>
   </head>
   <body>
     <div id="site-nav" class="fixed w-full z-99">
       <!-- Plain links on purpose: the nav has no dropdowns, so it needs no menu JS. -->
-      <nav class="hidden sm:flex w-fit mx-auto my-4 bg-background z-99 rounded-md border-2 border-transparent transition-colors [.is-scrolled_&]:border-muted">
+      <nav aria-label="Main" class="hidden sm:flex w-fit mx-auto my-4 bg-background z-99 rounded-md border-2 border-transparent transition-colors [.is-scrolled_&]:border-muted">
         <ul class="flex list-none items-center">
           {navLinks.map(([href, label]) => (
             <li>
-              <a data-astro-prefetch href={href} class="inline-flex h-9 items-center rounded-sm px-4 text-lg transition-all outline-none hover:bg-muted hover:text-accent focus:bg-muted focus:text-accent focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-1">
+              <a data-astro-prefetch href={href} aria-current={isCurrent(href) ? "page" : undefined} class="inline-flex h-9 items-center rounded-sm px-4 text-lg transition-all outline-none hover:bg-muted hover:text-accent focus:bg-muted focus:text-accent focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-1 aria-[current=page]:text-accent">
                 {label}
               </a>
             </li>
@@ -40,7 +52,7 @@ const navLinks: [href: string, label: string][] = [
       </nav>
 
       <div class="sm:hidden fixed top-4 inset-x-4 z-99 flex items-center justify-between rounded-md border-2 border-muted bg-background px-2">
-        <a data-astro-prefetch href="/" class="px-3 py-2 text-lg font-medium">
+        <a data-astro-prefetch href="/" aria-current={isCurrent("/") ? "page" : undefined} class="px-3 py-2 text-lg font-medium">
           Home
         </a>
 
@@ -57,15 +69,16 @@ const navLinks: [href: string, label: string][] = [
           <span class="block h-0.5 w-5 rounded-full bg-foreground transition-transform duration-200 group-aria-expanded:-translate-y-2 group-aria-expanded:-rotate-45"></span>
         </button>
 
-        <div
+        <nav
           id="mobile-nav-menu"
+          aria-label="Main"
           hidden
           class="absolute top-full right-0 mt-2 flex w-60 flex-col gap-0.5 rounded-md border-2 border-muted bg-background p-2 shadow-lg"
         >
           {navLinks.slice(1).map(([href, label]) => (
-            <a data-astro-prefetch href={href} class="rounded-sm px-3 py-2 text-base hover:bg-muted">{label}</a>
+            <a data-astro-prefetch href={href} aria-current={isCurrent(href) ? "page" : undefined} class="rounded-sm px-3 py-2 text-base hover:bg-muted aria-[current=page]:text-accent">{label}</a>
           ))}
-        </div>
+        </nav>
       </div>
     </div>
     <slot />
@@ -79,6 +92,7 @@ const navLinks: [href: string, label: string][] = [
 
       const mobileToggle = document.getElementById("mobile-nav-toggle");
       const mobileMenu = document.getElementById("mobile-nav-menu");
+      const isMenuOpen = () => !!mobileMenu && !mobileMenu.hasAttribute("hidden");
       const closeMobileMenu = () => {
         mobileToggle?.setAttribute("aria-expanded", "false");
         mobileMenu?.setAttribute("hidden", "");
@@ -93,16 +107,20 @@ const navLinks: [href: string, label: string][] = [
       });
       document.addEventListener("click", (event) => {
         if (
-          mobileMenu &&
-          !mobileMenu.hasAttribute("hidden") &&
-          !mobileMenu.contains(event.target as Node) &&
+          isMenuOpen() &&
+          !mobileMenu!.contains(event.target as Node) &&
           !mobileToggle?.contains(event.target as Node)
         ) {
           closeMobileMenu();
         }
       });
       document.addEventListener("keydown", (event) => {
-        if (event.key === "Escape") closeMobileMenu();
+        if (event.key !== "Escape" || !isMenuOpen()) return;
+        // Focus was inside the menu (or on the toggle); hand it back to the toggle so a keyboard
+        // user isn't dropped at the top of the document.
+        const focusWasInMenu = mobileMenu!.contains(document.activeElement);
+        closeMobileMenu();
+        if (focusWasInMenu) mobileToggle?.focus();
       });
     </script>
   </body>
