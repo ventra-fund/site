@@ -1,0 +1,253 @@
+---
+// A styled date input backed by the Cally web components (<calendar-date>), used instead of the
+// browser's native date input for a look that matches the rest of the form. Typable: a visitor can
+// type MM/DD/YYYY directly, or open the dropdown (via the calendar icon, or just by typing) and
+// pick a day. Either way the value that travels to the server is a hidden field holding an ISO
+// date string (YYYY-MM-DD) — what Cally's `value` already is, and what the zod schema expects.
+import { Popover, PopoverTrigger, PopoverContent } from "@/ui/popover";
+import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/ui/select";
+import { Calendar, ChevronLeft, ChevronRight } from "@lucide/astro";
+import { cn } from "@/lib/utils";
+
+interface Props {
+  name: string;
+  id?: string;
+  min?: string;
+  max?: string;
+  placeholder?: string;
+  required?: boolean;
+  class?: string;
+}
+
+const { name, id = name, min, max, placeholder = "MM/DD/YYYY", required = false, class: className = "" } = Astro.props;
+
+const MONTH_NAMES = [
+  "January", "February", "March", "April", "May", "June",
+  "July", "August", "September", "October", "November", "December",
+];
+// A wide, fixed range rather than something tied tightly to "this year": it's computed at build
+// time (this page is prerendered), and typing a date directly always works regardless, so a
+// build going slightly stale isn't a correctness problem — just a scroll away either way. No
+// future years: a business can't have started yet.
+const now = new Date();
+const YEAR_MIN = now.getFullYear() - 100;
+const YEAR_MAX = now.getFullYear();
+const YEARS = Array.from({ length: YEAR_MAX - YEAR_MIN + 1 }, (_, i) => YEAR_MAX - i);
+---
+
+<Popover id={`${id}-popover`} data-date-field class="relative block w-full">
+  {/* The typable field, and the only labelable control here: a <label> wrapping this component
+      focuses it first, same as any other text input on the form. Left outside the popover trigger
+      on purpose (see the script below) so clicking or typing in it never toggles the dropdown shut.
+      `required` lives here (a real, visible, focusable control), not on the hidden field below,
+      which browsers exempt from constraint validation entirely. */}
+  <input
+    type="text"
+    inputmode="numeric"
+    autocomplete="off"
+    placeholder={placeholder}
+    required={required}
+    data-date-input
+    class={cn(
+      "h-10 w-full rounded-lg border border-input bg-background px-3 pr-10 text-base font-normal outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 aria-invalid:border-destructive aria-invalid:ring-3 aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40",
+      className,
+    )}
+  />
+  <input type="hidden" name={name} data-date-value />
+
+  <PopoverTrigger asChild class="absolute inset-y-0 right-0 flex items-center pr-3">
+    <button type="button" data-date-icon aria-label="Open calendar" class="text-muted-foreground outline-none hover:text-foreground focus-visible:text-foreground">
+      <Calendar class="size-4" />
+    </button>
+  </PopoverTrigger>
+
+  <PopoverContent align="end" class="w-auto p-2">
+    {/* Cally's default previous/next buttons fall back to the plain words "Previous"/"Next", which
+        are different widths and throw off the header's centering (it's a flex row split evenly
+        around them, so unequal button widths push the month/year heading off-center). Slotted
+        icons of matching size keep the two buttons — and the heading between them — symmetric. */}
+    <calendar-date min={min} max={max}>
+      <span slot="previous" class="inline-flex items-center justify-center">
+        <ChevronLeft class="size-4" aria-hidden="true" />
+        <span class="sr-only">Previous month</span>
+      </span>
+      <span slot="next" class="inline-flex items-center justify-center">
+        <ChevronRight class="size-4" aria-hidden="true" />
+        <span class="sr-only">Next month</span>
+      </span>
+      {/* Replaces the plain "Month Year" text heading with two of the site's own scrollable
+          Selects (not native <select> dropdowns), so the year — or month — can be jumped to
+          directly instead of only stepping one month at a time. Wired up in the script below to
+          Cally's own `focusday` event, the same mechanism its built-in month/year pickers use. */}
+      <span slot="heading" class="inline-flex items-center gap-1">
+        <Select id={`${id}-month`} data-date-month-select defaultValue={String(now.getMonth() + 1)} class="inline-block">
+          <SelectTrigger class="h-auto gap-0.5 rounded-md border-0 bg-transparent p-1 text-sm font-bold shadow-none">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent align="start" class="min-w-32">
+            {MONTH_NAMES.map((label, i) => <SelectItem value={String(i + 1)}>{label}</SelectItem>)}
+          </SelectContent>
+        </Select>
+        <Select id={`${id}-year`} data-date-year-select defaultValue={String(now.getFullYear())} class="inline-block">
+          <SelectTrigger class="h-auto gap-0.5 rounded-md border-0 bg-transparent p-1 text-sm font-bold shadow-none">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent align="start" class="min-w-24">
+            {YEARS.map((year) => <SelectItem value={String(year)}>{year}</SelectItem>)}
+          </SelectContent>
+        </Select>
+      </span>
+      <calendar-month></calendar-month>
+    </calendar-date>
+  </PopoverContent>
+</Popover>
+
+<style>
+  calendar-month {
+    --color-accent: var(--primary);
+    --color-text-on-accent: var(--primary-foreground);
+  }
+
+  /* ::part(button) here only reaches calendar-date's own previous/next nav buttons — the day-grid
+     buttons live inside calendar-month's separate shadow root, out of reach from this selector.
+     Cally resets the native button chrome for day buttons but not for these, so without this
+     they'd keep the browser's default 3D/outset border. No border at all here, just the aqua icon
+     color, with a filled background on hover. */
+  calendar-date::part(button) {
+    padding: 0.5rem;
+    border: none;
+    border-radius: 0.375rem;
+    background: transparent;
+    appearance: none;
+    cursor: pointer;
+    color: var(--primary);
+  }
+
+  calendar-date::part(button):hover {
+    background: var(--primary);
+    color: var(--primary-foreground);
+  }
+
+  /* calendar-month renders its own "Month Year" heading above the day grid — separate from, and
+     now redundant with, the month/year Selects in calendar-date's header above it. Hidden the same
+     visually-only way: `display: none` would also drop the table's aria-labelledby target. */
+  calendar-month::part(heading) {
+    position: absolute;
+    transform: scale(0);
+  }
+</style>
+
+<script>
+  import "cally";
+
+  const DATE_RE = /^(\d{1,2})\/(\d{1,2})\/(\d{4})$/;
+
+  /** "MM/DD/YYYY" text -> ISO date, or null if it isn't a real, fully-typed date yet. */
+  function parseTyped(text: string): string | null {
+    const match = text.trim().match(DATE_RE);
+    if (!match) return null;
+    const [, mm, dd, yyyy] = match;
+    const month = Number(mm), day = Number(dd), year = Number(yyyy);
+    const date = new Date(year, month - 1, day);
+    if (date.getFullYear() !== year || date.getMonth() !== month - 1 || date.getDate() !== day) return null;
+    return `${String(year).padStart(4, "0")}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+  }
+
+  function formatIso(iso: string): string {
+    const [y, m, d] = iso.split("-");
+    return `${Number(m)}/${Number(d)}/${y}`;
+  }
+
+  for (const field of document.querySelectorAll<HTMLElement>("[data-date-field]")) {
+    const input = field.querySelector<HTMLInputElement>("[data-date-input]")!;
+    const hiddenInput = field.querySelector<HTMLInputElement>("[data-date-value]")!;
+    const picker = field.querySelector("calendar-date") as HTMLElement & { value: string };
+
+    // The month/year Selects in the header don't know how to move the calendar themselves — they
+    // dispatch `focusday` (bubbling, detail: a native Date), the same event Cally's own built-in
+    // month/year pickers use internally to change the visible page. Listening for it back on the
+    // calendar keeps the Selects in sync with the prev/next arrows and keyboard nav too, not just
+    // with themselves, since all three paths funnel through this one event.
+    const monthSelect = field.querySelector<HTMLElement>("[data-date-month-select]");
+    const yearSelect = field.querySelector<HTMLElement>("[data-date-year-select]");
+    if (monthSelect && yearSelect) {
+      let syncing = false;
+      let focusedDay = new Date().getDate();
+      const daysInMonth = (year: number, month1to12: number) => new Date(year, month1to12, 0).getDate();
+
+      const setSelectValue = (select: HTMLElement, value: string) => {
+        syncing = true;
+        select.dispatchEvent(new CustomEvent("select:set", { detail: { value } }));
+        syncing = false;
+      };
+
+      const initial = picker.value ? new Date(`${picker.value}T00:00:00`) : new Date();
+      focusedDay = initial.getDate();
+      setSelectValue(monthSelect, String(initial.getMonth() + 1));
+      setSelectValue(yearSelect, String(initial.getFullYear()));
+
+      picker.addEventListener("focusday", (e) => {
+        const date = (e as CustomEvent<Date>).detail;
+        if (!date) return;
+        focusedDay = date.getDate();
+        setSelectValue(monthSelect, String(date.getMonth() + 1));
+        setSelectValue(yearSelect, String(date.getFullYear()));
+      });
+
+      const goToSelectedMonthYear = () => {
+        const month = Number(monthSelect.dataset.value);
+        const year = Number(yearSelect.dataset.value);
+        if (!month || !year) return;
+        // Keep the same day of month where possible (Cally's own select-year does the same), only
+        // clamping it back when the target month is shorter (e.g. Jan 31 -> Feb).
+        const day = Math.min(focusedDay, daysInMonth(year, month));
+        picker.dispatchEvent(new CustomEvent("focusday", { bubbles: true, detail: new Date(year, month - 1, day) }));
+      };
+      monthSelect.addEventListener("select:change", () => { if (!syncing) goToSelectedMonthYear(); });
+      yearSelect.addEventListener("select:change", () => { if (!syncing) goToSelectedMonthYear(); });
+    }
+
+    const close = () => field.dispatchEvent(new CustomEvent("popover:set", { detail: { open: false } }));
+
+    // Opening the popover auto-focuses the first focusable thing inside it (a calendar nav/day
+    // button), same as any other popover here — but this one opens as a side effect of focusing
+    // the text input, and that steal would bounce focus right back out, forcing a second click
+    // before typing actually lands. Reclaim focus on the next frame, after the library's own.
+    const openKeepingFocus = () => {
+      field.dispatchEvent(new CustomEvent("popover:set", { detail: { open: true } }));
+      requestAnimationFrame(() => { if (document.activeElement !== input) input.focus(); });
+    };
+
+    // `required` alone only catches an empty field; typed text that doesn't parse into a real date
+    // ("13/40/2026") needs its own custom validity so the browser's own constraint checks (and the
+    // page's red-ring styling, which keys off the same aria-invalid the browser sets) catch it too.
+    const syncValidity = () => {
+      input.setCustomValidity(input.value.trim() && !parseTyped(input.value) ? "Enter a valid date (MM/DD/YYYY)." : "");
+    };
+
+    // Typing opens the dropdown so the calendar can track along; a complete, valid date syncs the
+    // hidden field and the calendar's selection right away, without waiting for blur.
+    input.addEventListener("focus", openKeepingFocus);
+    input.addEventListener("input", () => {
+      openKeepingFocus();
+      syncValidity();
+      const iso = parseTyped(input.value);
+      hiddenInput.value = iso ?? "";
+      if (iso) picker.value = iso;
+    });
+
+    // Picking a day writes the field back in the same MM/DD/YYYY shape someone would've typed.
+    picker.addEventListener("change", () => {
+      hiddenInput.value = picker.value;
+      input.value = picker.value ? formatIso(picker.value) : "";
+      syncValidity();
+      close();
+    });
+
+    field.closest("form")?.addEventListener("reset", () => {
+      input.value = "";
+      hiddenInput.value = "";
+      picker.value = "";
+    });
+  }
+</script>

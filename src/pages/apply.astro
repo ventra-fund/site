@@ -2,10 +2,11 @@
 import Layout from "@/layouts/Layout.astro";
 import Footer from "@/components/Footer.astro";
 import Turnstile from "@/components/Turnstile.astro";
+import DateField from "@/components/DateField.astro";
 import { Button } from "@/ui/button";
 import { Checkbox } from "@/ui/checkbox";
 
-const inputClass = "h-10 rounded-lg border border-input bg-background px-3 text-base font-normal outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50";
+const inputClass = "h-10 rounded-lg border border-input bg-background px-3 text-base font-normal outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 aria-invalid:border-destructive aria-invalid:ring-3 aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40";
 const fieldClass = "flex flex-col gap-1.5 text-sm font-medium";
 ---
 <Layout>
@@ -25,7 +26,7 @@ const fieldClass = "flex flex-col gap-1.5 text-sm font-medium";
                     </label>
 
                     <label class={fieldClass}>
-                        DBA <span class="font-normal text-muted-foreground">(optional)</span>
+                        <span>DBA <span class="font-normal text-muted-foreground">(optional)</span></span>
                         <input name="dba" type="text" maxlength="200" class={inputClass} />
                     </label>
 
@@ -78,7 +79,7 @@ const fieldClass = "flex flex-col gap-1.5 text-sm font-medium";
 
                     <label class={fieldClass}>
                         Business start date
-                        <input name="businessStartDate" type="date" required class={inputClass} />
+                        <DateField name="businessStartDate" required />
                     </label>
 
                     <label class={fieldClass}>
@@ -137,12 +138,34 @@ const fieldClass = "flex flex-col gap-1.5 text-sm font-medium";
 
         const showError = (msg: string) => { errorEl.textContent = msg; errorEl.hidden = false; };
 
+        // Every invalid field gets a red ring so a visitor can see everything that needs fixing at
+        // a glance, instead of the browser's one-at-a-time tooltip — which is suppressed below so
+        // the ring is the only cue. Constraint checking itself (required/type/min/max/custom
+        // validity) still runs exactly as before; only the popup UI is turned off. A field clears
+        // its own ring the moment it becomes valid again, live, as they retype.
+        const validatedInputs = Array.from(form.querySelectorAll<HTMLInputElement>('input:not([type="hidden"])'));
+        for (const el of validatedInputs) {
+            el.addEventListener('invalid', (e) => e.preventDefault());
+            el.addEventListener('input', () => { if (el.checkValidity()) el.removeAttribute('aria-invalid'); });
+        }
+        const markInvalidFields = () => {
+            // Tailwind's `aria-invalid:` variant matches `[aria-invalid="true"]` specifically, not
+            // just the attribute's presence — setAttribute here, not toggleAttribute (which would
+            // set it to "" and never match).
+            for (const el of validatedInputs) {
+                if (el.checkValidity()) el.removeAttribute('aria-invalid');
+                else el.setAttribute('aria-invalid', 'true');
+            }
+        };
+
         form.addEventListener('submit', async (e) => {
             e.preventDefault();
             errorEl.hidden = true;
             successEl.hidden = true;
 
-            if (!form.reportValidity()) return;
+            const valid = form.reportValidity();
+            markInvalidFields();
+            if (!valid) return;
 
             const token = widget ? takeTurnstileToken(widget) : undefined;
             if (!token) { showError('Please complete the security check and try again.'); return; }
@@ -173,8 +196,8 @@ const fieldClass = "flex flex-col gap-1.5 text-sm font-medium";
                     }),
                 });
                 if (!res.ok) throw new Error(String(res.status));
-                form.reset();
-                businessInput.readOnly = false;
+                // Leave the submitted values in place instead of clearing the form: the visitor can
+                // see exactly what they sent, and re-submitting isn't blocked if they want to.
                 successEl.hidden = false;
             } catch {
                 showError('Something went wrong. Please try again.');
