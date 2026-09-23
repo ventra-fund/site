@@ -11,10 +11,12 @@ The site is static except for `/api/apply`, `/api/contact` and `/api/partner`, w
 
 Until the runtime secrets are set, all three endpoints return 500 and send nothing.
 
+Submissions are capped per IP by the `FORM_RATE_LIMIT` rate limiting binding in `wrangler.jsonc` (2 per 60 s across all three endpoints; a third returns 429 and the form explains why). The binding is read through `cloudflare:workers` in `src/lib/server/rate-limit.ts`, so it is only active inside the Worker: `pnpm dev` runs unlimited, `pnpm build && pnpm preview` exercises it.
+
 Response headers (HSTS, nosniff, referrer policy, `frame-ancestors`) come from `public/_headers`, which Workers static assets applies to every response.
 
 ### Dev vs. build
-`astro.config.mjs` only attaches the `@astrojs/cloudflare` adapter for `astro build`/`astro preview`, not `astro dev`. Local dev runs on plain Node/Vite instead of the adapter's workerd emulation, which sidesteps an upstream dev-server bug where a dependency only reachable from an on-demand route (e.g. `free-email-domains` via `/partner`) gets discovered lazily and crashes the runner ([withastro/astro#17921](https://github.com/withastro/astro/issues/17921)). Nothing in the app reads Cloudflare-specific runtime bindings (KV/D1/`locals.runtime`), so this doesn't change behavior — but if that ever changes, test it with `pnpm build && pnpm preview` (or `wrangler dev`), not `pnpm dev`.
+`astro.config.mjs` only attaches the `@astrojs/cloudflare` adapter for `astro build`/`astro preview`, not `astro dev`. Local dev runs on plain Node/Vite instead of the adapter's workerd emulation, which sidesteps an upstream dev-server bug where a dependency only reachable from an on-demand route (e.g. `free-email-domains` via `/partner`) gets discovered lazily and crashes the runner ([withastro/astro#17921](https://github.com/withastro/astro/issues/17921)). The only Cloudflare binding the app reads is the rate limiter, which degrades to "unlimited" when absent, so `pnpm dev` behaves the same apart from that. To exercise anything binding-specific, use `pnpm build && pnpm preview` (or `wrangler dev`), not `pnpm dev`.
 
 ### Images
 The adapter is set to `imageService: "compile"`: images are optimized once at build time and served as plain static files. The alternative, the Cloudflare Images binding, transforms on request, so the first load of each image size waits on the transform before it is cached. Only switch to it if a server-rendered page ever needs runtime resizing; static pages gain nothing from it.

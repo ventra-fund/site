@@ -5,6 +5,7 @@ import { escapeHtml } from '@/lib/sanitize';
 import { invalidBody, json, methodNotAllowed, readJson, requireSecrets } from '@/lib/server/http';
 import { sendEmail } from '@/lib/server/email';
 import { verifyTurnstile } from '@/lib/server/turnstile';
+import { enforceRateLimit } from '@/lib/server/rate-limit';
 
 // One of the three on-demand routes (with /api/contact and /api/partner). Everything else on the
 // site is prerendered.
@@ -17,6 +18,10 @@ const TURNSTILE_ACTION = 'apply';
 const money = (n: number) => n.toLocaleString('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 });
 
 export const POST: APIRoute = async ({ request }) => {
+  // First thing, so a rejected client never costs a siteverify or Resend call.
+  const limited = await enforceRateLimit(TAG, request);
+  if (limited) return limited;
+
   const read = await readJson(request);
   if ('response' in read) return read.response;
   // The form runs friendly checks client-side, but anyone can POST here directly.

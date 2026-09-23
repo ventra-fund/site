@@ -153,6 +153,7 @@ export async function submitJson(opts: SubmitOptions): Promise<void> {
     if (data.error === 'invalid_body' && data.fields?.length) markServerIssues(form, data.fields, errorEl);
     else if (data.error === 'invalid_message') showError('Please check your message and try again.');
     else if (data.error === 'verification_failed') showError('The security check expired. Please try again.');
+    else if (data.error === 'too_many_requests') showError("Too many submissions from your network in the last minute, so this one wasn't sent. Please wait a minute and try again. If you're on a shared office connection, someone else may have just submitted a form.");
     else showError('Something went wrong. Please try again.');
   } catch {
     showError('Something went wrong. Please check your connection and try again.');

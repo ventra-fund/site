@@ -8,6 +8,17 @@
 		"directory": "./dist",
 		"binding": "ASSETS"
 	},
+	// Per-IP cap on form submissions (/api/apply, /api/contact, /api/partner), read in
+	// src/lib/server/rate-limit.ts. Two per minute is enough for a visitor to send, say, a contact
+	// message and an application back to back; a third within the minute gets a 429. `period` can
+	// only be 10 or 60. `namespace_id` is an arbitrary account-unique id for this counter.
+	"ratelimits": [
+		{
+			"name": "FORM_RATE_LIMIT",
+			"namespace_id": "1001",
+			"simple": { "limit": 2, "period": 60 }
+		}
+	],
 	"observability": {
 		"enabled": true
 	}
