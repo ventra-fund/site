@@ -17,6 +17,9 @@ importers:
       '@data-slot/select':
         specifier: ^0.2.167
         version: 0.2.167
+      '@llamaindex/llama-cloud':
+        specifier: ^2.16.0
+        version: 2.16.0
       '@lucide/astro':
         specifier: ^1.47.0
         version: 1.47.0(astro@7.3.3(@emnapi/core@1.11.3)(@emnapi/runtime@1.11.3)(@types/node@26.6.2)(jiti@2.7.0)(yaml@2.9.1))
@@ -1005,6 +1008,9 @@ packages:
 
   '@jridgewell/trace-mapping@0.3.9':
     resolution: {integrity: sha512-3Belt6tdc8bPgAtbcmdtNJlirVoTmEb5e2gC94PnkwEW9jI6CAHUeoG85tjWP5WquqfavoMtMwiG4P926ZKKuQ==}
+
+  '@llamaindex/llama-cloud@2.16.0':
+    resolution: {integrity: sha512-yF1XkIvHCX+rAn7FJGbxEqDHqp4brkYRxHuA9+/Y6S+L6khDFFzssfwLYDOQeS0GGu3rlqiIXm4zjBKva98D9Q==}
 
   '@lucide/astro@1.47.0':
     resolution: {integrity: sha512-jpqLn/6Mbt1LhGHrgAXv64Wiqi+8cd80LD09Z/QqnXHfoC0z5Y+RSty/SjWw+sohYww3MGtkppf3OvQ28uxCrQ==}
@@ -4518,6 +4524,8 @@ snapshots:
     dependencies:
       '@jridgewell/resolve-uri': 3.1.2
       '@jridgewell/sourcemap-codec': 1.6.0
+
+  '@llamaindex/llama-cloud@2.16.0': {}
 
   '@lucide/astro@1.47.0(astro@7.3.3(@emnapi/core@1.11.3)(@emnapi/runtime@1.11.3)(@types/node@26.6.2)(jiti@2.7.0)(yaml@2.9.1))':
     dependencies:

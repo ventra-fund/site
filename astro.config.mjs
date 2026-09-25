@@ -65,6 +65,8 @@ export default defineConfig({
       RESEND_API_KEY: envField.string({ context: "server", access: "secret", optional: true }),
       CONTACT_TO_EMAIL: envField.string({ context: "server", access: "secret", optional: true }),
       CONTACT_FROM_EMAIL: envField.string({ context: "server", access: "secret", optional: true }),
+      // LlamaCloud, for reading uploaded bank statements (/api/apply/upload and parse-status).
+      LLAMA_CLOUD_API_KEY: envField.string({ context: "server", access: "secret", optional: true }),
     },
   },
   integrations: [],

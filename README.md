@@ -3,20 +3,35 @@
 - Bejamas/ui for the component library
 - CF worker deployment through github repo connection: automatic when pushed to main
 ## Environment
-The site is static except for `/api/apply`, `/api/contact` and `/api/partner`, which run on the Worker: each verifies the Turnstile token, then sends the message through Resend. They share the same secrets and inbox. The shared pieces (body parsing, secret checks, siteverify, Resend) live in `src/lib/server/`. Variables are listed in `.env.example`.
+The site is static except for `/api/apply`, `/api/contact` and `/api/partner`, which run on the Worker: each verifies the Turnstile token, then sends the message through Resend. They share the same secrets and inbox. The apply form also has `/api/apply/upload` and `/api/apply/parse-status` for bank statements (below). The shared pieces (body parsing, secret checks, siteverify, Resend, bindings) live in `src/lib/server/`. Variables are listed in `.env.example`.
 
-- **Local:** copy `.env.example` to `.env` (gitignored) and fill it in. `pnpm dev` reads it.
+- **Local:** copy `.env.example` to `.env` (gitignored) and fill it in. Both `pnpm dev` and `pnpm build && pnpm preview` read it (the adapter hands the values to wrangler at build time).
 - **Production build:** needs nothing. The Turnstile site key is public, so it is committed as the default in `astro.config.mjs`. A `PUBLIC_TURNSTILE_SITE_KEY` build variable overrides it.
-- **Production runtime** (Worker → Settings → Variables and Secrets, type *Secret*, or `npx wrangler secret put <NAME>`): `TURNSTILE_SECRET_KEY`, `RESEND_API_KEY`, `CONTACT_TO_EMAIL`, `CONTACT_FROM_EMAIL`. Use secrets, not plain variables: plain dashboard variables are wiped on each deploy, and nothing belongs in `wrangler.jsonc` since the repo is on GitHub.
+- **Production runtime** (Worker → Settings → Variables and Secrets, type *Secret*, or `npx wrangler secret put <NAME>`): `TURNSTILE_SECRET_KEY`, `RESEND_API_KEY`, `CONTACT_TO_EMAIL`, `CONTACT_FROM_EMAIL`, `LLAMA_CLOUD_API_KEY`. Use secrets, not plain variables: plain dashboard variables are wiped on each deploy, and nothing belongs in `wrangler.jsonc` since the repo is on GitHub.
 
-Until the runtime secrets are set, all three endpoints return 500 and send nothing.
+Until the runtime secrets are set, the endpoints return 500 and send nothing.
 
-Submissions are capped per IP by the `FORM_RATE_LIMIT` rate limiting binding in `wrangler.jsonc` (2 per 60 s across all three endpoints; a third returns 429 and the form explains why). The binding is read through `cloudflare:workers` in `src/lib/server/rate-limit.ts`, so it is only active inside the Worker: `pnpm dev` runs unlimited, `pnpm build && pnpm preview` exercises it.
+Submissions are capped per IP by the `FORM_RATE_LIMIT` rate limiting binding in `wrangler.jsonc` (2 per 60 s across the three submit endpoints; a third returns 429 and the form explains why). Statement uploads have their own `UPLOAD_RATE_LIMIT` (4 requests per 60 s) so re-picking files doesn't use up the submit budget, and the statement status polls have `STATUS_RATE_LIMIT` (30 per 60 s). The bindings are read through `cloudflare:workers` in `src/lib/server/bindings.ts`, so they are only active inside the Worker: `pnpm dev` runs unlimited, `pnpm build && pnpm preview` exercises them.
 
 Response headers (HSTS, nosniff, referrer policy, `frame-ancestors`) come from `public/_headers`, which Workers static assets applies to every response.
 
+### Bank statements on the apply form
+The apply page has an "Upload documents" area for bank statements (PDF, JPG, PNG; up to 6 files, 10 MB each, 20 MB together — `src/lib/upload-config.ts`). It does two jobs: the statements are attached to the application email, and what they say is read to pre-fill the legal business name (or first/last name for a personal account), the business address and the monthly revenue (average monthly deposits). Pre-filled fields are tinted and badged until the visitor edits them, and the email lists which ones were still pre-filled at submit.
+
+Flow, per file (`src/pages/api/apply/upload.ts`):
+1. Per-IP rate limit (`UPLOAD_RATE_LIMIT`, counted per request, not per file), then size caps and a magic-byte check of the actual bytes against the extension (`doc-extract/content-sniff.ts`); the browser's declared type is never trusted.
+2. Turnstile, once per batch, only if something survived the free checks (a token is single-use).
+3. One upload to LlamaCloud, then **Classify** on that file: anything that isn't a bank statement is refused here.
+4. LlamaCloud **Extract** (agentic tier, `doc-extract/schema.ts` for exactly what is asked) is submitted and its job id returned to the browser; it takes minutes, so the browser polls `/api/apply/parse-status?jobs=…`, which asks the provider and returns suggestions aggregated over every statement (`doc-extract/autofill.ts`).
+
+The page sends at most 4 files per upload request (`MAX_FILES_PER_UPLOAD`), so a pick of 5 or 6 goes up as two requests, each with its own Turnstile token. Each request may make at most `PROVIDER_CALLS_PER_REQUEST` provider calls (`doc-extract/config.ts`, 45). Classify takes 20–30 s per statement, about nine calls, so four files fit under the Workers Free limit of 50 external subrequests per request; files past the budget come back as "try again". On Workers Paid both limits can be raised.
+
+Nothing is stored server-side: the browser keeps the files (the page says to stay on it until submitting) and `/api/apply` is multipart, taking the same JSON as before in a `payload` field plus the files, which it re-validates (count, size, bytes) and attaches, adding a "Statements:" summary read from the provider by job id, not from the browser. Server-side storage in R2 is written but parked (`src/lib/server/documents.ts`, the commented-out `DOCUMENTS` binding in `wrangler.jsonc`) until the abandoned-form-fill work lands, so statements and that data can share one bucket and one set of lifecycle rules.
+
+Without `LLAMA_CLOUD_API_KEY` the upload area reports uploads as unavailable and the form still submits without statements. To test locally, use `pnpm build && pnpm preview` with `.env` filled in.
+
 ### Dev vs. build
-`astro.config.mjs` only attaches the `@astrojs/cloudflare` adapter for `astro build`/`astro preview`, not `astro dev`. Local dev runs on plain Node/Vite instead of the adapter's workerd emulation, which sidesteps an upstream dev-server bug where a dependency only reachable from an on-demand route (e.g. `free-email-domains` via `/partner`) gets discovered lazily and crashes the runner ([withastro/astro#17921](https://github.com/withastro/astro/issues/17921)). The only Cloudflare binding the app reads is the rate limiter, which degrades to "unlimited" when absent, so `pnpm dev` behaves the same apart from that. To exercise anything binding-specific, use `pnpm build && pnpm preview` (or `wrangler dev`), not `pnpm dev`.
+`astro.config.mjs` only attaches the `@astrojs/cloudflare` adapter for `astro build`/`astro preview`, not `astro dev`. Local dev runs on plain Node/Vite instead of the adapter's workerd emulation, which sidesteps an upstream dev-server bug where a dependency only reachable from an on-demand route (e.g. `free-email-domains` via `/partner`) gets discovered lazily and crashes the runner ([withastro/astro#17921](https://github.com/withastro/astro/issues/17921)). The rate limiters degrade to "unlimited" when absent, so `pnpm dev` behaves the same apart from that. To exercise anything binding-specific, use `pnpm build && pnpm preview` (or `wrangler dev`), not `pnpm dev`.
 
 ### Images
 The adapter is set to `imageService: "compile"`: images are optimized once at build time and served as plain static files. The alternative, the Cloudflare Images binding, transforms on request, so the first load of each image size waits on the transform before it is cached. Only switch to it if a server-rendered page ever needs runtime resizing; static pages gain nothing from it.
