@@ -1,0 +1,32 @@
+---
+import Layout from "@/layouts/Layout.astro";
+import { Button } from "@/ui/button";
+import { getAdminSession } from "@/lib/server/auth";
+
+// Not linked from anywhere on the site, and kept out of search results.
+export const prerender = false;
+
+Astro.response.headers.set("X-Robots-Tag", "noindex, nofollow");
+Astro.response.headers.set("Cache-Control", "no-store");
+
+const session = await getAdminSession(Astro.request.headers);
+if (!session) return Astro.redirect("/admin/sign-in");
+---
+
+<Layout title="Admin" noindex>
+  <main class="w-full min-h-screen px-4 py-16">
+    <div class="mx-auto flex max-w-4xl items-center justify-between gap-4">
+      <p class="text-sm text-muted-foreground">Signed in as {session.user.email}</p>
+      <Button variant="outline" size="sm" data-sign-out>Sign out</Button>
+    </div>
+  </main>
+</Layout>
+
+<script>
+  import { authClient } from "@/lib/auth-client";
+
+  document.querySelector("[data-sign-out]")?.addEventListener("click", async () => {
+    await authClient.signOut();
+    location.assign("/admin/sign-in");
+  });
+</script>

@@ -11,7 +11,7 @@ export interface EmailAttachment {
 export interface OutgoingEmail {
   from: string;
   to: string;
-  replyTo: string;
+  replyTo?: string;
   subject: string;
   html: string;
   text: string;

@@ -67,6 +67,11 @@ export default defineConfig({
       CONTACT_FROM_EMAIL: envField.string({ context: "server", access: "secret", optional: true }),
       // LlamaCloud, for reading uploaded bank statements (/api/apply/upload and parse-status).
       LLAMA_CLOUD_API_KEY: envField.string({ context: "server", access: "secret", optional: true }),
+      // Admin sign-in (src/lib/server/auth.ts). Emails go through RESEND_API_KEY / CONTACT_FROM_EMAIL.
+      BETTER_AUTH_SECRET: envField.string({ context: "server", access: "secret", optional: true }),
+      BETTER_AUTH_URL: envField.string({ context: "server", access: "secret", optional: true }),
+      // Comma-separated; the only addresses that can sign in to /admin.
+      ADMIN_EMAILS: envField.string({ context: "server", access: "secret", optional: true }),
     },
   },
   integrations: [],

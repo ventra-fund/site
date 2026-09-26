@@ -50,6 +50,17 @@
 	// 		"bucket_name": "ventra-fund-documents"
 	// 	}
 	// ],
+	// Admin sign-in (src/lib/server/auth.ts): users, sessions, one-time codes and rate-limit
+	// counters. Schema lives in migrations/; apply with
+	// `npx wrangler d1 migrations apply ventra-fund-auth --local` (or `--remote`). No
+	// `database_id`: `wrangler deploy` provisions the database on first deploy and writes it back.
+	"d1_databases": [
+		{
+			"binding": "AUTH_DB",
+			"database_name": "ventra-fund-auth",
+			"migrations_dir": "migrations"
+		}
+	],
 	"observability": {
 		"enabled": true
 	}

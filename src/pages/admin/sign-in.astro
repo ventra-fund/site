@@ -1,0 +1,133 @@
+---
+import Layout from "@/layouts/Layout.astro";
+import { Button } from "@/ui/button";
+import { Input } from "@/ui/input";
+import Turnstile from "@/components/Turnstile.astro";
+import { getAdminSession, getAuth } from "@/lib/server/auth";
+
+// Not linked from anywhere on the site, and kept out of search results.
+export const prerender = false;
+
+Astro.response.headers.set("X-Robots-Tag", "noindex, nofollow");
+Astro.response.headers.set("Cache-Control", "no-store");
+
+if (await getAdminSession(Astro.request.headers)) return Astro.redirect("/admin");
+const available = (await getAuth()) !== null;
+---
+
+<Layout title="Sign in" noindex>
+  <main class="w-full min-h-screen px-4 py-16">
+    <div class="mx-auto flex max-w-sm flex-col gap-6">
+      <h1 class="text-3xl font-bold text-accent">Admin sign in</h1>
+
+      {available ? (
+        <>
+          <form data-email-form novalidate class="flex flex-col gap-4">
+            <label class="flex flex-col gap-1.5 text-sm font-medium">
+              Email
+              <Input name="email" type="email" required maxlength="254" autocomplete="email" />
+            </label>
+            <Turnstile action="admin-sign-in" />
+            <Button type="submit" size="lg" data-send-code data-label="Send code" disabled>Checking security…</Button>
+          </form>
+
+          <form data-code-form hidden novalidate class="flex flex-col gap-4">
+            <p data-code-sent class="text-sm text-muted-foreground"></p>
+            <label class="flex flex-col gap-1.5 text-sm font-medium">
+              Code
+              <Input name="otp" type="text" required inputmode="numeric" pattern="[0-9]{6}" maxlength="6" autocomplete="one-time-code" />
+            </label>
+            <Button type="submit" size="lg">Sign in</Button>
+            <button type="button" data-restart class="self-start text-sm text-muted-foreground underline">Use a different email</button>
+          </form>
+
+          <p data-auth-error hidden role="alert" class="text-sm text-destructive"></p>
+        </>
+      ) : (
+        <p class="text-muted-foreground">Sign-in isn't available here. It needs the Worker's D1 database (run <code>pnpm build && pnpm preview</code> locally) and <code>BETTER_AUTH_SECRET</code>.</p>
+      )}
+    </div>
+  </main>
+</Layout>
+
+<script>
+  import { authClient } from "@/lib/auth-client";
+  import { gateOnFirstInteraction, gateOnTurnstile, takeTurnstileToken } from "@/lib/turnstile";
+
+  const emailForm = document.querySelector<HTMLFormElement>("[data-email-form]");
+  const codeForm = document.querySelector<HTMLFormElement>("[data-code-form]");
+  const errorEl = document.querySelector<HTMLElement>("[data-auth-error]");
+  const sentEl = document.querySelector<HTMLElement>("[data-code-sent]");
+  const widget = emailForm?.querySelector("turnstile-widget");
+  const sendBtn = emailForm?.querySelector<HTMLButtonElement>("[data-send-code]") ?? null;
+  let email = "";
+
+  const showError = (message = "") => {
+    if (!errorEl) return;
+    errorEl.textContent = message;
+    errorEl.hidden = !message;
+  };
+
+  const busy = (form: HTMLFormElement, on: boolean) => {
+    form.querySelector<HTMLButtonElement>("button[type=submit]")!.disabled = on;
+  };
+
+  // Sending a code needs a Turnstile token (checked in /api/auth). Like the other forms, the
+  // challenge only loads once the form is touched, and "Send code" stays disabled until it passes.
+  if (emailForm && widget) gateOnFirstInteraction({ form: emailForm, widget, button: sendBtn, onError: showError });
+  // Tokens are single-use: every attempt, successful or not, needs a fresh one for the next.
+  const regate = () => { if (widget) gateOnTurnstile({ widget, button: sendBtn, onError: showError }); };
+
+  emailForm?.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    showError();
+    email = String(new FormData(emailForm).get("email") ?? "").trim();
+    if (!email) return showError("Enter your email.");
+
+    const token = widget ? takeTurnstileToken(widget) : undefined;
+    if (!token) return showError("Please complete the security check and try again.");
+
+    busy(emailForm, true);
+    const { error } = await authClient.emailOtp.sendVerificationOtp(
+      { email, type: "sign-in" },
+      { headers: { "x-captcha-response": token } },
+    );
+    regate();
+    if (error) {
+      const message =
+        error.status === 429 ? "Too many attempts. Wait a minute and try again."
+        : error.status === 403 ? "The security check failed. Try again."
+        : "Couldn't send a code. Try again.";
+      return showError(message);
+    }
+
+    // Same answer whether or not the address is an admin.
+    sentEl!.textContent = `If ${email} is allowed to sign in, a 6-digit code is on its way.`;
+    emailForm.hidden = true;
+    codeForm!.hidden = false;
+    codeForm!.querySelector("input")?.focus();
+  });
+
+  codeForm?.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    showError();
+    const otp = String(new FormData(codeForm).get("otp") ?? "").trim();
+    if (!/^\d{6}$/.test(otp)) return showError("Enter the 6-digit code.");
+
+    busy(codeForm, true);
+    const { error } = await authClient.signIn.emailOtp({ email, otp });
+    if (error) {
+      busy(codeForm, false);
+      return showError(error.status === 429 ? "Too many attempts. Wait a minute and try again." : "That code didn't work. Check it, or request a new one.");
+    }
+    location.assign("/admin");
+  });
+
+  codeForm?.querySelector("[data-restart]")?.addEventListener("click", () => {
+    showError();
+    codeForm.reset();
+    codeForm.hidden = true;
+    emailForm!.hidden = false;
+    emailForm!.querySelector("input")?.focus();
+  });
+</script>

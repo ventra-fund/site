@@ -5,9 +5,11 @@ import { Font } from "astro:assets";
 interface Props {
   /** Page-specific part of the <title>; the site name is appended. Omit on the home page. */
   title?: string;
+  /** Keep the page out of search results (the admin pages). */
+  noindex?: boolean;
 }
 
-const { title } = Astro.props;
+const { title, noindex = false } = Astro.props;
 const SITE_NAME = "Ventra Fund";
 const pageTitle = title ? `${title} | ${SITE_NAME}` : SITE_NAME;
 
@@ -21,6 +23,9 @@ const navLinks: [href: string, label: string][] = [
 // Trailing-slash-insensitive so "/apply/" still marks the Apply link as current.
 const currentPath = Astro.url.pathname.replace(/\/+$/, "") || "/";
 const isCurrent = (href: string) => href === currentPath;
+// The admin pages stand apart from the public site: no nav (its script below finds nothing and
+// does nothing).
+const showNav = !/^\/admin(\/|$)/.test(currentPath);
 ---
 
 <!doctype html>
@@ -34,9 +39,11 @@ const isCurrent = (href: string) => href === currentPath;
     <!-- bejamas:astro-fonts:end -->
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="generator" content={Astro.generator} />
+    {noindex && <meta name="robots" content="noindex, nofollow" />}
     <title>{pageTitle}</title>
   </head>
   <body>
+    {showNav && (
     <div id="site-nav" class="fixed w-full z-99">
       <!-- Plain links on purpose: the nav has no dropdowns, so it needs no menu JS. -->
       <nav aria-label="Main" class="hidden sm:flex w-fit mx-auto my-4 bg-background z-99 rounded-md border-2 border-transparent transition-colors [.is-scrolled_&]:border-muted">
@@ -81,6 +88,7 @@ const isCurrent = (href: string) => href === currentPath;
         </nav>
       </div>
     </div>
+    )}
     <slot />
     <script>
       const nav = document.getElementById("site-nav");
