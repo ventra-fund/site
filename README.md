@@ -11,7 +11,7 @@ The site is static except for `/api/apply`, `/api/contact` and `/api/partner`, w
 
 Until the runtime secrets are set, the endpoints return 500 and send nothing.
 
-Submissions are capped per IP by the `FORM_RATE_LIMIT` rate limiting binding in `wrangler.jsonc` (2 per 60 s across the three submit endpoints; a third returns 429 and the form explains why). Statement uploads have their own `UPLOAD_RATE_LIMIT` (4 requests per 60 s) so re-picking files doesn't use up the submit budget, and the statement status polls have `STATUS_RATE_LIMIT` (30 per 60 s). The bindings are read through `cloudflare:workers` in `src/lib/server/bindings.ts`, so they are only active inside the Worker: `pnpm dev` runs unlimited, `pnpm build && pnpm preview` exercises them.
+Submissions are capped per IP by the `FORM_RATE_LIMIT` rate limiting binding in `wrangler.jsonc` (2 per 60 s across the three submit endpoints; a third returns 429 and the form explains why). Statement uploads have their own `UPLOAD_RATE_LIMIT` (4 requests per 60 s) so re-picking files doesn't use up the submit budget, the statement status polls have `STATUS_RATE_LIMIT` (30 per 60 s), and drop-off capture has `DRAFT_RATE_LIMIT` (12 per 60 s). The bindings are read through `cloudflare:workers` in `src/lib/server/bindings.ts`, so they are only active inside the Worker: `pnpm dev` runs unlimited, `pnpm build && pnpm preview` exercises them.
 
 Response headers (HSTS, nosniff, referrer policy, `frame-ancestors`) come from `public/_headers`, which Workers static assets applies to every response.
 
@@ -26,7 +26,23 @@ Flow, per file (`src/pages/api/apply/upload.ts`):
 
 The page sends at most 4 files per upload request (`MAX_FILES_PER_UPLOAD`), so a pick of 5 or 6 goes up as two requests, each with its own Turnstile token. Each request may make at most `PROVIDER_CALLS_PER_REQUEST` provider calls (`doc-extract/config.ts`, 45). Classify takes 20–30 s per statement, about nine calls, so four files fit under the Workers Free limit of 50 external subrequests per request; files past the budget come back as "try again". On Workers Paid both limits can be raised.
 
-Nothing is stored server-side: the browser keeps the files (the page says to stay on it until submitting) and `/api/apply` is multipart, taking the same JSON as before in a `payload` field plus the files, which it re-validates (count, size, bytes) and attaches, adding a "Statements:" summary read from the provider by job id, not from the browser. Server-side storage in R2 is written but parked (`src/lib/server/documents.ts`, the commented-out `DOCUMENTS` binding in `wrangler.jsonc`) until the abandoned-form-fill work lands, so statements and that data can share one bucket and one set of lifecycle rules.
+5. A copy of each accepted statement goes to the `DOCUMENTS` R2 bucket (`src/lib/server/documents.ts`) for the drop-off record below; the browser is told its document id.
+
+The submission doesn't read those copies: the browser keeps the files (the page says to stay on it until submitting) and `/api/apply` is multipart, taking the same JSON as before in a `payload` field plus the files, which it re-validates (count, size, bytes) and attaches, adding a "Statements:" summary read from the provider by job id, not from the browser.
+
+### Drop-offs (unsubmitted applications)
+The apply page saves what the visitor has typed as they go (`src/lib/apply-draft.ts`), so an abandoned application still reaches the team. Nothing is sent until a Turnstile check passes: the first save spends one token on `/api/apply/session`, which records the session's signals (IP from `CF-Connecting-IP`, country/city/ASN from `request.cf`, user agent, referrer, UTM) in the `DRAFTS_DB` D1 database and returns a draft id; later saves go to `/api/apply/draft` with that id (debounced, plus a `sendBeacon` when the page is hidden), capped by `DRAFT_RATE_LIMIT` (12 per 60 s). A successful `/api/apply` marks the session converted. See `src/lib/server/drafts.ts`.
+
+Retention is set in the `app_setting` table (defaults: unsubmitted drafts 30 days after their last save, converted sessions 90 days, at most 5000 unsubmitted drafts, beyond which the oldest without an email or mobile go first) and applied lazily: a purge pass runs at most hourly, triggered by new sessions and admin page loads, and deletes each session's stored statements with it. Changing a setting re-scopes existing rows on the next pass.
+
+One-time setup (production), then `pnpm migrate:remote` after any schema change:
+```sh
+npx wrangler r2 bucket create ventra-fund-documents
+# Backstop for statement copies no session ever claimed; keep it above the longest retention setting.
+npx wrangler r2 bucket lifecycle add ventra-fund-documents apply-backstop apply/ --expire-days 180
+pnpm migrate:remote
+```
+Locally, `pnpm migrate:local` before `pnpm build && pnpm preview`. Under local preview `CF-Connecting-IP` and `request.cf` are absent, so those columns stay empty. Under `pnpm dev` there are no bindings and capture is off.
 
 Without `LLAMA_CLOUD_API_KEY` the upload area reports uploads as unavailable and the form still submits without statements. To test locally, use `pnpm build && pnpm preview` with `.env` filled in.
 

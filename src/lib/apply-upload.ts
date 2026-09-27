@@ -25,11 +25,11 @@ export type { Suggestions };
 
 /**
  * A file's journey. `queued`/`uploading` are the check request in flight; the rest are terminal
- * except `reading`, which the poll advances. Everything from `reading` on is a verified statement
- * that will be attached to the application.
+ * except `reading`, which the poll advances, or which becomes `sent_unread` if the application is
+ * sent first. Everything from `reading` on is a verified statement that will be attached to the application.
  */
-type EntryStatus = 'queued' | 'uploading' | 'reading' | 'done' | 'unreadable' | 'unavailable' | 'rejected' | 'failed';
-const ATTACHED: ReadonlySet<EntryStatus> = new Set(['reading', 'done', 'unreadable', 'unavailable']);
+type EntryStatus = 'queued' | 'uploading' | 'reading' | 'sent_unread' | 'done' | 'unreadable' | 'unavailable' | 'rejected' | 'failed';
+const ATTACHED: ReadonlySet<EntryStatus> = new Set(['reading', 'sent_unread', 'done', 'unreadable', 'unavailable']);
 const PENDING: ReadonlySet<EntryStatus> = new Set(['queued', 'uploading']);
 const NOT_ATTACHED: ReadonlySet<EntryStatus> = new Set(['rejected', 'failed']);
 
@@ -38,6 +38,8 @@ interface Entry {
   status: EntryStatus;
   /** The reader's job id; null when the file was verified but the reader couldn't take it. */
   jobId?: string | null;
+  /** The server's stored copy, when storage is on. */
+  documentId?: string;
   /** Why it was rejected or failed, ready to print. */
   note?: string;
   months?: string[];
@@ -64,10 +66,15 @@ export interface UploadOptions {
 }
 
 export interface StatementUploader {
-  /** Every attached statement, for the submit: the files themselves and the reader's job ids. */
-  attachments(): { files: File[]; jobIds: string[] };
+  /** Every attached statement: the files themselves, the reader's job ids and the stored copies' ids. */
+  attachments(): { files: File[]; jobIds: string[]; documentIds: string[] };
   /** True while an upload request is in flight. */
   isBusy(): boolean;
+  /**
+   * The application was sent. What the visitor submitted stands: reading stops, nothing more is
+   * pre-filled, and statements still being read say they went unread.
+   */
+  markSubmitted(): void;
 }
 
 const POLL_INTERVAL_MS = 6_000;
@@ -107,6 +114,9 @@ export function setupStatementUpload(opts: UploadOptions): StatementUploader {
   // Set when the attached set changes during a poll: that poll's suggestions describe the old
   // set, so the loop asks once more before it stops.
   let stale = false;
+  // Set once the application is sent: the form now shows what was submitted, so the reader may
+  // no longer change it. Cleared if the visitor adds more statements afterwards.
+  let submitted = false;
 
   const attached = () => entries.filter((e) => ATTACHED.has(e.status));
   const counted = () => entries.filter((e) => ATTACHED.has(e.status) || PENDING.has(e.status));
@@ -123,6 +133,8 @@ export function setupStatementUpload(opts: UploadOptions): StatementUploader {
         return { text: 'Uploading…', tone: 'busy' };
       case 'reading':
         return { text: 'Attached · reading the statement…', tone: 'busy' };
+      case 'sent_unread':
+        return { text: 'Sent with your application before it was read, so nothing was pre-filled from it', tone: 'ok' };
       case 'done': {
         const n = e.months?.length ?? 0;
         return { text: n ? `Attached · read ${n} month${n === 1 ? '' : 's'}` : 'Attached · read', tone: 'ok' };
@@ -204,6 +216,7 @@ export function setupStatementUpload(opts: UploadOptions): StatementUploader {
       showError(`${problems.length === 1 ? "This file can't be added" : `${problems.length} files can't be added`}: ${problems.join('; ')}.`);
     }
     if (!accepted.length) return;
+    submitted = false;
     for (const file of accepted) {
       // Trying a file again after it failed or was refused replaces its old row rather than adding one.
       const previous = entries.findIndex((e) => NOT_ATTACHED.has(e.status) && sameFile(e.file, file));
@@ -258,6 +271,7 @@ export function setupStatementUpload(opts: UploadOptions): StatementUploader {
         const result = data.results?.[i];
         if (result && 'jobId' in result) {
           e.jobId = result.jobId;
+          e.documentId = result.documentId;
           e.status = result.jobId ? 'reading' : 'unavailable';
           e.readingSince = Date.now();
         } else {
@@ -290,6 +304,7 @@ export function setupStatementUpload(opts: UploadOptions): StatementUploader {
   // another after an interval while any is still being read. Also the refresh after a removal:
   // the one request recomputes the suggestions over what's left.
   async function poll() {
+    if (submitted) { polling = false; return; }
     stale = false;
     const expired = attached().filter((e) => e.status === 'reading' && Date.now() - (e.readingSince ?? 0) > POLL_BUDGET_MS);
     if (expired.length) {
@@ -301,6 +316,8 @@ export function setupStatementUpload(opts: UploadOptions): StatementUploader {
 
     try {
       const res = await fetch(`/api/apply/parse-status?jobs=${polled.map((e) => e.jobId).join(',')}`);
+      // Sent while this poll was out: its answer must not touch the submitted form.
+      if (submitted) { polling = false; return; }
       if (res.ok) {
         const data = (await res.json()) as ParseStatusResponse;
         for (const d of data.documents) {
@@ -361,7 +378,13 @@ export function setupStatementUpload(opts: UploadOptions): StatementUploader {
     attachments: () => ({
       files: attached().map((e) => e.file),
       jobIds: attached().flatMap((e) => (e.jobId ? [e.jobId] : [])),
+      documentIds: attached().flatMap((e) => (e.documentId ? [e.documentId] : [])),
     }),
     isBusy: () => busy,
+    markSubmitted: () => {
+      submitted = true;
+      for (const e of entries) if (e.status === 'reading') e.status = 'sent_unread';
+      render();
+    },
   };
 }

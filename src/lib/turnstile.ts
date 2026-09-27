@@ -159,6 +159,9 @@ export function gateOnTurnstile(opts: GateOptions): void {
     if (done) return;
     done = true;
     stopTimers();
+    // A locked button (see lockButton) stays disabled with its locked label; unlockButton
+    // re-enables it later if a token is waiting by then.
+    if (button?.dataset.locked !== undefined) { setLabel(button.dataset.locked); return; }
     button?.removeAttribute('disabled');
     setLabel(label);
   };
@@ -193,6 +196,41 @@ export function gateOnTurnstile(opts: GateOptions): void {
   }, 5000);
 
   widget.mount(ready).catch(failed);
+}
+
+/**
+ * After a request spent the widget's token: gate `button` on a fresh one, or with no widget just
+ * re-enable it. Either way a locked button (see lockButton) stays locked.
+ */
+export function releaseButton(button: HTMLElement, widget: TurnstileWidget | null, onError?: (message: string) => void): void {
+  if (widget) gateOnTurnstile({ widget, button, onError });
+  else if (button.dataset.locked === undefined) button.removeAttribute('disabled');
+}
+
+/**
+ * Keep `button` disabled, showing `label`, whatever the gate does, until `unlockButton`. For a
+ * reason to hold submit that has nothing to do with the security check (the apply form, after
+ * it has been sent, until something changes).
+ */
+export function lockButton(button: HTMLElement, label: string): void {
+  button.dataset.locked = label;
+  button.setAttribute('disabled', '');
+  button.textContent = label;
+}
+
+/**
+ * Lift `lockButton`. The button comes back enabled straight away if a token is waiting;
+ * otherwise a fresh gate runs and enables it once verified.
+ */
+export function unlockButton(button: HTMLElement, widget: TurnstileWidget | null, onError?: (message: string) => void): void {
+  if (button.dataset.locked === undefined) return;
+  delete button.dataset.locked;
+  if (!widget || widget.getToken()) {
+    button.removeAttribute('disabled');
+    button.textContent = button.dataset.label ?? '';
+  } else {
+    gateOnTurnstile({ widget, button, onError });
+  }
 }
 
 /**

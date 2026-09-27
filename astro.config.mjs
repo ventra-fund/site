@@ -48,12 +48,13 @@ const isDevCommand = process.argv[2] === "dev";
 // https://astro.build/config
 export default defineConfig({
   fonts: BEJAMAS_ASTRO_FONTS,
-  // Pages stay prerendered; only routes with `prerender = false` (the apply/contact/partner APIs) run on
-  // the Worker. Skip the adapter for `astro dev`: its workerd dev runner has a nasty upstream bug
-  // (withastro/astro#17921) where a package only reachable from an on-demand route gets discovered
-  // lazily and crashes the dev server. Nothing here touches Cloudflare-specific runtime bindings
-  // (KV/D1/locals.runtime), so plain Node dev behaves identically. `astro build`/`astro preview`
-  // and the deploy workflow still get the real adapter.
+  // Pages stay prerendered; only routes with `prerender = false` (the form APIs, drop-off capture
+  // and the admin pages) run on the Worker. Skip the adapter for `astro dev`: its workerd dev runner
+  // has a nasty upstream bug (withastro/astro#17921) where a package only reachable from an
+  // on-demand route gets discovered lazily and crashes the dev server. Bindings (rate limiters, D1,
+  // R2) are read through src/lib/server/bindings.ts, which resolves nothing under plain Node, so
+  // `pnpm dev` runs with them off (no limits, no admin sign-in, no drop-off capture). `astro
+  // build`/`astro preview` and the deploy workflow get the real adapter and bindings.
   adapter: isDevCommand ? undefined : cloudflare({ imageService: "compile" }),
   env: {
     schema: {

@@ -1,6 +1,7 @@
 import { z } from 'astro/zod';
 import { emailAddress, singleLine, turnstileToken } from './message-schema';
 import { AUTOFILL_FIELDS, EXTRACT_JOB_ID, MAX_UPLOAD_FILES } from './upload-config';
+import { DRAFT_FIELDS, UUID_V4, MAX_DRAFT_VALUE } from './draft-config';
 
 // The apply form's rules, enforced by the /api/apply endpoint. Server-only: the page script does
 // its own lightweight checks for friendly errors, so zod stays out of the client bundle. Keep the
@@ -45,7 +46,34 @@ export const applyRequest = z.object({
   // it goes into the email so the reviewer knows what was read rather than typed.
   autofilled: z.array(z.enum(AUTOFILL_FIELDS)).max(AUTOFILL_FIELDS.length).default([]),
 
+  // The drop-off session this submission closes, when capture got as far as minting one.
+  draftId: z.string().regex(UUID_V4).optional(),
+
   token: turnstileToken,
 });
 
 export type ApplyRequest = z.infer<typeof applyRequest>;
+
+// ── Drop-off capture (src/lib/apply-draft.ts) ─────────────────────────────────────────────────
+
+const shortText = z.string().trim().max(300).optional();
+
+/** POST /api/apply/session: one Turnstile token buys a draft id. */
+export const draftSessionRequest = z.object({
+  token: turnstileToken,
+  referrer: shortText,
+  utm: z.object({ source: shortText, medium: shortText, campaign: shortText }).default({}),
+});
+
+/**
+ * POST /api/apply/draft: a snapshot of the form as it stands. Deliberately lenient, since a draft
+ * is incomplete by definition: any subset of the known fields, each just capped in length.
+ */
+export const draftSaveRequest = z.object({
+  draftId: z.string().regex(UUID_V4),
+  fields: z.partialRecord(z.enum(DRAFT_FIELDS), z.string().max(MAX_DRAFT_VALUE)).default({}),
+  autofilled: z.array(z.enum(AUTOFILL_FIELDS)).max(AUTOFILL_FIELDS.length).default([]),
+  jobIds: z.array(z.string().regex(EXTRACT_JOB_ID)).max(MAX_UPLOAD_FILES).default([]),
+  // Stored statement copies from /api/apply/upload; same uuid shape as a draft id.
+  documentIds: z.array(z.string().regex(UUID_V4)).max(MAX_UPLOAD_FILES).optional(),
+});

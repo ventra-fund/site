@@ -3,7 +3,7 @@
 // JSON POST. Page scripts keep only what's specific to them (which fields go in the body, what
 // happens on success).
 
-import { gateOnTurnstile, takeTurnstileToken, type TurnstileWidget } from './turnstile';
+import { releaseButton, takeTurnstileToken, type TurnstileWidget } from './turnstile';
 
 export type FormControl = HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement;
 
@@ -174,7 +174,6 @@ export async function submitJson(opts: SubmitOptions): Promise<void> {
     showError('Something went wrong. Please check your connection and try again.');
   } finally {
     // A Turnstile token is single-use: get a fresh one before the next attempt.
-    if (widget) gateOnTurnstile({ widget, button, onError: showError });
-    else button.disabled = false;
+    releaseButton(button, widget, showError);
   }
 }

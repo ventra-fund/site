@@ -59,8 +59,9 @@ export type AutofillField = (typeof AUTOFILL_FIELDS)[number];
 /**
  * One entry per file sent to /api/apply/upload, in input order. `jobId` null means the file is
  * a verified statement (attach it) but the reader couldn't take it, so nothing will be pre-filled.
+ * `documentId` is the stored copy (src/lib/server/documents.ts), absent when storage is off or failed.
  */
-export type UploadResult = { jobId: string | null } | { reason: string };
+export type UploadResult = { jobId: string | null; documentId?: string } | { reason: string };
 
 /** Where one statement is in the reader, as /api/apply/parse-status reports it. */
 export type JobStatus = 'reading' | 'done' | 'unreadable' | 'failed';

@@ -1,6 +1,6 @@
 import type { APIRoute } from 'astro';
 import { CONTACT_FROM_EMAIL, CONTACT_TO_EMAIL, LLAMA_CLOUD_API_KEY, RESEND_API_KEY, TURNSTILE_SECRET_KEY } from 'astro:env/server';
-import { applyRequest } from '@/lib/apply-schema';
+import { applyRequest, type ApplyRequest } from '@/lib/apply-schema';
 import { escapeHtml } from '@/lib/sanitize';
 import { APPLY_TURNSTILE_ACTION, MAX_UPLOAD_TOTAL_BYTES, type AutofillField } from '@/lib/upload-config';
 import { MAX_BODY_BYTES, invalidBody, json, methodNotAllowed, parseJsonText, readMultipart, requireSecrets } from '@/lib/server/http';
@@ -11,25 +11,33 @@ import { checkStatementBatch, checkStatementFile, filesOf } from '@/lib/server/d
 import { createDocClient, readExtractions } from '@/lib/server/doc-extract/llamacloud';
 import { buildSuggestions } from '@/lib/server/doc-extract/autofill';
 import type { StatementExtraction } from '@/lib/server/doc-extract/schema';
+import { runInBackground } from '@/lib/server/bindings';
+import { getDraftDb, markConverted } from '@/lib/server/drafts';
+import { DRAFT_FIELDS, DRAFT_FIELD_LABELS } from '@/lib/draft-config';
 
 // One of the three on-demand routes (with /api/contact and /api/partner). Everything else on the
 // site is prerendered. Unlike the other two this one is multipart, because the bank statements
 // ride along with it: a `payload` field holding the JSON the form used to POST, plus `files[]`.
-// Nothing is stored between the upload check and this submission (see src/lib/server/documents.ts),
-// so the files go through the same gates as the upload did (statement-files.ts) before they are attached.
+// The upload's stored copies (src/lib/server/documents.ts) belong to the drop-off record, not to
+// this path: the browser re-sends the files, so they go through the same gates as the upload did
+// (statement-files.ts) before they are attached.
+// When the page opened a drop-off session (src/lib/server/drafts.ts), a sent application closes it.
 export const prerender = false;
 
 const TAG = 'apply';
 
 const money = (n: number) => n.toLocaleString('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 });
 
-const AUTOFILL_LABELS: Record<AutofillField, string> = {
-  legalBusinessName: 'Legal business name',
-  firstName: 'First name',
-  lastName: 'Last name',
-  businessAddress: 'Business address',
-  monthlyRevenue: 'Monthly business revenue',
-};
+const collapse = (s: string) => s.replace(/\s+/g, ' ').trim().toLowerCase();
+
+/** What the reader made of the attached statements by the time the application was sent. */
+interface StatementReading {
+  rows: [string, string][];
+  /** Values the statements read so far suggest, over the ones that finished. */
+  suggested: Partial<Record<AutofillField, string | number>>;
+  /** Statements still being read at submission: nothing from them reached the form. */
+  pending: number;
+}
 
 export const POST: APIRoute = async ({ request }) => {
   // First thing, so a rejected client never costs a siteverify or Resend call.
@@ -68,7 +76,7 @@ export const POST: APIRoute = async ({ request }) => {
   if (!verified) return json(403, { error: 'verification_failed' });
 
   // The provider round trip for the summary doesn't depend on the files, so it runs while they're checked.
-  const summaryRows = statementSummaryRows(data.jobIds);
+  const readingPromise = readStatements(data.jobIds);
 
   // Same per-file gates as the upload check (size, actual bytes), so only real PDFs and images
   // ever reach the inbox, whatever the browser claims they are.
@@ -79,24 +87,31 @@ export const POST: APIRoute = async ({ request }) => {
     attachments.push({ filename: checked.filename, content: file });
   }
 
+  const reading = await readingPromise;
+  const source = sourceLabeler(data, reading);
+  const labelled = (value: string, note: string | null) => (note ? `${value} (${note})` : value);
+  const firstSource = source('firstName');
+  const lastSource = source('lastName');
+  const nameSource = firstSource === lastSource ? firstSource : `first name ${firstSource ?? 'entered by applicant'}; last name ${lastSource ?? 'entered by applicant'}`;
+
   const applicantName = `${data.firstName} ${data.lastName}`;
+  const L = DRAFT_FIELD_LABELS;
   const rows: [string, string][] = [
-    ['Legal business name', data.legalBusinessName],
-    ['DBA', data.dba || '—'],
-    ['Contact name', applicantName],
-    ['Mobile', data.mobile],
-    ['Email', data.email],
-    ['Monthly business revenue', money(data.monthlyRevenue)],
-    ['Home address', data.homeAddress],
-    ['Business address', data.businessAddress],
-    ['Business start date', data.businessStartDate],
-    ['Business industry', data.businessIndustry],
-    ['Estimated FICO score', String(data.ficoScore)],
-    ['Requested funding amount', money(data.fundingAmount)],
+    [L.legalBusinessName, labelled(data.legalBusinessName, source('legalBusinessName'))],
+    [L.dba, data.dba || '—'],
+    ['Contact name', labelled(applicantName, nameSource)],
+    [L.mobile, data.mobile],
+    [L.email, data.email],
+    [L.monthlyRevenue, labelled(money(data.monthlyRevenue), source('monthlyRevenue'))],
+    [L.homeAddress, data.homeAddress],
+    [L.businessAddress, labelled(data.businessAddress, source('businessAddress'))],
+    [L.businessStartDate, data.businessStartDate],
+    [L.businessIndustry, data.businessIndustry],
+    [L.ficoScore, String(data.ficoScore)],
+    [L.fundingAmount, money(data.fundingAmount)],
     ['Bank statements', attachments.length ? `${attachments.length} attached: ${attachments.map((a) => a.filename).join(', ')}` : 'None uploaded'],
   ];
-  if (data.autofilled.length) rows.push(['Pre-filled from statements', data.autofilled.map((f) => AUTOFILL_LABELS[f]).join(', ')]);
-  rows.push(...(await summaryRows));
+  rows.push(...reading.rows);
 
   const sent = await sendEmail(TAG, secrets.RESEND_API_KEY, {
     from: secrets.CONTACT_FROM_EMAIL,
@@ -108,18 +123,57 @@ export const POST: APIRoute = async ({ request }) => {
     attachments,
   });
   if (!sent) return json(502, { error: 'send_failed' });
+  if (data.draftId) void runInBackground(closeDraft(data.draftId, data));
   return json(200, { ok: true });
 };
 
 export const ALL: APIRoute = methodNotAllowed;
+
+/** Mark the visitor's drop-off session converted, with what was actually sent. Best effort. */
+async function closeDraft(draftId: string, data: ApplyRequest): Promise<void> {
+  try {
+    const db = await getDraftDb();
+    if (!db) return;
+    const fields = Object.fromEntries(DRAFT_FIELDS.map((name) => [name, String(data[name] ?? '')]));
+    await markConverted(db, draftId, { fields, autofilled: data.autofilled, jobIds: data.jobIds });
+  } catch (err) {
+    console.error(`[${TAG}] could not mark draft converted`, err);
+  }
+}
+
+/**
+ * Where each pre-fillable value in the email came from. The applicant's entry always stands: a
+ * value is "from statement" only if they left the reader's suggestion untouched, and anything a
+ * statement says that differs from what they typed (or would have said, when it was still being
+ * read at submission) is noted, never applied. Null when no statements were attached.
+ */
+function sourceLabeler(data: ApplyRequest, reading: StatementReading) {
+  const autofilled = new Set(data.autofilled);
+  return (field: AutofillField): string | null => {
+    if (!data.jobIds.length) return null;
+    if (autofilled.has(field)) return 'from statement';
+    const suggested = reading.suggested[field];
+    if (suggested != null && suggested !== '') {
+      const submitted = data[field];
+      const same = typeof suggested === 'number'
+        ? Math.round(Number(submitted)) === Math.round(suggested)
+        : collapse(String(submitted)) === collapse(suggested);
+      if (same) return 'entered by applicant, matches statement';
+      return `entered by applicant; statement read ${typeof suggested === 'number' ? money(suggested) : `"${suggested}"`}`;
+    }
+    if (reading.pending) return 'entered by applicant; statements were still being read';
+    return 'entered by applicant';
+  };
+}
 
 /**
  * What the reader made of the attached statements, for the reviewer: read here from the
  * provider rather than trusted from the browser. Best effort: any hiccup leaves the rows out,
  * the application still goes.
  */
-async function statementSummaryRows(jobIds: string[]): Promise<[string, string][]> {
-  if (!jobIds.length || !LLAMA_CLOUD_API_KEY) return [];
+async function readStatements(jobIds: string[]): Promise<StatementReading> {
+  const none: StatementReading = { rows: [], suggested: {}, pending: 0 };
+  if (!jobIds.length || !LLAMA_CLOUD_API_KEY) return none;
   // readExtractions already turns a provider failure into `pending`; this catch is for anything
   // else, since the promise can be left unawaited when a file fails its check.
   const results = await readExtractions(TAG, createDocClient(LLAMA_CLOUD_API_KEY), jobIds).catch((err: unknown) => {
@@ -129,13 +183,20 @@ async function statementSummaryRows(jobIds: string[]): Promise<[string, string][
   const extractions: StatementExtraction[] = results.flatMap(({ result }) => (result.status === 'done' ? [result.extraction] : []));
   const pending = results.filter(({ result }) => result.status === 'pending').length;
   const rows: [string, string][] = [];
+  let suggested: StatementReading['suggested'] = {};
   if (extractions.length) {
     const s = buildSuggestions(extractions);
+    suggested = s.fields;
     if (s.accountHolder) rows.push(['Statements: account holder', s.accountHolder]);
     if (s.bankName) rows.push(['Statements: bank', s.bankName]);
     if (s.monthsCovered.length) rows.push(['Statements: months covered', s.monthsCovered.join(', ')]);
     if (s.averageMonthlyDeposits != null) rows.push(['Statements: average monthly deposits', money(s.averageMonthlyDeposits)]);
   }
-  if (pending) rows.push(['Statements: still being read', `${pending} of ${jobIds.length} (submitted before the reader finished)`]);
-  return rows;
+  if (pending) {
+    rows.push([
+      'Statements: not yet read',
+      `${pending} of ${jobIds.length} were still being read when the application was sent. Nothing from ${pending === 1 ? 'it' : 'them'} was pre-filled or applied; each value above is labelled with where it came from. ${pending === 1 ? 'It is' : 'They are'} attached for manual review.`,
+    ]);
+  }
+  return { rows, suggested, pending };
 }

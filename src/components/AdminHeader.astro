@@ -1,0 +1,36 @@
+---
+import { Button } from "@/ui/button";
+
+// Top bar for the admin pages: where you are, who you're signed in as, and sign out.
+interface Props {
+  current: "overview" | "drop-offs";
+}
+
+const { current } = Astro.props;
+const email = Astro.locals.adminSession?.user.email;
+const links = [
+  { key: "overview", href: "/admin", label: "Overview" },
+  { key: "drop-offs", href: "/admin/drop-offs", label: "Drop-offs" },
+] as const;
+---
+
+<header class="flex flex-wrap items-center justify-between gap-4 border-b border-border pb-4">
+  <nav class="flex gap-4 text-sm font-medium">
+    {links.map((l) => (
+      <a href={l.href} class={l.key === current ? "text-foreground" : "text-muted-foreground hover:text-foreground"} aria-current={l.key === current ? "page" : undefined}>{l.label}</a>
+    ))}
+  </nav>
+  <div class="flex items-center gap-3">
+    <p class="text-sm text-muted-foreground">Signed in as {email}</p>
+    <Button variant="outline" size="sm" data-sign-out>Sign out</Button>
+  </div>
+</header>
+
+<script>
+  import { authClient } from "@/lib/auth-client";
+
+  document.querySelector("[data-sign-out]")?.addEventListener("click", async () => {
+    await authClient.signOut();
+    location.assign("/admin/sign-in");
+  });
+</script>

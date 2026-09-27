@@ -1,18 +1,19 @@
+import { UUID_V4 } from '../draft-config';
 import { getBinding } from './bindings';
 
-// PARKED, not wired up. Server-side storage of uploaded statements in an R2 bucket, keyed
-// `apply/<uuid>` with the filename, sniffed type and extraction job id as object metadata. It
-// is switched off until the abandoned-form-fill work lands, at which point statements will be
-// stored alongside that data under one set of lifecycle rules; the `DOCUMENTS` binding in
-// wrangler.jsonc is commented out for the same reason. Until then the flow is stateless: the
-// browser keeps the files and re-sends them with the submission (see src/pages/api/apply.ts).
+// Server-side copies of uploaded statements in the DOCUMENTS R2 bucket, keyed `apply/<uuid>` with
+// the filename, sniffed type and extraction job id as object metadata. Written by
+// /api/apply/upload so a statement from an application that is never submitted still reaches the
+// drop-off record (src/lib/server/drafts.ts), whose purge deletes a session's documents along with
+// it; an R2 lifecycle rule on `apply/` backstops copies no session ever claimed. The submission
+// itself doesn't read from here: the browser re-sends the files (see src/pages/api/apply.ts).
+// Without the binding (`pnpm dev`) nothing is stored and uploads work as before.
 //
-// Access model when this is live: the uuid is minted here (122 random bits) and only the
+// Access model: the uuid is minted by the upload endpoint (122 random bits) and only the
 // uploading browser is told it, so it is the whole capability; anything naming a document has
 // to present one, validated by `isDocumentId` before it is used in a key.
 
 const KEY_PREFIX = 'apply/';
-const DOC_ID = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/;
 
 // The slice of the R2 API this module uses. The full `wrangler types` output is not pulled in
 // because its globals collide with the DOM types the page scripts rely on (html-rewriter.d.ts).
@@ -28,6 +29,7 @@ export interface R2Bucket {
   put(key: string, value: ArrayBuffer, options?: { httpMetadata?: { contentType?: string }; customMetadata?: Record<string, string> }): Promise<unknown>;
   head(key: string): Promise<R2Object | null>;
   get(key: string): Promise<R2ObjectBody | null>;
+  delete(keys: string | string[]): Promise<void>;
 }
 
 export interface DocumentMetadata {
@@ -48,7 +50,7 @@ export interface StoredDocument extends DocumentMetadata {
 
 export const getDocumentBucket = () => getBinding<R2Bucket>('DOCUMENTS');
 
-export const isDocumentId = (id: unknown): id is string => typeof id === 'string' && DOC_ID.test(id);
+export const isDocumentId = (id: unknown): id is string => typeof id === 'string' && UUID_V4.test(id);
 
 const keyFor = (id: string) => `${KEY_PREFIX}${id}`;
 
@@ -84,7 +86,14 @@ export async function headDocument(bucket: R2Bucket, id: string): Promise<Stored
   return obj ? fromObject(id, obj) : null;
 }
 
-/** Metadata plus the bytes, for attaching to the email. */
+/** Delete stored documents; ids that aren't valid document ids are skipped. */
+export async function deleteDocuments(bucket: R2Bucket, ids: string[]): Promise<void> {
+  const keys = ids.filter(isDocumentId).map(keyFor);
+  // One call takes up to 1000 keys.
+  for (let i = 0; i < keys.length; i += 1000) await bucket.delete(keys.slice(i, i + 1000));
+}
+
+/** Metadata plus the bytes, e.g. for downloading from the admin dashboard. */
 export async function getDocument(bucket: R2Bucket, id: string): Promise<(StoredDocument & { bytes: ArrayBuffer }) | null> {
   const obj = await bucket.get(keyFor(id));
   if (!obj) return null;

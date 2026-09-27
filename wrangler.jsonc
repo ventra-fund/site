@@ -37,28 +37,43 @@
 			"name": "STATUS_RATE_LIMIT",
 			"namespace_id": "1003",
 			"simple": { "limit": 30, "period": 60 }
+		},
+		// Drop-off capture (/api/apply/session and /api/apply/draft). The page saves at most every
+		// 8 s (DRAFT_SAVE_DEBOUNCE_MS in src/lib/draft-config.ts) while someone types (about 6 a minute at a steady pace), plus a final beacon and the
+		// one session mint; 12 leaves room for two applicants on one office IP and still stops a
+		// script from writing freely.
+		{
+			"name": "DRAFT_RATE_LIMIT",
+			"namespace_id": "1004",
+			"simple": { "limit": 12, "period": 60 }
 		}
 	],
-	// PARKED: server-side storage of uploaded statements (src/lib/server/documents.ts). Switched
-	// off until the abandoned-form-fill work lands, so statements and that data share one bucket
-	// and one set of lifecycle rules. To turn it on: uncomment, create the bucket once with
-	// `npx wrangler r2 bucket create ventra-fund-documents`, and wire documents.ts back into the
-	// upload/submit endpoints.
-	// "r2_buckets": [
-	// 	{
-	// 		"binding": "DOCUMENTS",
-	// 		"bucket_name": "ventra-fund-documents"
-	// 	}
-	// ],
-	// Admin sign-in (src/lib/server/auth.ts): users, sessions, one-time codes and rate-limit
-	// counters. Schema lives in migrations/; apply with
-	// `npx wrangler d1 migrations apply ventra-fund-auth --local` (or `--remote`). No
-	// `database_id`: `wrangler deploy` provisions the database on first deploy and writes it back.
+	// Stored copies of uploaded statements (src/lib/server/documents.ts), kept with the drop-off
+	// sessions in DRAFTS_DB and deleted by the same purge. One-time setup, see README: create the
+	// bucket and add the 180-day lifecycle rule on `apply/` that backstops unclaimed copies.
+	"r2_buckets": [
+		{
+			"binding": "DOCUMENTS",
+			"bucket_name": "ventra-fund-documents"
+		}
+	],
+	// Apply schema changes with `pnpm migrate:local` / `pnpm migrate:remote` (package.json), which
+	// run every database's migrations. No `database_id`s: `wrangler deploy` provisions each
+	// database on first deploy and writes the id back. One environment only, no staging copies.
 	"d1_databases": [
+		// Admin sign-in (src/lib/server/auth.ts): users, sessions, one-time codes and rate-limit
+		// counters. Schema in migrations/.
 		{
 			"binding": "AUTH_DB",
 			"database_name": "ventra-fund-auth",
 			"migrations_dir": "migrations"
+		},
+		// Drop-off capture for /apply (src/lib/server/drafts.ts): unsubmitted sessions and the
+		// retention settings. Schema in migrations-drafts/.
+		{
+			"binding": "DRAFTS_DB",
+			"database_name": "ventra-fund-drafts",
+			"migrations_dir": "migrations-drafts"
 		}
 	],
 	"observability": {

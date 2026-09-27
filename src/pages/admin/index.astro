@@ -1,32 +1,96 @@
 ---
 import Layout from "@/layouts/Layout.astro";
+import AdminHeader from "@/components/AdminHeader.astro";
 import { Button } from "@/ui/button";
-import { getAdminSession } from "@/lib/server/auth";
+import { Input } from "@/ui/input";
+import { runInBackground } from "@/lib/server/bindings";
+import { SETTING_BOUNDS, getDraftDb, getFunnel, getSettings, purgeExpired, saveSettings, type DraftSettings } from "@/lib/server/drafts";
+import { percent } from "@/lib/server/admin-format";
 
-// Not linked from anywhere on the site, and kept out of search results.
+// Not linked from anywhere on the site, and kept out of search results. Sign-in is enforced by
+// src/middleware.ts, which also sets the no-store / noindex headers.
 export const prerender = false;
 
-Astro.response.headers.set("X-Robots-Tag", "noindex, nofollow");
-Astro.response.headers.set("Cache-Control", "no-store");
+const db = await getDraftDb();
 
-const session = await getAdminSession(Astro.request.headers);
-if (!session) return Astro.redirect("/admin/sign-in");
+if (db && Astro.request.method === "POST") {
+  // The session cookie is SameSite=Lax, so a cross-site form post arrives signed out anyway; the
+  // origin check makes that explicit rather than relying on the browser.
+  if (Astro.request.headers.get("Origin") !== Astro.url.origin) return new Response("Forbidden", { status: 403 });
+  const form = await Astro.request.formData();
+  await saveSettings(db, {
+    baseTtlDays: Number(form.get("baseTtlDays")),
+    convertedTtlDays: Number(form.get("convertedTtlDays")),
+    maxDraftRows: Number(form.get("maxDraftRows")),
+  });
+  // Post/redirect/get, so reloading the page doesn't post again.
+  return Astro.redirect("/admin?saved=1", 303);
+}
+const notice = Astro.url.searchParams.has("saved") ? "Settings saved. They apply from the next purge pass (at most an hour away)." : "";
+
+const DAYS = 30;
+const [funnel, settings] = db ? await Promise.all([getFunnel(db, DAYS), getSettings(db)]) : [null, null];
+if (db) void runInBackground(purgeExpired(db));
+
+const settingFields: { key: keyof DraftSettings; label: string; hint: string }[] = [
+  { key: "baseTtlDays", label: "Keep unsubmitted drafts (days)", hint: "Counted from the visitor's last save." },
+  { key: "convertedTtlDays", label: "Keep submitted sessions (days)", hint: "Counted from submission. The email remains the record of the application." },
+  { key: "maxDraftRows", label: "Most unsubmitted drafts to keep", hint: "Past this, the oldest drafts without an email or mobile are deleted first." },
+];
 ---
 
 <Layout title="Admin" noindex>
   <main class="w-full min-h-screen px-4 py-16">
-    <div class="mx-auto flex max-w-4xl items-center justify-between gap-4">
-      <p class="text-sm text-muted-foreground">Signed in as {session.user.email}</p>
-      <Button variant="outline" size="sm" data-sign-out>Sign out</Button>
+    <div class="mx-auto flex max-w-4xl flex-col gap-10">
+      <AdminHeader current="overview" />
+
+      {!db ? (
+        <p class="text-sm text-muted-foreground">Drop-off capture isn't available here (no DRAFTS_DB binding). Use <code>pnpm build && pnpm preview</code> after <code>pnpm migrate:local</code>.</p>
+      ) : (
+        <>
+          <section class="flex flex-col gap-4">
+            <div class="flex items-baseline justify-between gap-4">
+              <h1 class="text-2xl font-bold">Apply funnel</h1>
+              <p class="text-sm text-muted-foreground">Sessions opened in the last {DAYS} days</p>
+            </div>
+            <dl class="grid grid-cols-2 gap-4 sm:grid-cols-4">
+              {[
+                { label: "Verified sessions", value: funnel!.sessions, sub: "Passed the security check" },
+                { label: "Started", value: funnel!.started, sub: `${percent(funnel!.started, funnel!.sessions)} of sessions` },
+                { label: "Left contact details", value: funnel!.withContact, sub: `${percent(funnel!.withContact, funnel!.sessions)} of sessions` },
+                { label: "Submitted", value: funnel!.converted, sub: `${percent(funnel!.converted, funnel!.started)} of started` },
+              ].map((s) => (
+                <div class="flex flex-col gap-1 rounded-lg border border-border p-4">
+                  <dt class="text-sm text-muted-foreground">{s.label}</dt>
+                  <dd class="text-3xl font-semibold tabular-nums">{s.value}</dd>
+                  <dd class="text-xs text-muted-foreground">{s.sub}</dd>
+                </div>
+              ))}
+            </dl>
+            <a href="/admin/drop-offs?status=draft" class="self-start text-sm font-medium text-primary hover:underline">See unsubmitted drafts →</a>
+          </section>
+
+          <section class="flex flex-col gap-4">
+            <div class="flex flex-col gap-1">
+              <h2 class="text-lg font-semibold">Retention</h2>
+              <p class="text-sm text-muted-foreground">How long drop-off data and its stored statements are kept. Changes re-scope existing rows too.</p>
+            </div>
+            <form method="post" class="flex flex-col gap-5">
+              <div class="grid grid-cols-1 gap-5 sm:grid-cols-3">
+                {settingFields.map((f) => (
+                  <label class="flex flex-col gap-1.5 text-sm font-medium">
+                    {f.label}
+                    <Input name={f.key} type="number" required step="1" min={String(SETTING_BOUNDS[f.key][0])} max={String(SETTING_BOUNDS[f.key][1])} value={String(settings![f.key])} />
+                    <span class="text-xs font-normal text-muted-foreground">{f.hint} {SETTING_BOUNDS[f.key][0]}–{SETTING_BOUNDS[f.key][1].toLocaleString("en-US")}.</span>
+                  </label>
+                ))}
+              </div>
+              {notice && <p role="status" class="text-sm font-medium text-accent">{notice}</p>}
+              <Button type="submit" size="sm" class="self-start">Save retention settings</Button>
+            </form>
+          </section>
+        </>
+      )}
     </div>
   </main>
 </Layout>
-
-<script>
-  import { authClient } from "@/lib/auth-client";
-
-  document.querySelector("[data-sign-out]")?.addEventListener("click", async () => {
-    await authClient.signOut();
-    location.assign("/admin/sign-in");
-  });
-</script>

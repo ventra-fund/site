@@ -102,7 +102,8 @@ let authPromise: Promise<Auth | null> | undefined;
 
 /** The auth instance, or null when the D1 binding or the secret is missing (fails closed). */
 export function getAuth(): Promise<Auth | null> {
-  authPromise ??= (async () => {
+  if (authPromise) return authPromise;
+  const created = (async () => {
     const db = await getBinding<NonNullable<BetterAuthOptions['database']>>('AUTH_DB');
     if (!db) return null;
     if (!BETTER_AUTH_SECRET) {
@@ -120,8 +121,14 @@ export function getAuth(): Promise<Auth | null> {
     await ready;
     return auth;
   })();
-  return authPromise;
+  // A failed setup (say, a D1 hiccup) must not stick for the life of the isolate: the next
+  // request starts over.
+  created.catch(() => { if (authPromise === created) authPromise = undefined; });
+  authPromise = created;
+  return created;
 }
+
+export type AdminSession = NonNullable<Awaited<ReturnType<typeof getAdminSession>>>;
 
 /** The signed-in admin's session, or null (not signed in, auth unavailable, or no longer allowlisted). */
 export async function getAdminSession(headers: Headers) {

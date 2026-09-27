@@ -7,6 +7,9 @@
     "check": "astro check",
     "build": "astro build",
     "preview": "astro preview",
+    "migrate:local": "wrangler d1 migrations apply ventra-fund-auth --local && wrangler d1 migrations apply ventra-fund-drafts --local",
+    "migrate:remote": "wrangler d1 migrations apply ventra-fund-auth --remote && wrangler d1 migrations apply ventra-fund-drafts --remote",
+    "migrate:list": "wrangler d1 migrations list ventra-fund-auth --remote && wrangler d1 migrations list ventra-fund-drafts --remote",
     "astro": "astro"
   },
   "dependencies": {

@@ -8,14 +8,16 @@ import { enforceRateLimit } from '@/lib/server/rate-limit';
 import { verifyTurnstile } from '@/lib/server/turnstile';
 import { checkStatementBatch, checkStatementFile, filesOf, type CheckedFile } from '@/lib/server/doc-extract/statement-files';
 import { classifyDocument, createDocClient, logProviderError, submitExtraction, uploadStatement, type Classification } from '@/lib/server/doc-extract/llamacloud';
+import { getDocumentBucket, putDocument, type R2Bucket } from '@/lib/server/documents';
 
 // Bank-statement check + read for the apply form. Multipart: `token` (Turnstile) + `files[]`,
 // at most MAX_FILES_PER_UPLOAD of them (the page splits a bigger pick into several requests).
 // Each file goes through, in order: size cap → magic-byte sniff → Turnstile (once per batch,
-// only if anything survived the free checks) → one LlamaCloud upload → Classify → Extract. Nothing
-// is stored here (server-side storage is parked, see src/lib/server/documents.ts): a file that
-// passes comes back with its extraction job id, which the browser polls /api/apply/parse-status
-// with, and the browser re-sends the file itself with the final submission so it can be
+// only if anything survived the free checks) → one LlamaCloud upload → Classify → Extract → a copy
+// in R2 (src/lib/server/documents.ts), so a statement from an application that is never submitted
+// still reaches the drop-off record. A file that passes comes back with its extraction job id,
+// which the browser polls /api/apply/parse-status with, and its document id, which the drop-off
+// capture records. The browser still re-sends the file itself with the final submission to be
 // attached to the email. Results are per file, in input order, so a bad file never sinks its batch.
 export const prerender = false;
 
@@ -55,19 +57,20 @@ export const POST: APIRoute = async ({ request }) => {
   if (!verified) return json(403, { error: 'verification_failed' });
 
   const client = createDocClient(secrets.LLAMA_CLOUD_API_KEY);
-  const results = await Promise.all(checked.map((c): Promise<UploadResult> | UploadResult => (c.ok ? processFile(client, c) : { reason: c.reason })));
+  const bucket = await getDocumentBucket();
+  const results = await Promise.all(checked.map((c): Promise<UploadResult> | UploadResult => (c.ok ? processFile(client, bucket, c) : { reason: c.reason })));
   return json(200, { ok: true, results });
 };
 
 export const ALL: APIRoute = methodNotAllowed;
 
 /**
- * Upload → classify → submit extraction for one file that passed the byte checks. A provider
+ * Upload → classify → submit extraction → store, for one file that passed the byte checks. A provider
  * failure during the upload or classification fails closed (the file is refused: an unverified file must not reach
- * the inbox); a failure submitting the extraction keeps the file, since it is a verified
- * statement by then, and just leaves it without pre-fill.
+ * the inbox); a failure submitting the extraction or storing the copy keeps the file, since it is a
+ * verified statement by then, and just leaves it without pre-fill or without a drop-off copy.
  */
-async function processFile(client: LlamaCloud, { file, type, filename }: CheckedFile & { ok: true }): Promise<UploadResult> {
+async function processFile(client: LlamaCloud, bucket: R2Bucket | undefined, { file, type, filename }: CheckedFile & { ok: true }): Promise<UploadResult> {
   let fileId: string;
   let classification: Classification;
   try {
@@ -85,6 +88,22 @@ async function processFile(client: LlamaCloud, { file, type, filename }: Checked
   } catch (err) {
     logProviderError(TAG, 'extract', err);
   }
-  console.log(`[${TAG}] accepted statement (${file.size} bytes, confidence ${classification.confidence.toFixed(2)}, job ${jobId ?? 'none'})`);
-  return { jobId };
+  let documentId: string | undefined;
+  if (bucket) {
+    const id = crypto.randomUUID();
+    try {
+      await putDocument(bucket, id, await file.arrayBuffer(), {
+        filename,
+        mime: type.mime,
+        uploadedAt: new Date().toISOString(),
+        jobId: jobId ?? '',
+        classifierConfidence: classification.confidence,
+      });
+      documentId = id;
+    } catch (err) {
+      console.error(`[${TAG}] could not store statement`, err);
+    }
+  }
+  console.log(`[${TAG}] accepted statement (${file.size} bytes, confidence ${classification.confidence.toFixed(2)}, job ${jobId ?? 'none'}, stored ${documentId ? 'yes' : 'no'})`);
+  return { jobId, documentId };
 }

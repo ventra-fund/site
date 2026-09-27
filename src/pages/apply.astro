@@ -35,7 +35,7 @@ const EMAIL_PATTERN = "[^@\\s]+@[^@\\s]+\\.[^@\\s]{2,}";
                         <p class="text-sm text-muted-foreground">
                             Add your last 3–6 months of business bank statements, as PDFs or photos. We read them to
                             pre-fill parts of this form, and they're sent along with your application. Keep this page
-                            open until you submit: the files stay in your browser until then.
+                            open until you submit.
                         </p>
                     </div>
 
@@ -152,9 +152,11 @@ const EMAIL_PATTERN = "[^@\\s]+@[^@\\s]+\\.[^@\\s]{2,}";
 </Layout>
 
 <script>
-    import { gateOnFirstInteraction, gateOnTurnstile, waitForTurnstileToken } from '@/lib/turnstile';
+    import { gateOnFirstInteraction, lockButton, releaseButton, unlockButton, waitForTurnstileToken } from '@/lib/turnstile';
     import { clearInvalid, setupValidation, showMessage, submitJson, validateForm } from '@/lib/form';
     import { setupStatementUpload, type Suggestions } from '@/lib/apply-upload';
+    import { setupDraftCapture } from '@/lib/apply-draft';
+    import { DRAFT_FIELDS } from '@/lib/draft-config';
     import { AUTOFILL_FIELDS, UPLOAD_TYPE_LABEL, type AutofillField } from '@/lib/upload-config';
 
     const form = document.querySelector<HTMLFormElement>('[data-apply-form]');
@@ -224,6 +226,7 @@ const EMAIL_PATTERN = "[^@\\s]+@[^@\\s]+\\.[^@\\s]{2,}";
                 clearInvalid(input);
             }
             updateNote();
+            capture.scheduleSave();
         }
 
         function clearAutofill() {
@@ -233,6 +236,7 @@ const EMAIL_PATTERN = "[^@\\s]+@[^@\\s]+\\.[^@\\s]{2,}";
                 setAutofilled(input, false);
             }
             updateNote();
+            capture.scheduleSave();
         }
 
         const uploader = setupStatementUpload({
@@ -244,7 +248,11 @@ const EMAIL_PATTERN = "[^@\\s]+@[^@\\s]+\\.[^@\\s]{2,}";
             waitForToken: () => (widget ? waitForTurnstileToken(widget) : Promise.resolve(undefined)),
             onUploadStart: () => { submitBtn.disabled = true; },
             // The upload spent the token; a fresh gate re-enables submit once there's a new one.
-            onUploadEnd: () => { if (widget) gateOnTurnstile({ widget, button: submitBtn, onError: showError }); else submitBtn.disabled = false; },
+            onUploadEnd: () => {
+                releaseButton(submitBtn, widget, showError);
+                capture.scheduleSave();
+                refreshLock();
+            },
             onSuggestions: applySuggestions,
             onCleared: clearAutofill,
         });
@@ -253,8 +261,41 @@ const EMAIL_PATTERN = "[^@\\s]+@[^@\\s]+\\.[^@\\s]{2,}";
         // and the alert below the form sums it up, instead of the browser's one-at-a-time tooltip.
         setupValidation(form);
 
+        // Drop-off capture: once a Turnstile check passes, what's typed is saved as it goes, so an
+        // application abandoned half way still reaches the team. Silent and best effort.
+        const capture = setupDraftCapture({
+            form, widget, submitBtn,
+            onGateError: showError,
+            isUploaderBusy: () => uploader.isBusy(),
+            attachments: () => uploader.attachments(),
+            autofilled: () => autofillInputs.filter(isAutofilled).map((i) => i.name),
+        });
+
+        // Once an application has gone through, submit stays locked until the form differs from
+        // what was sent (a field, or the attached statements), so the same application can't be
+        // sent twice. Changing it back to exactly what was sent locks it again.
+        const fingerprint = () => {
+            const data = new FormData(form);
+            const files = uploader.attachments().files.map((f) => [f.name, f.size, f.lastModified]);
+            return JSON.stringify([DRAFT_FIELDS.map((n) => String(data.get(n) ?? '').trim()), files]);
+        };
+        let sentFingerprint: string | undefined;
+        function refreshLock() {
+            if (sentFingerprint === undefined) return;
+            if (fingerprint() === sentFingerprint) lockButton(submitBtn, 'Application sent');
+            else unlockButton(submitBtn, widget, showError);
+        }
+        // Capture phase, so the date picker's non-bubbling change counts; deferred, so fields the
+        // page fills in response (the "same as home" mirror) and the statement list after a
+        // Remove click (no input event) have settled before the comparison.
+        const refreshSoon = () => { setTimeout(refreshLock); };
+        form.addEventListener('input', refreshSoon, true);
+        form.addEventListener('change', refreshSoon, true);
+        form.addEventListener('click', refreshSoon, true);
+
         form.addEventListener('submit', async (e) => {
             e.preventDefault();
+            if (submitBtn.dataset.locked !== undefined) return;
             errorEl.hidden = true;
             successEl.hidden = true;
 
@@ -267,6 +308,7 @@ const EMAIL_PATTERN = "[^@\\s]+@[^@\\s]+\\.[^@\\s]{2,}";
             // The statements go with the submission itself (nothing is kept server-side between the
             // upload check and now), so this one is multipart: the JSON below plus the files.
             const { files, jobIds } = uploader.attachments();
+            const sending = fingerprint();
             await submitJson({
                 form, widget, button: submitBtn, errorEl, successEl,
                 url: '/api/apply',
@@ -293,9 +335,17 @@ const EMAIL_PATTERN = "[^@\\s]+@[^@\\s]+\\.[^@\\s]{2,}";
                     fundingAmount: Number(field('fundingAmount')),
                     jobIds,
                     autofilled: autofillInputs.filter(isAutofilled).map((i) => i.name),
+                    draftId: capture.getDraftId(),
                 }),
+                // What was sent stands: statements still being read no longer pre-fill anything.
+                onSuccess: () => {
+                    uploader.markSubmitted();
+                    capture.stop();
+                    sentFingerprint = sending;
+                    refreshLock();
+                },
                 // Leave the submitted values in place instead of clearing the form: the visitor can
-                // see exactly what they sent, and re-submitting isn't blocked if they want to.
+                // see exactly what they sent, and send a corrected version once they change something.
             });
         });
     }
