@@ -12,7 +12,7 @@ import { createDocClient, readExtractions } from '@/lib/server/doc-extract/llama
 import { buildSuggestions } from '@/lib/server/doc-extract/autofill';
 import type { StatementExtraction } from '@/lib/server/doc-extract/schema';
 import { runInBackground } from '@/lib/server/bindings';
-import { getDraftDb, markConverted } from '@/lib/server/drafts';
+import { claimSubmission, getDraftDb, type DraftDb, recordSubmission, releaseSubmission } from '@/lib/server/drafts';
 import { DRAFT_FIELDS, DRAFT_FIELD_LABELS } from '@/lib/draft-config';
 
 // One of the three on-demand routes (with /api/contact and /api/partner). Everything else on the
@@ -21,7 +21,8 @@ import { DRAFT_FIELDS, DRAFT_FIELD_LABELS } from '@/lib/draft-config';
 // The upload's stored copies (src/lib/server/documents.ts) belong to the drop-off record, not to
 // this path: the browser re-sends the files, so they go through the same gates as the upload did
 // (statement-files.ts) before they are attached.
-// When the page opened a drop-off session (src/lib/server/drafts.ts), a sent application closes it.
+// A sent application is recorded as a converted session (src/lib/server/drafts.ts), closing the
+// page's drop-off draft when it has one, and the exact same application can't be sent twice.
 export const prerender = false;
 
 const TAG = 'apply';
@@ -87,6 +88,21 @@ export const POST: APIRoute = async ({ request }) => {
     attachments.push({ filename: checked.filename, content: file });
   }
 
+  // The same application (fields and statement bytes) goes out once. Claimed before sending so
+  // two concurrent submits can't both pass; a database hiccup lets it through rather than lose it.
+  const db = await getDraftDb();
+  const hash = db ? await applicationHash(data, files) : undefined;
+  if (db && hash) {
+    const claimed = await claimSubmission(db, hash).catch((err: unknown) => {
+      console.error(`[${TAG}] duplicate check failed`, err);
+      return true;
+    });
+    if (!claimed) return json(409, { error: 'duplicate_application' });
+  }
+  const release = async () => {
+    if (db && hash) await releaseSubmission(db, hash).catch((err: unknown) => console.error(`[${TAG}] could not release claim`, err));
+  };
+
   const reading = await readingPromise;
   const source = sourceLabeler(data, reading);
   const labelled = (value: string, note: string | null) => (note ? `${value} (${note})` : value);
@@ -122,23 +138,49 @@ export const POST: APIRoute = async ({ request }) => {
     text: rows.map(([k, v]) => `${k}: ${v}`).join('\n'),
     attachments,
   });
-  if (!sent) return json(502, { error: 'send_failed' });
-  if (data.draftId) void runInBackground(closeDraft(data.draftId, data));
+  if (!sent) {
+    await release();
+    return json(502, { error: 'send_failed' });
+  }
+  if (db) void runInBackground(recordApplication(db, request, data));
   return json(200, { ok: true });
 };
 
 export const ALL: APIRoute = methodNotAllowed;
 
-/** Mark the visitor's drop-off session converted, with what was actually sent. Best effort. */
-async function closeDraft(draftId: string, data: ApplyRequest): Promise<void> {
+/** Put the sent application on the admin dashboard, closing the visitor's draft if any. Best effort. */
+async function recordApplication(db: DraftDb, request: Request, data: ApplyRequest): Promise<void> {
   try {
-    const db = await getDraftDb();
-    if (!db) return;
     const fields = Object.fromEntries(DRAFT_FIELDS.map((name) => [name, String(data[name] ?? '')]));
-    await markConverted(db, draftId, { fields, autofilled: data.autofilled, jobIds: data.jobIds });
+    await recordSubmission(
+      db,
+      data.draftId,
+      { fields, autofilled: data.autofilled, jobIds: data.jobIds, documentIds: data.documentIds },
+      {
+        ip: request.headers.get('CF-Connecting-IP'),
+        ua: request.headers.get('User-Agent')?.slice(0, 500) ?? null,
+        referrer: null,
+        utm: {},
+        cf: (request as Request & { cf?: Record<string, unknown> }).cf,
+      },
+    );
   } catch (err) {
-    console.error(`[${TAG}] could not mark draft converted`, err);
+    console.error(`[${TAG}] could not record application`, err);
   }
+}
+
+const hex = (buf: ArrayBuffer) => Array.from(new Uint8Array(buf), (b) => b.toString(16).padStart(2, '0')).join('');
+const sha256 = async (data: BufferSource) => hex(await crypto.subtle.digest('SHA-256', data));
+
+/**
+ * What makes two applications "the same": every field (whitespace collapsed, case ignored) plus
+ * the bytes of each statement, in any order. Filenames don't count; a re-picked copy of the same
+ * file is the same statement.
+ */
+async function applicationHash(data: ApplyRequest, files: File[]): Promise<string> {
+  const fields = DRAFT_FIELDS.map((name) => collapse(String(data[name] ?? '')));
+  const statements = (await Promise.all(files.map(async (f) => sha256(await f.arrayBuffer())))).sort();
+  return sha256(new TextEncoder().encode(JSON.stringify([fields, statements])));
 }
 
 /**

@@ -67,7 +67,10 @@ const settingFields: { key: keyof DraftSettings; label: string; hint: string }[]
                 </div>
               ))}
             </dl>
-            <a href="/admin/drop-offs?status=draft" class="self-start text-sm font-medium text-primary hover:underline">See unsubmitted drafts →</a>
+            <div class="flex flex-wrap gap-6">
+              <a href="/admin/drop-offs?status=converted" class="text-sm font-medium text-primary hover:underline">See submitted applications →</a>
+              <a href="/admin/drop-offs?status=draft" class="text-sm font-medium text-primary hover:underline">See unsubmitted drafts →</a>
+            </div>
           </section>
 
           <section class="flex flex-col gap-4">

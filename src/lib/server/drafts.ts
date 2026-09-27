@@ -32,6 +32,8 @@ interface D1Database {
   batch(statements: D1PreparedStatement[]): Promise<D1Result<unknown>[]>;
 }
 
+export type DraftDb = D1Database;
+
 export const getDraftDb = () => getBinding<D1Database>('DRAFTS_DB');
 
 const now = () => Math.floor(Date.now() / 1000);
@@ -100,7 +102,7 @@ export async function saveSettings(db: D1Database, settings: DraftSettings): Pro
 
 // ── Sessions and snapshots ─────────────────────────────────────────────────────────────────
 
-interface SessionSignals {
+export interface SessionSignals {
   ip: string | null;
   ua: string | null;
   referrer: string | null;
@@ -190,9 +192,35 @@ async function writeSnapshot(db: D1Database, id: string, snapshot: DraftSnapshot
  */
 export const saveDraft = (db: D1Database, id: string, snapshot: DraftSnapshot) => writeSnapshot(db, id, snapshot, false);
 
-/** Mark a draft submitted, recording what was actually sent (the last debounced save may lag it). */
-export async function markConverted(db: D1Database, id: string, snapshot: DraftSnapshot): Promise<void> {
-  await writeSnapshot(db, id, snapshot, true);
+/**
+ * Record a sent application, with what was actually sent (the last debounced save may lag it).
+ * Closes the page's open draft when there is one; otherwise (capture hadn't minted a session yet,
+ * the draft was purged, or it was already closed by an earlier application from the same page)
+ * a session is opened for it here, so every application reaches the dashboard.
+ */
+export async function recordSubmission(db: D1Database, draftId: string | undefined, snapshot: DraftSnapshot, signals: SessionSignals): Promise<void> {
+  if (draftId && (await writeSnapshot(db, draftId, snapshot, true))) return;
+  await writeSnapshot(db, await createDraft(db, signals), snapshot, true);
+}
+
+// ── Duplicate guard ────────────────────────────────────────────────────────────────────────
+
+/**
+ * Claim an application's content hash before it is sent. False when the same application was
+ * already sent (and is still within convertedTtlDays); the unique key makes concurrent sends of
+ * the same one race safely, exactly one wins.
+ */
+export async function claimSubmission(db: D1Database, hash: string): Promise<boolean> {
+  const res = await db
+    .prepare('insert into "apply_submission" ("hash", "created_at") values (?, ?) on conflict ("hash") do nothing')
+    .bind(hash, now())
+    .run();
+  return res.meta.changes > 0;
+}
+
+/** Give a claim back when the application didn't go out after all, so it can be retried. */
+export async function releaseSubmission(db: D1Database, hash: string): Promise<void> {
+  await db.prepare('delete from "apply_submission" where "hash" = ?').bind(hash).run();
 }
 
 export type DraftStatus = 'draft' | 'converted';
@@ -326,6 +354,8 @@ export async function purgeExpired(db: D1Database): Promise<void> {
       purgeRows(db, bucket, `"status" = 'draft' and "last_active_at" < ?`, [t - s.baseTtlDays * DAY]),
       purgeRows(db, bucket, `"status" = 'converted' and "converted_at" < ?`, [t - s.convertedTtlDays * DAY]),
     ]);
+    // Duplicate-guard claims live as long as the converted sessions they stand beside.
+    await db.prepare('delete from "apply_submission" where "created_at" < ?').bind(t - s.convertedTtlDays * DAY).run();
 
     // Volume valve: over the cap, drafts nobody could follow up on (no email or mobile) go first.
     const count = await db.prepare(`select count(*) as "n" from "apply_draft" where "status" = 'draft'`).first<{ n: number }>();

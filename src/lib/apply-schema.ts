@@ -48,6 +48,9 @@ export const applyRequest = z.object({
 
   // The drop-off session this submission closes, when capture got as far as minting one.
   draftId: z.string().regex(UUID_V4).optional(),
+  // Stored statement copies from /api/apply/upload, so the submission's record lists them even
+  // when no draft had been saved with them.
+  documentIds: z.array(z.string().regex(UUID_V4)).max(MAX_UPLOAD_FILES).optional(),
 
   token: turnstileToken,
 });

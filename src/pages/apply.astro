@@ -307,7 +307,7 @@ const EMAIL_PATTERN = "[^@\\s]+@[^@\\s]+\\.[^@\\s]{2,}";
 
             // The statements go with the submission itself (nothing is kept server-side between the
             // upload check and now), so this one is multipart: the JSON below plus the files.
-            const { files, jobIds } = uploader.attachments();
+            const { files, jobIds, documentIds } = uploader.attachments();
             const sending = fingerprint();
             await submitJson({
                 form, widget, button: submitBtn, errorEl, successEl,
@@ -318,6 +318,7 @@ const EMAIL_PATTERN = "[^@\\s]+@[^@\\s]+\\.[^@\\s]{2,}";
                     too_many_documents: 'Too many statements are attached. Please remove one and resubmit.',
                     too_large: 'Your application is too large to send. Please remove a statement and resubmit.',
                     documents_invalid: `One of your statements couldn't be read as a ${UPLOAD_TYPE_LABEL}. Please remove it and resubmit.`,
+                    duplicate_application: "We've already received this exact application, so it wasn't sent again. If something needs correcting, change it and submit again.",
                 },
                 body: () => ({
                     legalBusinessName: field('legalBusinessName'),
@@ -336,6 +337,7 @@ const EMAIL_PATTERN = "[^@\\s]+@[^@\\s]+\\.[^@\\s]{2,}";
                     jobIds,
                     autofilled: autofillInputs.filter(isAutofilled).map((i) => i.name),
                     draftId: capture.getDraftId(),
+                    documentIds,
                 }),
                 // What was sent stands: statements still being read no longer pre-fill anything.
                 onSuccess: () => {
