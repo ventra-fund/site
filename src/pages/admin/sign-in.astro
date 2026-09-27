@@ -1,5 +1,5 @@
 ---
-import Layout from "@/layouts/Layout.astro";
+import AdminLayout from "@/layouts/AdminLayout.astro";
 import { Button } from "@/ui/button";
 import { Input } from "@/ui/input";
 import Turnstile from "@/components/Turnstile.astro";
@@ -15,40 +15,36 @@ if (await getAdminSession(Astro.request.headers)) return Astro.redirect("/admin"
 const available = (await getAuth()) !== null;
 ---
 
-<Layout title="Sign in" noindex>
-  <main class="w-full min-h-screen px-4 py-16">
-    <div class="mx-auto flex max-w-sm flex-col gap-6">
-      <h1 class="text-3xl font-bold text-accent">Admin sign in</h1>
+<AdminLayout title="Sign in">
+  <h1 class="text-xl font-semibold">Sign in</h1>
 
-      {available ? (
-        <>
-          <form data-email-form novalidate class="flex flex-col gap-4">
-            <label class="flex flex-col gap-1.5 text-sm font-medium">
-              Email
-              <Input name="email" type="email" required maxlength="254" autocomplete="email" />
-            </label>
-            <Turnstile action="admin-sign-in" />
-            <Button type="submit" size="lg" data-send-code data-label="Send code" disabled>Checking security…</Button>
-          </form>
+  {available ? (
+    <>
+      <form data-email-form novalidate class="flex flex-col gap-3">
+        <label class="flex flex-col gap-1.5 text-sm text-muted-foreground">
+          Email
+          <Input name="email" type="email" required maxlength="254" autocomplete="email" />
+        </label>
+        <Turnstile action="admin-sign-in" />
+        <Button type="submit" data-send-code data-label="Send code" disabled>Checking security…</Button>
+      </form>
 
-          <form data-code-form hidden novalidate class="flex flex-col gap-4">
-            <p data-code-sent class="text-sm text-muted-foreground"></p>
-            <label class="flex flex-col gap-1.5 text-sm font-medium">
-              Code
-              <Input name="otp" type="text" required inputmode="numeric" pattern="[0-9]{6}" maxlength="6" autocomplete="one-time-code" />
-            </label>
-            <Button type="submit" size="lg">Sign in</Button>
-            <button type="button" data-restart class="self-start text-sm text-muted-foreground underline">Use a different email</button>
-          </form>
+      <form data-code-form hidden novalidate class="flex flex-col gap-3">
+        <p data-code-sent class="text-sm text-muted-foreground"></p>
+        <label class="flex flex-col gap-1.5 text-sm text-muted-foreground">
+          Code
+          <Input name="otp" type="text" required inputmode="numeric" pattern="[0-9]{6}" maxlength="6" autocomplete="one-time-code" />
+        </label>
+        <Button type="submit">Sign in</Button>
+        <button type="button" data-restart class="self-start text-sm text-primary hover:underline">Different email</button>
+      </form>
 
-          <p data-auth-error hidden role="alert" class="text-sm text-destructive"></p>
-        </>
-      ) : (
-        <p class="text-muted-foreground">Sign-in isn't available here. It needs the Worker's D1 database (run <code>pnpm build && pnpm preview</code> locally) and <code>BETTER_AUTH_SECRET</code>.</p>
-      )}
-    </div>
-  </main>
-</Layout>
+      <p data-auth-error hidden role="alert" class="text-sm text-destructive"></p>
+    </>
+  ) : (
+    <p class="text-sm text-muted-foreground">Sign-in unavailable.</p>
+  )}
+</AdminLayout>
 
 <script>
   import { authClient } from "@/lib/auth-client";
@@ -95,14 +91,14 @@ const available = (await getAuth()) !== null;
     regate();
     if (error) {
       const message =
-        error.status === 429 ? "Too many attempts. Wait a minute and try again."
-        : error.status === 403 ? "The security check failed. Try again."
+        error.status === 429 ? "Too many attempts. Try again in a minute."
+        : error.status === 403 ? "Security check failed. Try again."
         : "Couldn't send a code. Try again.";
       return showError(message);
     }
 
     // Same answer whether or not the address is an admin.
-    sentEl!.textContent = `If ${email} is allowed to sign in, a 6-digit code is on its way.`;
+    sentEl!.textContent = `Code sent to ${email} if it has access.`;
     emailForm.hidden = true;
     codeForm!.hidden = false;
     codeForm!.querySelector("input")?.focus();
@@ -118,7 +114,7 @@ const available = (await getAuth()) !== null;
     const { error } = await authClient.signIn.emailOtp({ email, otp });
     if (error) {
       busy(codeForm, false);
-      return showError(error.status === 429 ? "Too many attempts. Wait a minute and try again." : "That code didn't work. Check it, or request a new one.");
+      return showError(error.status === 429 ? "Too many attempts. Try again in a minute." : "Invalid code.");
     }
     location.assign("/admin");
   });

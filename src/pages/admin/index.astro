@@ -1,6 +1,5 @@
 ---
-import Layout from "@/layouts/Layout.astro";
-import AdminHeader from "@/components/AdminHeader.astro";
+import AdminLayout from "@/layouts/AdminLayout.astro";
 import { Button } from "@/ui/button";
 import { Input } from "@/ui/input";
 import { runInBackground } from "@/lib/server/bindings";
@@ -26,74 +25,68 @@ if (db && Astro.request.method === "POST") {
   // Post/redirect/get, so reloading the page doesn't post again.
   return Astro.redirect("/admin?saved=1", 303);
 }
-const notice = Astro.url.searchParams.has("saved") ? "Settings saved. They apply from the next purge pass (at most an hour away)." : "";
+const notice = Astro.url.searchParams.has("saved") ? "Saved." : "";
 
 const DAYS = 30;
 const [funnel, settings] = db ? await Promise.all([getFunnel(db, DAYS), getSettings(db)]) : [null, null];
 if (db) void runInBackground(purgeExpired(db));
 
-const settingFields: { key: keyof DraftSettings; label: string; hint: string }[] = [
-  { key: "baseTtlDays", label: "Keep unsubmitted drafts (days)", hint: "Counted from the visitor's last save." },
-  { key: "convertedTtlDays", label: "Keep submitted sessions (days)", hint: "Counted from submission. The email remains the record of the application." },
-  { key: "maxDraftRows", label: "Most unsubmitted drafts to keep", hint: "Past this, the oldest drafts without an email or mobile are deleted first." },
+const stats = funnel
+  ? [
+      { label: "Sessions", value: funnel.sessions, sub: "" },
+      { label: "Started", value: funnel.started, sub: percent(funnel.started, funnel.sessions) },
+      { label: "With contact", value: funnel.withContact, sub: percent(funnel.withContact, funnel.sessions) },
+      { label: "Submitted", value: funnel.converted, sub: percent(funnel.converted, funnel.started) },
+    ]
+  : [];
+
+const settingFields: { key: keyof DraftSettings; label: string }[] = [
+  { key: "baseTtlDays", label: "Keep drafts (days)" },
+  { key: "convertedTtlDays", label: "Keep submitted (days)" },
+  { key: "maxDraftRows", label: "Max drafts" },
 ];
 ---
 
-<Layout title="Admin" noindex>
-  <main class="w-full min-h-screen px-4 py-16">
-    <div class="mx-auto flex max-w-4xl flex-col gap-10">
-      <AdminHeader current="overview" />
+<AdminLayout title="Admin" current="overview">
+  {!db ? (
+    <p class="text-sm text-muted-foreground">Database unavailable.</p>
+  ) : (
+    <>
+      <section class="flex flex-col gap-3">
+        <div class="flex items-baseline justify-between gap-4">
+          <h1 class="text-xl font-semibold">Overview</h1>
+          <span class="text-sm text-muted-foreground">Last {DAYS} days</span>
+        </div>
+        <dl class="grid grid-cols-2 gap-3 sm:grid-cols-4">
+          {stats.map((s) => (
+            <a href={s.label === "Submitted" ? "/admin/drop-offs?status=converted" : "/admin/drop-offs"} class="flex flex-col gap-1 rounded-md border border-border p-4 hover:bg-muted/40">
+              <dt class="text-sm text-muted-foreground">{s.label}</dt>
+              <dd class="flex items-baseline gap-2">
+                <span class="text-2xl font-semibold tabular-nums">{s.value}</span>
+                {s.sub && <span class="text-xs text-muted-foreground">{s.sub}</span>}
+              </dd>
+            </a>
+          ))}
+        </dl>
+      </section>
 
-      {!db ? (
-        <p class="text-sm text-muted-foreground">Drop-off capture isn't available here (no DRAFTS_DB binding). Use <code>pnpm build && pnpm preview</code> after <code>pnpm migrate:local</code>.</p>
-      ) : (
-        <>
-          <section class="flex flex-col gap-4">
-            <div class="flex items-baseline justify-between gap-4">
-              <h1 class="text-2xl font-bold">Apply funnel</h1>
-              <p class="text-sm text-muted-foreground">Sessions opened in the last {DAYS} days</p>
-            </div>
-            <dl class="grid grid-cols-2 gap-4 sm:grid-cols-4">
-              {[
-                { label: "Verified sessions", value: funnel!.sessions, sub: "Passed the security check" },
-                { label: "Started", value: funnel!.started, sub: `${percent(funnel!.started, funnel!.sessions)} of sessions` },
-                { label: "Left contact details", value: funnel!.withContact, sub: `${percent(funnel!.withContact, funnel!.sessions)} of sessions` },
-                { label: "Submitted", value: funnel!.converted, sub: `${percent(funnel!.converted, funnel!.started)} of started` },
-              ].map((s) => (
-                <div class="flex flex-col gap-1 rounded-lg border border-border p-4">
-                  <dt class="text-sm text-muted-foreground">{s.label}</dt>
-                  <dd class="text-3xl font-semibold tabular-nums">{s.value}</dd>
-                  <dd class="text-xs text-muted-foreground">{s.sub}</dd>
-                </div>
-              ))}
-            </dl>
-            <div class="flex flex-wrap gap-6">
-              <a href="/admin/drop-offs?status=converted" class="text-sm font-medium text-primary hover:underline">See submitted applications →</a>
-              <a href="/admin/drop-offs?status=draft" class="text-sm font-medium text-primary hover:underline">See unsubmitted drafts →</a>
-            </div>
-          </section>
-
-          <section class="flex flex-col gap-4">
-            <div class="flex flex-col gap-1">
-              <h2 class="text-lg font-semibold">Retention</h2>
-              <p class="text-sm text-muted-foreground">How long drop-off data and its stored statements are kept. Changes re-scope existing rows too.</p>
-            </div>
-            <form method="post" class="flex flex-col gap-5">
-              <div class="grid grid-cols-1 gap-5 sm:grid-cols-3">
-                {settingFields.map((f) => (
-                  <label class="flex flex-col gap-1.5 text-sm font-medium">
-                    {f.label}
-                    <Input name={f.key} type="number" required step="1" min={String(SETTING_BOUNDS[f.key][0])} max={String(SETTING_BOUNDS[f.key][1])} value={String(settings![f.key])} />
-                    <span class="text-xs font-normal text-muted-foreground">{f.hint} {SETTING_BOUNDS[f.key][0]}–{SETTING_BOUNDS[f.key][1].toLocaleString("en-US")}.</span>
-                  </label>
-                ))}
-              </div>
-              {notice && <p role="status" class="text-sm font-medium text-accent">{notice}</p>}
-              <Button type="submit" size="sm" class="self-start">Save retention settings</Button>
-            </form>
-          </section>
-        </>
-      )}
-    </div>
-  </main>
-</Layout>
+      <section class="flex flex-col gap-3">
+        <h2 class="text-base font-semibold">Retention</h2>
+        <form method="post" class="flex flex-col gap-4">
+          <div class="grid grid-cols-1 gap-3 sm:grid-cols-3">
+            {settingFields.map((f) => (
+              <label class="flex flex-col gap-1.5 text-sm text-muted-foreground">
+                {f.label}
+                <Input name={f.key} type="number" required step="1" min={String(SETTING_BOUNDS[f.key][0])} max={String(SETTING_BOUNDS[f.key][1])} value={String(settings![f.key])} />
+              </label>
+            ))}
+          </div>
+          <div class="flex items-center gap-3">
+            <Button type="submit" size="sm">Save</Button>
+            {notice && <span role="status" class="text-sm text-muted-foreground">{notice}</span>}
+          </div>
+        </form>
+      </section>
+    </>
+  )}
+</AdminLayout>

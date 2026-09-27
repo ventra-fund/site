@@ -1,7 +1,7 @@
 ---
 import type { DraftStatus } from "@/lib/server/drafts";
 
-// Whether an /apply session was submitted, as shown on the drop-off pages.
+// Whether an /apply session was submitted, as shown on the admin pages.
 interface Props {
   status: DraftStatus;
 }
@@ -10,5 +10,5 @@ const { status } = Astro.props;
 ---
 
 <span class={`rounded px-2 py-0.5 text-xs font-medium ${status === "converted" ? "bg-accent/15 text-accent" : "bg-muted text-muted-foreground"}`}>
-  {status === "converted" ? "Submitted" : "Unsubmitted"}
+  {status === "converted" ? "Submitted" : "Draft"}
 </span>

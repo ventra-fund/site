@@ -1,6 +1,5 @@
 ---
-import Layout from "@/layouts/Layout.astro";
-import AdminHeader from "@/components/AdminHeader.astro";
+import AdminLayout from "@/layouts/AdminLayout.astro";
 import StatusBadge from "@/components/StatusBadge.astro";
 import { getDraft, getDraftDb, parseIds, parseObject } from "@/lib/server/drafts";
 import { getDocumentBucket, headDocument, type StoredDocument } from "@/lib/server/documents";
@@ -32,97 +31,90 @@ const firstFilled = (name: DraftField) => (typeof progress[name] === "number" ? 
 // The order fields were first filled in, for reading how far the visitor got and in what order.
 const timeline = DRAFT_FIELDS.filter((n) => firstFilled(n) != null).sort((a, b) => firstFilled(a)! - firstFilled(b)!);
 
-const title = value("legalBusinessName") || formatName(value("firstName"), value("lastName")) || "Unnamed session";
-const utm = [row.utm_source && `source ${row.utm_source}`, row.utm_medium && `medium ${row.utm_medium}`, row.utm_campaign && `campaign ${row.utm_campaign}`].filter(Boolean).join(" · ");
+const title = value("legalBusinessName") || formatName(value("firstName"), value("lastName")) || "Unnamed";
+const utm = [row.utm_source, row.utm_medium, row.utm_campaign].filter(Boolean).join(" · ");
 const signals: [string, string][] = [
+  ["Created", formatTime(row.created_at)],
+  ["Updated", formatTime(row.last_active_at)],
+  ...(row.converted_at ? [["Submitted", formatTime(row.converted_at)] as [string, string]] : []),
   ["Location", formatPlace(row.city, [row.region, row.country].filter(Boolean).join(", ") || null)],
   ["Network", [row.as_org, row.asn != null ? `AS${row.asn}` : null].filter(Boolean).join(" · ") || "—"],
   ["Browser", row.ua ?? "—"],
   ["Referrer", row.referrer ?? "—"],
-  ["Campaign", utm || "—"],
+  ["UTM", utm || "—"],
   ["Saves", String(row.save_count)],
 ];
 const sizeLabel = (bytes: number) => `${(bytes / 1024 / 1024).toFixed(1)} MB`;
 ---
 
-<Layout title="Drop-off" noindex>
-  <main class="w-full min-h-screen px-4 py-16">
-    <div class="mx-auto flex max-w-4xl flex-col gap-10">
-      <AdminHeader current="drop-offs" />
-
-      <div class="flex flex-col gap-2">
-        <a href="/admin/drop-offs" class="text-sm text-primary hover:underline">← All sessions</a>
-        <div class="flex flex-wrap items-center gap-3">
-          <h1 class="text-2xl font-bold">{title}</h1>
-          <StatusBadge status={row.status} />
-        </div>
-        <p class="text-sm text-muted-foreground">
-          Opened {formatTime(row.created_at)} · last active {formatTime(row.last_active_at)}
-          {row.converted_at && <> · submitted {formatTime(row.converted_at)}</>}
-          · {row.fields_completed}/{row.fields_total} fields
-        </p>
-      </div>
-
-      <section class="flex flex-col gap-3">
-        <h2 class="text-lg font-semibold">Form</h2>
-        <table class="w-full text-left text-sm">
-          <tbody>
-            {DRAFT_FIELDS.map((name) => (
-              <tr class="border-b border-border last:border-0">
-                <th class="w-1/3 py-2 pr-4 align-top font-medium">{DRAFT_FIELD_LABELS[name]}</th>
-                <td class="py-2 pr-4 align-top break-words">
-                  {value(name) || <span class="text-muted-foreground">—</span>}
-                  {autofilled.has(name) && <span class="ml-2 rounded bg-primary/10 px-1.5 py-0.5 text-xs text-primary">from statement</span>}
-                </td>
-                <td class="whitespace-nowrap py-2 align-top text-xs text-muted-foreground">{firstFilled(name) != null && `first filled ${formatTime(firstFilled(name))}`}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-        {timeline.length > 1 && (
-          <p class="text-xs text-muted-foreground">Fill order: {timeline.map((n) => DRAFT_FIELD_LABELS[n]).join(" → ")}</p>
-        )}
-      </section>
-
-      <section class="flex flex-col gap-3">
-        <h2 class="text-lg font-semibold">Statements</h2>
-        {documents.length === 0 ? (
-          <p class="text-sm text-muted-foreground">
-            {jobIds.length ? `${jobIds.length} uploaded, but no stored copy (storage was off or failed).` : "None uploaded."}
-          </p>
-        ) : (
-          <ul class="flex flex-col gap-2 text-sm">
-            {documents.map(({ id: docId, doc }) => (
-              <li>
-                {doc ? (
-                  <a href={`/api/admin/documents/${docId}`} class="text-primary hover:underline">{doc.filename}</a>
-                ) : (
-                  <span class="text-muted-foreground">Statement {docId.slice(0, 8)} (no longer stored)</span>
-                )}
-                {doc && <span class="text-xs text-muted-foreground"> · {sizeLabel(doc.size)}</span>}
-              </li>
-            ))}
-          </ul>
-        )}
-      </section>
-
-      <section class="flex flex-col gap-3">
-        <h2 class="text-lg font-semibold">Session</h2>
-        <dl class="grid grid-cols-1 gap-x-6 gap-y-2 text-sm sm:grid-cols-[10rem_1fr]">
-          <dt class="font-medium">IP</dt>
-          <dd class="font-mono text-xs">
-            {row.ip ? <a href={`/admin/drop-offs?ip=${encodeURIComponent(row.ip)}`} class="text-primary hover:underline" title="Every session from this IP">{row.ip}</a> : "—"}
-          </dd>
-          {signals.map(([k, v]) => (
-            <>
-              <dt class="font-medium">{k}</dt>
-              <dd class="break-words text-muted-foreground">{v}</dd>
-            </>
-          ))}
-          <dt class="font-medium">Session id</dt>
-          <dd class="font-mono text-xs text-muted-foreground">{row.id}</dd>
-        </dl>
-      </section>
+<AdminLayout title={title} current="applications">
+  <div class="flex flex-col gap-2">
+    <a href="/admin/drop-offs" class="text-sm text-primary hover:underline">← Applications</a>
+    <div class="flex flex-wrap items-center gap-3">
+      <h1 class="text-xl font-semibold">{title}</h1>
+      <StatusBadge status={row.status} />
     </div>
-  </main>
-</Layout>
+  </div>
+
+  <section class="flex flex-col gap-3">
+    <h2 class="text-base font-semibold">Form <span class="font-normal text-muted-foreground">{row.fields_completed}/{row.fields_total}</span></h2>
+    <div class="rounded-md border border-border">
+      <table class="w-full text-left text-sm">
+        <tbody>
+          {DRAFT_FIELDS.map((name) => (
+            <tr class="border-b border-border last:border-0">
+              <th class="w-1/3 px-3 py-2 align-top font-normal text-muted-foreground">{DRAFT_FIELD_LABELS[name]}</th>
+              <td class="break-words px-3 py-2 align-top">
+                {value(name) || <span class="text-muted-foreground">—</span>}
+                {autofilled.has(name) && <span class="ml-2 text-xs text-muted-foreground">(statement)</span>}
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+    {timeline.length > 1 && (
+      <p class="text-xs text-muted-foreground">Fill order: {timeline.map((n) => DRAFT_FIELD_LABELS[n]).join(" → ")}</p>
+    )}
+  </section>
+
+  <section class="flex flex-col gap-3">
+    <h2 class="text-base font-semibold">Statements</h2>
+    {documents.length === 0 ? (
+      <p class="text-sm text-muted-foreground">{jobIds.length ? `${jobIds.length} uploaded, not stored.` : "None."}</p>
+    ) : (
+      <ul class="flex flex-col gap-1 text-sm">
+        {documents.map(({ id: docId, doc }) => (
+          <li>
+            {doc ? (
+              <>
+                <a href={`/api/admin/documents/${docId}`} class="text-primary hover:underline">{doc.filename}</a>
+                <span class="text-muted-foreground"> · {sizeLabel(doc.size)}</span>
+              </>
+            ) : (
+              <span class="text-muted-foreground">{docId.slice(0, 8)} (expired)</span>
+            )}
+          </li>
+        ))}
+      </ul>
+    )}
+  </section>
+
+  <section class="flex flex-col gap-3">
+    <h2 class="text-base font-semibold">Session</h2>
+    <dl class="grid grid-cols-1 gap-x-6 gap-y-1.5 text-sm sm:grid-cols-[8rem_1fr]">
+      {signals.map(([k, v]) => (
+        <>
+          <dt class="text-muted-foreground">{k}</dt>
+          <dd class="break-words">{v}</dd>
+        </>
+      ))}
+      <dt class="text-muted-foreground">IP</dt>
+      <dd class="font-mono text-xs">
+        {row.ip ? <a href={`/admin/drop-offs?ip=${encodeURIComponent(row.ip)}`} class="text-primary hover:underline">{row.ip}</a> : "—"}
+      </dd>
+      <dt class="text-muted-foreground">ID</dt>
+      <dd class="font-mono text-xs text-muted-foreground">{row.id}</dd>
+    </dl>
+  </section>
+</AdminLayout>

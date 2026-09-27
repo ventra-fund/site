@@ -1,6 +1,5 @@
 ---
-import Layout from "@/layouts/Layout.astro";
-import AdminHeader from "@/components/AdminHeader.astro";
+import AdminLayout from "@/layouts/AdminLayout.astro";
 import StatusBadge from "@/components/StatusBadge.astro";
 import { getDraftDb, listDrafts } from "@/lib/server/drafts";
 import { formatName, formatPlace, formatTime } from "@/lib/server/admin-format";
@@ -30,94 +29,78 @@ function linkWith(changes: Partial<Record<"status" | "ip" | "page", string | und
 
 const tabs = [
   { label: "All", value: undefined },
-  { label: "Unsubmitted", value: "draft" },
   { label: "Submitted", value: "converted" },
+  { label: "Drafts", value: "draft" },
 ] as const;
 
 const name = (r: (typeof rows)[number]) => formatName(r.first_name, r.last_name);
 ---
 
-<Layout title="Drop-offs" noindex>
-  <main class="w-full min-h-screen px-4 py-16">
-    <div class="mx-auto flex max-w-6xl flex-col gap-8">
-      <AdminHeader current="drop-offs" />
+<AdminLayout title="Applications" current="applications">
+  <div class="flex flex-wrap items-center justify-between gap-4">
+    <h1 class="text-xl font-semibold">Applications</h1>
+    <nav class="flex gap-1 text-sm">
+      {tabs.map((t) => (
+        <a
+          href={linkWith({ status: t.value, page: undefined })}
+          class={`rounded-md px-3 py-1 ${t.value === status ? "bg-muted font-medium text-foreground" : "text-muted-foreground hover:text-foreground"}`}
+        >{t.label}</a>
+      ))}
+    </nav>
+  </div>
 
-      <div class="flex flex-wrap items-center justify-between gap-4">
-        <h1 class="text-2xl font-bold">Apply sessions</h1>
-        <nav class="flex gap-2 text-sm">
-          {tabs.map((t) => (
-            <a
-              href={linkWith({ status: t.value, page: undefined })}
-              class={`rounded-md border px-3 py-1 ${t.value === status ? "border-primary bg-primary/5 font-medium" : "border-border text-muted-foreground hover:text-foreground"}`}
-            >{t.label}</a>
+  {ip && (
+    <p class="text-sm text-muted-foreground">
+      IP <code class="font-mono">{ip}</code> · <a href={linkWith({ ip: undefined, page: undefined })} class="text-primary hover:underline">Clear</a>
+    </p>
+  )}
+
+  {!db ? (
+    <p class="text-sm text-muted-foreground">Database unavailable.</p>
+  ) : rows.length === 0 ? (
+    <p class="text-sm text-muted-foreground">Nothing here.</p>
+  ) : (
+    <div class="overflow-x-auto rounded-md border border-border">
+      <table class="w-full text-left text-sm">
+        <thead class="border-b border-border text-muted-foreground">
+          <tr>
+            <th class="px-3 py-2 font-medium">Applicant</th>
+            <th class="px-3 py-2 font-medium">Status</th>
+            <th class="px-3 py-2 font-medium">Fields</th>
+            <th class="px-3 py-2 font-medium">Updated</th>
+            <th class="px-3 py-2 font-medium">IP</th>
+            <th class="px-3 py-2 font-medium">Location</th>
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map((r) => (
+            <tr class="border-b border-border last:border-0 hover:bg-muted/40">
+              <td class="px-3 py-2">
+                <a href={`/admin/drop-offs/${r.id}`} class="font-medium text-primary hover:underline">{r.business || name(r) || "Unnamed"}</a>
+                {r.email && <div class="text-xs text-muted-foreground">{r.email}</div>}
+              </td>
+              <td class="px-3 py-2"><StatusBadge status={r.status} /></td>
+              <td class="whitespace-nowrap px-3 py-2 tabular-nums text-muted-foreground">
+                {r.fields_completed}/{r.fields_total}{r.documents > 0 && ` · ${r.documents} doc${r.documents === 1 ? "" : "s"}`}
+              </td>
+              <td class="whitespace-nowrap px-3 py-2 text-muted-foreground">{formatTime(r.last_active_at)}</td>
+              <td class="whitespace-nowrap px-3 py-2 font-mono text-xs">
+                {r.ip ? (
+                  <a href={linkWith({ ip: r.ip, page: undefined })} class="hover:underline">{r.ip}{r.ip_sessions > 1 && ` ×${r.ip_sessions}`}</a>
+                ) : "—"}
+              </td>
+              <td class="px-3 py-2 text-muted-foreground">{formatPlace(r.city, r.country)}</td>
+            </tr>
           ))}
-        </nav>
-      </div>
-
-      {ip && (
-        <p class="text-sm">
-          Showing sessions from IP <code class="font-mono">{ip}</code>. <a href={linkWith({ ip: undefined, page: undefined })} class="text-primary hover:underline">Show all IPs</a>
-        </p>
-      )}
-
-      {!db ? (
-        <p class="text-sm text-muted-foreground">Drop-off capture isn't available here (no DRAFTS_DB binding).</p>
-      ) : rows.length === 0 ? (
-        <p class="text-sm text-muted-foreground">No sessions{page ? " on this page" : " yet"}.</p>
-      ) : (
-        <div class="overflow-x-auto rounded-lg border border-border">
-          <table class="w-full text-left text-sm">
-            <thead class="border-b border-border bg-muted/40 text-xs uppercase tracking-wide text-muted-foreground">
-              <tr>
-                <th class="px-3 py-2 font-medium">Last active</th>
-                <th class="px-3 py-2 font-medium">Applicant</th>
-                <th class="px-3 py-2 font-medium">Progress</th>
-                <th class="px-3 py-2 font-medium">Status</th>
-                <th class="px-3 py-2 font-medium">IP</th>
-                <th class="px-3 py-2 font-medium">Location</th>
-              </tr>
-            </thead>
-            <tbody>
-              {rows.map((r) => (
-                <tr class="border-b border-border last:border-0 hover:bg-muted/30">
-                  <td class="whitespace-nowrap px-3 py-2">
-                    <a href={`/admin/drop-offs/${r.id}`} class="text-primary hover:underline">{formatTime(r.last_active_at)}</a>
-                  </td>
-                  <td class="px-3 py-2">
-                    <div class="font-medium">{r.business || name(r) || <span class="text-muted-foreground">—</span>}</div>
-                    {r.business && name(r) && <div class="text-xs text-muted-foreground">{name(r)}</div>}
-                    {r.email && <div class="text-xs text-muted-foreground">{r.email}</div>}
-                  </td>
-                  <td class="whitespace-nowrap px-3 py-2 tabular-nums">
-                    {r.fields_completed}/{r.fields_total} fields
-                    {r.documents > 0 && <div class="text-xs text-muted-foreground">{r.documents} statement{r.documents === 1 ? "" : "s"}</div>}
-                    {!r.has_contact && <div class="text-xs text-muted-foreground">No contact details</div>}
-                  </td>
-                  <td class="px-3 py-2">
-                    <StatusBadge status={r.status} />
-                  </td>
-                  <td class="whitespace-nowrap px-3 py-2 font-mono text-xs">
-                    {r.ip ? (
-                      <a href={linkWith({ ip: r.ip, page: undefined })} class="hover:underline">{r.ip}</a>
-                    ) : "—"}
-                    {r.ip_sessions > 1 && (
-                      <a href={linkWith({ ip: r.ip ?? undefined, page: undefined })} class="ml-1 rounded bg-primary/10 px-1.5 py-0.5 font-sans text-primary" title="Sessions from this IP">×{r.ip_sessions}</a>
-                    )}
-                  </td>
-                  <td class="px-3 py-2 text-xs text-muted-foreground">{formatPlace(r.city, r.country, r.as_org)}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
-
-      {(page > 0 || more) && (
-        <nav class="flex justify-between text-sm">
-          {page > 0 ? <a href={linkWith({ page: page - 1 ? String(page - 1) : undefined })} class="text-primary hover:underline">← Newer</a> : <span />}
-          {more && <a href={linkWith({ page: String(page + 1) })} class="text-primary hover:underline">Older →</a>}
-        </nav>
-      )}
+        </tbody>
+      </table>
     </div>
-  </main>
-</Layout>
+  )}
+
+  {(page > 0 || more) && (
+    <nav class="flex justify-between text-sm">
+      {page > 0 ? <a href={linkWith({ page: page - 1 ? String(page - 1) : undefined })} class="text-primary hover:underline">← Newer</a> : <span />}
+      {more && <a href={linkWith({ page: String(page + 1) })} class="text-primary hover:underline">Older →</a>}
+    </nav>
+  )}
+</AdminLayout>
