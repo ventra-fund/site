@@ -79,7 +79,7 @@ const name = (r: (typeof rows)[number]) => formatName(r.first_name, r.last_name)
                 <a href={`/admin/drop-offs/${r.id}`} class="font-medium text-primary hover:underline">{r.business || name(r) || "Unnamed"}</a>
                 {r.email && <div class="text-xs text-muted-foreground">{r.email}</div>}
               </td>
-              <td class="px-3 py-2"><StatusBadge status={r.status} /></td>
+              <td class="px-3 py-2"><StatusBadge status={r.status} signed={!!r.signed} /></td>
               <td class="whitespace-nowrap px-3 py-2 tabular-nums text-muted-foreground">
                 {r.fields_completed}/{r.fields_total}{r.documents > 0 && ` · ${r.documents} doc${r.documents === 1 ? "" : "s"}`}
               </td>

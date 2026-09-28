@@ -266,6 +266,8 @@ interface DraftListRow {
   documents: number;
   /** Sessions from the same IP, this one included. */
   ip_sessions: number;
+  /** 1 once the application's signing link has been completed. */
+  signed: number;
 }
 
 interface DraftListQuery {
@@ -291,7 +293,8 @@ export async function listDrafts(db: D1Database, q: DraftListQuery): Promise<{ r
         json_extract(a."fields_json", '$.lastName') as "last_name",
         json_extract(a."fields_json", '$.email') as "email",
         json_array_length(a."document_ids_json") as "documents",
-        case when a."ip" is null then 1 else (select count(*) from "apply_draft" b where b."ip" = a."ip") end as "ip_sessions"
+        case when a."ip" is null then 1 else (select count(*) from "apply_draft" b where b."ip" = a."ip") end as "ip_sessions",
+        exists (select 1 from "signing_request" s where s."draft_id" = a."id" and s."status" = 'signed') as "signed"
        from "apply_draft" a ${where.length ? `where ${where.join(' and ')}` : ''}
        order by a."last_active_at" desc limit ? offset ?`,
     )
