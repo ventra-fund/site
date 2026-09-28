@@ -3,6 +3,9 @@ import AdminLayout from "@/layouts/AdminLayout.astro";
 import StatusBadge from "@/components/StatusBadge.astro";
 import { getDraft, getDraftDb, parseIds, parseObject } from "@/lib/server/drafts";
 import { getDocumentBucket, headDocument, type StoredDocument } from "@/lib/server/documents";
+import DocumentActions from "@/components/DocumentActions.astro";
+import { Dialog, DialogClose, DialogContent, DialogTitle, DialogTrigger } from "@/ui/dialog";
+import { X } from "@lucide/astro";
 import { DRAFT_FIELDS, DRAFT_FIELD_LABELS, UUID_V4, type DraftField } from "@/lib/draft-config";
 import { formatName, formatPlace, formatTime } from "@/lib/server/admin-format";
 
@@ -83,13 +86,41 @@ const sizeLabel = (bytes: number) => `${(bytes / 1024 / 1024).toFixed(1)} MB`;
     {documents.length === 0 ? (
       <p class="text-sm text-muted-foreground">{jobIds.length ? `${jobIds.length} uploaded, not stored.` : "None."}</p>
     ) : (
-      <ul class="flex flex-col gap-1 text-sm">
+      <ul class="flex flex-col gap-3 text-sm">
         {documents.map(({ id: docId, doc }) => (
-          <li>
+          <li class="flex items-center gap-3 rounded-lg border border-border px-3 py-2">
             {doc ? (
               <>
-                <a href={`/api/admin/documents/${docId}`} class="text-primary hover:underline">{doc.filename}</a>
-                <span class="text-muted-foreground"> · {sizeLabel(doc.size)}</span>
+                <Dialog class="min-w-0" data-document-dialog>
+                  <DialogTrigger class="max-w-full truncate font-medium text-primary hover:underline">{doc.filename}</DialogTrigger>
+                  {/* A full-screen dark backdrop with the pages floating on it, like Gmail's attachment preview. */}
+                  <DialogContent
+                    showCloseButton={false}
+                    class="top-0 left-0 flex h-dvh w-screen max-w-none translate-x-0 translate-y-0 flex-col gap-0 rounded-none bg-black/55 p-0 text-white ring-0 sm:max-w-none"
+                  >
+                    <div class="flex h-14 shrink-0 items-center gap-3 bg-black/40 px-4">
+                      <DialogTitle class="min-w-0 truncate">{doc.filename}</DialogTitle>
+                      <div class="ml-auto flex items-center gap-1">
+                        <DocumentActions id={docId} filename={doc.filename} buttonClass="text-white hover:bg-white/15" />
+                        <DialogClose class="static size-8.5 justify-center rounded-lg hover:bg-white/15 [&_svg]:size-4" title="Close">
+                          <X />
+                        </DialogClose>
+                      </div>
+                    </div>
+                    {/* Filled on first open by src/lib/admin-document-viewer.ts; a click on the backdrop around the pages closes. */}
+                    <div data-document-backdrop class="min-h-0 flex-1 overflow-y-auto px-4 py-6">
+                      <div
+                        data-document-pages
+                        data-src={`/api/admin/documents/${docId}`}
+                        data-kind={doc.mime === "application/pdf" ? "pdf" : doc.mime.startsWith("image/") ? "image" : "other"}
+                        data-filename={doc.filename}
+                        class="mx-auto flex max-w-4xl flex-col items-center gap-4"
+                      ></div>
+                    </div>
+                  </DialogContent>
+                </Dialog>
+                <span class="shrink-0 text-muted-foreground">{sizeLabel(doc.size)}</span>
+                <span class="ml-auto"><DocumentActions id={docId} filename={doc.filename} /></span>
               </>
             ) : (
               <span class="text-muted-foreground">{docId.slice(0, 8)} (expired)</span>
@@ -118,3 +149,9 @@ const sizeLabel = (bytes: number) => `${(bytes / 1024 / 1024).toFixed(1)} MB`;
     </dl>
   </section>
 </AdminLayout>
+
+<script>
+  import { setupDocumentViewer } from "@/lib/admin-document-viewer";
+
+  document.querySelectorAll<HTMLElement>("[data-document-dialog]").forEach(setupDocumentViewer);
+</script>

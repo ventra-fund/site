@@ -1,0 +1,24 @@
+---
+import { Download, ExternalLink } from "@lucide/astro";
+import { Button } from "@/ui/button";
+
+// Open-in-new-tab and download icons for one stored statement (src/pages/api/admin/documents/[id].ts).
+interface Props {
+  id: string;
+  filename: string;
+  /** Extra classes for both buttons, e.g. light icons on the viewer's dark toolbar. */
+  buttonClass?: string;
+}
+
+const { id, filename, buttonClass } = Astro.props;
+const href = `/api/admin/documents/${id}`;
+---
+
+<div class="flex shrink-0 items-center gap-1">
+  <Button as="a" href={href} target="_blank" rel="noopener" variant="ghost" size="icon-sm" class={buttonClass} aria-label={`Open ${filename} in a new tab`} title="Open in new tab">
+    <ExternalLink />
+  </Button>
+  <Button as="a" href={`${href}?download=1`} variant="ghost" size="icon-sm" class={buttonClass} aria-label={`Download ${filename}`} title="Download">
+    <Download />
+  </Button>
+</div>

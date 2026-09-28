@@ -21,12 +21,12 @@ The apply page has an "Upload documents" area for bank statements (PDF, JPG, PNG
 Flow, per file (`src/pages/api/apply/upload.ts`):
 1. Per-IP rate limit (`UPLOAD_RATE_LIMIT`, counted per request, not per file), then size caps and a magic-byte check of the actual bytes against the extension (`doc-extract/content-sniff.ts`); the browser's declared type is never trusted.
 2. Turnstile, once per batch, only if something survived the free checks (a token is single-use).
-3. One upload to LlamaCloud, then **Classify** on that file: anything that isn't a bank statement is refused here.
-4. LlamaCloud **Extract** (agentic tier, `doc-extract/schema.ts` for exactly what is asked) is submitted and its job id returned to the browser; it takes minutes, so the browser polls `/api/apply/parse-status?jobs=…`, which asks the provider and returns suggestions aggregated over every statement (`doc-extract/autofill.ts`).
+3. One upload to LlamaCloud, then **Classify** on that file. Nothing is refused on its verdict: Classify reads only a PDF's text layer, so a photographed statement with a text watermark stamped on it comes back as "other". Its verdict is only logged and kept on the stored copy.
+4. LlamaCloud **Extract** on every file (agentic tier, `doc-extract/schema.ts` for exactly what is asked) is submitted and its job id returned to the browser; it takes minutes, so the browser polls `/api/apply/parse-status?jobs=…`, which asks the provider and returns suggestions aggregated over every statement (`doc-extract/autofill.ts`). An extraction without a bank name and at least one month's deposits or balance is treated as unreadable and pre-fills nothing (`looksLikeStatement` in `doc-extract/llamacloud.ts`).
 
 The page sends at most 4 files per upload request (`MAX_FILES_PER_UPLOAD`), so a pick of 5 or 6 goes up as two requests, each with its own Turnstile token. Each request may make at most `PROVIDER_CALLS_PER_REQUEST` provider calls (`doc-extract/config.ts`, 45). Classify takes 20–30 s per statement, about nine calls, so four files fit under the Workers Free limit of 50 external subrequests per request; files past the budget come back as "try again". On Workers Paid both limits can be raised.
 
-5. A copy of each accepted statement goes to the `DOCUMENTS` R2 bucket (`src/lib/server/documents.ts`) for the drop-off record below; the browser is told its document id.
+5. A copy of each accepted file goes to the `DOCUMENTS` R2 bucket (`src/lib/server/documents.ts`) for the drop-off record below; the browser is told its document id.
 
 The submission doesn't read those copies: the browser keeps the files (the page says to stay on it until submitting) and `/api/apply` is multipart, taking the same JSON as before in a `payload` field plus the files, which it re-validates (count, size, bytes) and attaches, adding a "Statements:" summary read from the provider by job id, not from the browser.
 

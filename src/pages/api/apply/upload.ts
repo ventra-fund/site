@@ -13,9 +13,10 @@ import { getDocumentBucket, putDocument, type R2Bucket } from '@/lib/server/docu
 // Bank-statement check + read for the apply form. Multipart: `token` (Turnstile) + `files[]`,
 // at most MAX_FILES_PER_UPLOAD of them (the page splits a bigger pick into several requests).
 // Each file goes through, in order: size cap → magic-byte sniff → Turnstile (once per batch,
-// only if anything survived the free checks) → one LlamaCloud upload → Classify → Extract → a copy
-// in R2 (src/lib/server/documents.ts), so a statement from an application that is never submitted
-// still reaches the drop-off record. A file that passes comes back with its extraction job id,
+// only if anything survived the free checks) → one LlamaCloud upload → Classify → Extract (only
+// when Classify calls it a bank statement) → a copy in R2 (src/lib/server/documents.ts), so a
+// statement from an application that is never submitted still reaches the drop-off record. The
+// classifier never refuses a file; it only gates the pre-fill. A file that passes comes back with its extraction job id,
 // which the browser polls /api/apply/parse-status with, and its document id, which the drop-off
 // capture records. The browser still re-sends the file itself with the final submission to be
 // attached to the email. Results are per file, in input order, so a bad file never sinks its batch.
@@ -65,29 +66,33 @@ export const POST: APIRoute = async ({ request }) => {
 export const ALL: APIRoute = methodNotAllowed;
 
 /**
- * Upload → classify → submit extraction → store, for one file that passed the byte checks. A provider
- * failure during the upload or classification fails closed (the file is refused: an unverified file must not reach
- * the inbox); a failure submitting the extraction or storing the copy keeps the file, since it is a
- * verified statement by then, and just leaves it without pre-fill or without a drop-off copy.
+ * Upload → classify → submit extraction → store, for one file that passed the byte checks. Every
+ * such file is attached and read, whatever the classifier says: Classify only reads a PDF's text
+ * layer, so a photographed statement that a forwarder stamped a text watermark on comes back as
+ * "other" even though Extract (which OCRs the pages) reads it fine. Whether anything is pre-filled
+ * is decided on the extraction instead (see `looksLikeStatement` in llamacloud.ts); the classifier's
+ * verdict is only logged and kept on the stored copy. A provider failure at any step just leaves
+ * the file without pre-fill (`jobId: null`)
+ * or without a drop-off copy.
  */
 async function processFile(client: LlamaCloud, bucket: R2Bucket | undefined, { file, type, filename }: CheckedFile & { ok: true }): Promise<UploadResult> {
-  let fileId: string;
-  let classification: Classification;
+  let classification: Classification | null = null;
+  let jobId: string | null = null;
+  let fileId: string | null = null;
   try {
     fileId = await uploadStatement(client, file, type.mime, filename);
-    classification = await classifyDocument(client, fileId);
   } catch (err) {
-    logProviderError(TAG, 'classify', err);
-    return { reason: 'read_failed' };
+    logProviderError(TAG, 'upload', err);
   }
-  if (!classification.isBankStatement) return { reason: 'not_a_bank_statement' };
+  if (fileId) {
+    // Independent of each other, so a classifier hiccup never costs the read.
+    const [classified, submitted] = await Promise.allSettled([classifyDocument(client, fileId), submitExtraction(client, fileId)]);
+    if (classified.status === 'fulfilled') classification = classified.value;
+    else logProviderError(TAG, 'classify', classified.reason);
+    if (submitted.status === 'fulfilled') jobId = submitted.value;
+    else logProviderError(TAG, 'extract', submitted.reason);
+  }
 
-  let jobId: string | null = null;
-  try {
-    jobId = await submitExtraction(client, fileId);
-  } catch (err) {
-    logProviderError(TAG, 'extract', err);
-  }
   let documentId: string | undefined;
   if (bucket) {
     const id = crypto.randomUUID();
@@ -97,13 +102,14 @@ async function processFile(client: LlamaCloud, bucket: R2Bucket | undefined, { f
         mime: type.mime,
         uploadedAt: new Date().toISOString(),
         jobId: jobId ?? '',
-        classifierConfidence: classification.confidence,
+        classifierConfidence: classification?.confidence ?? 0,
       });
       documentId = id;
     } catch (err) {
       console.error(`[${TAG}] could not store statement`, err);
     }
   }
-  console.log(`[${TAG}] accepted statement (${file.size} bytes, confidence ${classification.confidence.toFixed(2)}, job ${jobId ?? 'none'}, stored ${documentId ? 'yes' : 'no'})`);
+  const verdict = classification ? `${classification.isBankStatement ? 'statement' : 'not a statement'}, confidence ${classification.confidence.toFixed(2)}` : 'unclassified';
+  console.log(`[${TAG}] accepted file (${file.size} bytes, ${verdict}, job ${jobId ?? 'none'}, stored ${documentId ? 'yes' : 'no'})`);
   return { jobId, documentId };
 }

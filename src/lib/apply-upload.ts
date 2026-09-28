@@ -26,7 +26,7 @@ export type { Suggestions };
 /**
  * A file's journey. `queued`/`uploading` are the check request in flight; the rest are terminal
  * except `reading`, which the poll advances, or which becomes `sent_unread` if the application is
- * sent first. Everything from `reading` on is a verified statement that will be attached to the application.
+ * sent first. Everything from `reading` on is a checked file that will be attached to the application.
  */
 type EntryStatus = 'queued' | 'uploading' | 'reading' | 'sent_unread' | 'done' | 'unreadable' | 'unavailable' | 'rejected' | 'failed';
 const ATTACHED: ReadonlySet<EntryStatus> = new Set(['reading', 'sent_unread', 'done', 'unreadable', 'unavailable']);
@@ -36,7 +36,7 @@ const NOT_ATTACHED: ReadonlySet<EntryStatus> = new Set(['rejected', 'failed']);
 interface Entry {
   file: File;
   status: EntryStatus;
-  /** The reader's job id; null when the file was verified but the reader couldn't take it. */
+  /** The reader's job id; null when the file is attached but won't be read. */
   jobId?: string | null;
   /** The server's stored copy, when storage is on. */
   documentId?: string;
@@ -90,8 +90,6 @@ const REASON_COPY: Record<string, string> = {
   not_a_pdf: "isn't a valid PDF",
   truncated_pdf: 'looks truncated or corrupted',
   not_an_image: "isn't a valid image",
-  not_a_bank_statement: "doesn't look like a bank statement, so it wasn't attached",
-  read_failed: "couldn't be read just now. Please try it again in a moment",
 };
 
 // Whole-request failures from /api/apply/upload.
@@ -131,18 +129,14 @@ export function setupStatementUpload(opts: UploadOptions): StatementUploader {
       case 'queued':
       case 'uploading':
         return { text: 'Uploading…', tone: 'busy' };
+      // However far the reader has got, the visitor is only told the file is in: reading is a
+      // background step whose result shows up as pre-filled fields, never as a wait.
       case 'reading':
-        return { text: 'Attached · reading the statement…', tone: 'busy' };
       case 'sent_unread':
-        return { text: 'Sent with your application before it was read, so nothing was pre-filled from it', tone: 'ok' };
-      case 'done': {
-        const n = e.months?.length ?? 0;
-        return { text: n ? `Attached · read ${n} month${n === 1 ? '' : 's'}` : 'Attached · read', tone: 'ok' };
-      }
+      case 'done':
       case 'unreadable':
-        return { text: "Attached · couldn't be read, so nothing was pre-filled from it", tone: 'ok' };
       case 'unavailable':
-        return { text: 'Attached · reading is unavailable right now', tone: 'ok' };
+        return { text: 'Uploaded', tone: 'ok' };
       case 'rejected':
       case 'failed':
         return { text: e.note ?? 'Not attached', tone: 'bad' };

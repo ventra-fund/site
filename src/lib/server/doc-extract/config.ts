@@ -2,8 +2,9 @@
 // size/type limits the browser also needs live in src/lib/upload-config.ts.
 
 /**
- * Classifier confidence floor. At or above this a file labelled `bank_statement` is accepted and
- * sent to the (costlier) Extract step; below it the file is treated as not-a-statement and refused.
+ * Classifier confidence floor. At or above this a file labelled `bank_statement` counts as one;
+ * below it the page is told it may not be one. Every file is extracted either way (see upload.ts),
+ * and whether it pre-fills is decided on what Extract read.
  */
 export const CLASSIFIER_MIN_CONFIDENCE = 0.5;
 

@@ -47,7 +47,7 @@ export interface Classification {
 export type ExtractionStatus =
   | { status: 'pending' }
   | { status: 'error'; message: string }
-  /** The provider finished but what came back wasn't a usable statement extraction. */
+  /** The provider finished but what came back wasn't a usable statement extraction, or didn't read as a statement. */
   | { status: 'unreadable' }
   | { status: 'done'; extraction: StatementExtraction };
 
@@ -99,8 +99,18 @@ export async function getExtraction(client: LlamaCloud, jobId: string): Promise<
   if (status !== 'COMPLETED') return { status: 'pending' };
   // `per_doc` returns one object; anything else (or an object missing required keys) is unusable.
   const parsed = StatementExtractionSchema.safeParse(job.extract_result);
-  if (!parsed.success) return { status: 'unreadable' };
+  if (!parsed.success || !looksLikeStatement(parsed.data)) return { status: 'unreadable' };
   return { status: 'done', extraction: parsed.data };
+}
+
+/**
+ * Whether an extraction reads as a real bank statement, so it may pre-fill the form. Every
+ * uploaded file is extracted, including the ones Classify called "other" (see upload.ts), and the
+ * schema lets every field be null, so a non-statement comes back as a mostly empty object: this
+ * wants a bank name and at least one month with a figure in it.
+ */
+function looksLikeStatement(e: StatementExtraction): boolean {
+  return Boolean(e.bankName?.trim()) && e.months.some((m) => m.totalDeposits != null || m.endingBalance != null);
 }
 
 /**

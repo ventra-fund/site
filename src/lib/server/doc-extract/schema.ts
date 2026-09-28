@@ -1,8 +1,9 @@
 import { z } from 'astro/zod';
 
 // What the document provider is asked for. Two products are used, in order:
-//   1. Classify (cheap, seconds): is this file a bank statement at all? Non-statements are
-//      refused at the upload check, so the inbox only ever receives statements.
+//   1. Classify (cheap, seconds): is this file a bank statement at all? Advisory only: it reads
+//      just the PDF's text layer, so a watermarked photo of a statement can come back "other".
+//      Every file is attached and extracted; what pre-fills is decided on the extraction.
 //   2. Extract (agentic, minutes): the header-level facts the apply form can be pre-filled
 //      from. Deliberately NOT the transaction list: the form wants "roughly what comes in each
 //      month", which every statement prints as a deposits/credits total, and skipping the
@@ -10,7 +11,7 @@ import { z } from 'astro/zod';
 // The zod schema is the single source of truth: it is converted to the JSON Schema the
 // provider takes, and the provider's result is validated against it before anything is read.
 
-// --- Classifier gate ------------------------------------------------------------------------
+// --- Classifier ------------------------------------------------------------------------------
 
 export const BANK_STATEMENT_LABEL = 'bank_statement';
 
