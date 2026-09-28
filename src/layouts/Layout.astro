@@ -23,9 +23,9 @@ const navLinks: [href: string, label: string][] = [
 // Trailing-slash-insensitive so "/apply/" still marks the Apply link as current.
 const currentPath = Astro.url.pathname.replace(/\/+$/, "") || "/";
 const isCurrent = (href: string) => href === currentPath;
-// The admin pages stand apart from the public site: no nav (its script below finds nothing and
-// does nothing).
-const showNav = !/^\/admin(\/|$)/.test(currentPath);
+// The admin pages and the signing page stand apart from the public site: no nav (its script below
+// finds nothing and does nothing).
+const showNav = !/^\/(admin|sign)(\/|$)/.test(currentPath);
 ---
 
 <!doctype html>
@@ -41,6 +41,7 @@ const showNav = !/^\/admin(\/|$)/.test(currentPath);
     <meta name="generator" content={Astro.generator} />
     {noindex && <meta name="robots" content="noindex, nofollow" />}
     <title>{pageTitle}</title>
+    <slot name="head" />
   </head>
   <body>
     {showNav && (

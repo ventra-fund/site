@@ -1,0 +1,135 @@
+---
+import { Button } from "@/ui/button";
+import { formatPlace, formatTime } from "@/lib/server/admin-format";
+import { parseObject } from "@/lib/server/drafts";
+import { DRAFT_FIELDS, DRAFT_FIELD_LABELS } from "@/lib/draft-config";
+import type { SigningEventRow, SigningRequestRow } from "@/lib/server/signing";
+
+// The signed agreement on the admin application page: the signature, what was confirmed (with
+// anything the signer changed from the application marked), the masked identifiers with a logged
+// reveal, and the full audit trail. The page loads the signature font (`--font-signature`).
+interface Props {
+  request: SigningRequestRow;
+  events: SigningEventRow[];
+}
+
+const { request, events } = Astro.props;
+const prefill = parseObject(request.prefill_json);
+const confirmed = parseObject(request.confirmed_json ?? "{}");
+const str = (v: unknown) => (v == null ? "" : String(v));
+
+const EVENT_LABELS: Record<SigningEventRow["type"], string> = {
+  sent: "Signing link emailed",
+  send_failed: "Signing link email failed",
+  viewed: "Link opened",
+  consented: "E-sign disclosure accepted",
+  signed: "Signed",
+  revoked: "Link revoked",
+  revealed: "EIN and SSN revealed",
+};
+
+const meta: [string, string][] = [
+  ["Signed", formatTime(request.signed_at)],
+  ["Disclosure accepted", formatTime(request.consented_at)],
+  ["Link sent", `${formatTime(request.email_sent_at)} to ${request.email}`],
+  ["IP", request.signer_ip ?? "—"],
+  ["Location", formatPlace(request.signer_city, request.signer_country)],
+  ["Browser", request.signer_ua ?? "—"],
+  ["Terms version", request.terms_version ?? "—"],
+];
+---
+
+<section class="flex flex-col gap-4">
+  <h2 class="text-base font-semibold">Signature</h2>
+
+  <div class="flex flex-col gap-1 rounded-md border border-border p-5">
+    <span class="text-4xl leading-tight" style="font-family: var(--font-signature), cursive">{request.signer_name}</span>
+    <span class="border-t border-border pt-1 text-xs text-muted-foreground">
+      Signed electronically by {request.signer_name} · {formatTime(request.signed_at)}
+    </span>
+  </div>
+
+  <dl class="grid grid-cols-1 gap-x-6 gap-y-1.5 text-sm sm:grid-cols-[10rem_1fr]">
+    {meta.map(([k, v]) => (
+      <>
+        <dt class="text-muted-foreground">{k}</dt>
+        <dd class="break-words">{v}</dd>
+      </>
+    ))}
+    <dt class="text-muted-foreground">Document hash</dt>
+    <dd class="break-all font-mono text-xs">{request.document_hash}</dd>
+    <dt class="text-muted-foreground">EIN</dt>
+    <dd class="font-mono" data-reveal-ein>••-•••{request.ein_last4}</dd>
+    <dt class="text-muted-foreground">SSN</dt>
+    <dd class="flex items-center gap-3">
+      <span class="font-mono" data-reveal-ssn>•••-••-{request.ssn_last4}</span>
+      <Button type="button" size="sm" variant="outline" data-reveal={request.id}>Reveal</Button>
+      <span data-reveal-error hidden class="text-xs text-destructive"></span>
+    </dd>
+  </dl>
+
+  <div class="flex flex-col gap-2">
+    <h3 class="text-sm font-medium">Confirmed details</h3>
+    <div class="rounded-md border border-border">
+      <table class="w-full text-left text-sm">
+        <tbody>
+          {DRAFT_FIELDS.map((name) => {
+            const now = str(confirmed[name]);
+            const was = str(prefill[name]);
+            const changed = now.trim() !== was.trim();
+            return (
+              <tr class="border-b border-border last:border-0">
+                <th class="w-1/3 px-3 py-2 align-top font-normal text-muted-foreground">{DRAFT_FIELD_LABELS[name]}</th>
+                <td class="break-words px-3 py-2 align-top">
+                  {now || <span class="text-muted-foreground">—</span>}
+                  {changed && <span class="ml-2 text-xs text-muted-foreground">(changed from “{was || "empty"}”)</span>}
+                </td>
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="flex flex-col gap-2">
+    <h3 class="text-sm font-medium">Audit trail</h3>
+    <ol class="flex flex-col gap-1.5 text-sm">
+      {events.map((e) => (
+        <li class="flex flex-wrap gap-x-2">
+          <span class="w-44 shrink-0 text-muted-foreground tabular-nums">{formatTime(e.at)}</span>
+          <span class="font-medium">{EVENT_LABELS[e.type]}</span>
+          <span class="min-w-0 break-words text-muted-foreground">
+            {[e.actor, e.ip, formatPlace(e.city, e.country) === "—" ? null : formatPlace(e.city, e.country), e.ua].filter(Boolean).join(" · ")}
+          </span>
+        </li>
+      ))}
+    </ol>
+  </div>
+</section>
+
+<script>
+  import { formatEin, formatSsn } from "@/lib/identifier-format";
+
+  // Decrypt on demand. Each reveal is logged server-side in the audit trail.
+  document.querySelectorAll<HTMLButtonElement>("[data-reveal]").forEach((button) => {
+    const section = button.closest("section")!;
+    const errorEl = section.querySelector<HTMLElement>("[data-reveal-error]")!;
+    button.addEventListener("click", async () => {
+      button.disabled = true;
+      errorEl.hidden = true;
+      try {
+        const res = await fetch(`/api/admin/signatures/${button.dataset.reveal}`, { method: "POST" });
+        if (!res.ok) throw new Error(String(res.status));
+        const { ein, ssn } = (await res.json()) as { ein: string; ssn: string };
+        section.querySelector("[data-reveal-ein]")!.textContent = formatEin(ein);
+        section.querySelector("[data-reveal-ssn]")!.textContent = formatSsn(ssn);
+        button.hidden = true;
+      } catch {
+        errorEl.textContent = "Couldn't reveal them. Please try again.";
+        errorEl.hidden = false;
+        button.disabled = false;
+      }
+    });
+  });
+</script>

@@ -7,11 +7,11 @@ The site is static except for `/api/apply`, `/api/contact` and `/api/partner`, w
 
 - **Local:** copy `.env.example` to `.env` (gitignored) and fill it in. Both `pnpm dev` and `pnpm build && pnpm preview` read it (the adapter hands the values to wrangler at build time).
 - **Production build:** needs nothing. The Turnstile site key is public, so it is committed as the default in `astro.config.mjs`. A `PUBLIC_TURNSTILE_SITE_KEY` build variable overrides it.
-- **Production runtime** (Worker → Settings → Variables and Secrets, type *Secret*, or `npx wrangler secret put <NAME>`): `TURNSTILE_SECRET_KEY`, `RESEND_API_KEY`, `CONTACT_TO_EMAIL`, `CONTACT_FROM_EMAIL`, `LLAMA_CLOUD_API_KEY`. Use secrets, not plain variables: plain dashboard variables are wiped on each deploy, and nothing belongs in `wrangler.jsonc` since the repo is on GitHub.
+- **Production runtime** (Worker → Settings → Variables and Secrets, type *Secret*, or `npx wrangler secret put <NAME>`): `TURNSTILE_SECRET_KEY`, `RESEND_API_KEY`, `CONTACT_TO_EMAIL`, `CONTACT_FROM_EMAIL`, `LLAMA_CLOUD_API_KEY`, `SIGNING_ENCRYPTION_KEY`. Use secrets, not plain variables: plain dashboard variables are wiped on each deploy, and nothing belongs in `wrangler.jsonc` since the repo is on GitHub.
 
 Until the runtime secrets are set, the endpoints return 500 and send nothing.
 
-Submissions are capped per IP by the `FORM_RATE_LIMIT` rate limiting binding in `wrangler.jsonc` (2 per 60 s across the three submit endpoints; a third returns 429 and the form explains why). Statement uploads have their own `UPLOAD_RATE_LIMIT` (4 requests per 60 s) so re-picking files doesn't use up the submit budget, the statement status polls have `STATUS_RATE_LIMIT` (30 per 60 s), and drop-off capture has `DRAFT_RATE_LIMIT` (12 per 60 s). The bindings are read through `cloudflare:workers` in `src/lib/server/bindings.ts`, so they are only active inside the Worker: `pnpm dev` runs unlimited, `pnpm build && pnpm preview` exercises them.
+Submissions are capped per IP by the `FORM_RATE_LIMIT` rate limiting binding in `wrangler.jsonc` (2 per 60 s across the three submit endpoints; a third returns 429 and the form explains why). Statement uploads have their own `UPLOAD_RATE_LIMIT` (4 requests per 60 s) so re-picking files doesn't use up the submit budget, the statement status polls have `STATUS_RATE_LIMIT` (30 per 60 s), drop-off capture has `DRAFT_RATE_LIMIT` (12 per 60 s), and the signing link's steps have `SIGN_RATE_LIMIT` (10 per 60 s). The bindings are read through `cloudflare:workers` in `src/lib/server/bindings.ts`, so they are only active inside the Worker: `pnpm dev` runs unlimited, `pnpm build && pnpm preview` exercises them.
 
 Response headers (HSTS, nosniff, referrer policy, `frame-ancestors`) come from `public/_headers`, which Workers static assets applies to every response.
 
@@ -45,6 +45,17 @@ pnpm migrate:remote
 Locally, `pnpm migrate:local` before `pnpm build && pnpm preview`. Under local preview `CF-Connecting-IP` and `request.cf` are absent, so those columns stay empty. Under `pnpm dev` there are no bindings and capture is off.
 
 Without `LLAMA_CLOUD_API_KEY` the upload area reports uploads as unavailable and the form still submits without statements. To test locally, use `pnpm build && pnpm preview` with `.env` filled in.
+
+### Decisions and e-signatures
+An application's admin page (`/admin/drop-offs/<id>`) has a **Decision** section: approve or decline, with a reason written in the rich-text editor (required to decline, sanitized like the contact form's message). Approving emails the applicant a personal signing link (`/sign/<token>`, 14 days, `SIGNING_LINK_TTL_DAYS` in `src/lib/signing-config.ts`); approving again, resending or declining revokes the earlier link. Once signed, the decision is final. Logic in `src/lib/server/signing.ts`, schema in `migrations-drafts/0003_application_signing.sql`.
+
+The signing page works like a DocuSign envelope, in two steps posted to `/api/sign/<token>`:
+1. The electronic records and signatures disclosure (ESIGN), accepted on its own and timestamped.
+2. The application details to confirm or correct, the business EIN and the signer's SSN, the attestation, and a typed name drawn in a cursive face (Dancing Script) as the signature.
+
+Stored with the signature: what was confirmed (the admin page marks anything changed from the application), the signer's IP, browser, location, the disclosure and sign times, the terms version, and a SHA-256 over all of it plus the exact texts agreed to. Every step (sent, opened, disclosure accepted, signed, link revoked, identifiers revealed) goes into an audit trail with its time and origin, shown under the signature. The EIN and SSN are encrypted with AES-GCM under `SIGNING_ENCRYPTION_KEY` before they're written; the admin page shows the last four digits, and **Reveal** decrypts them, logging which admin did. The link token itself is never stored, only its hash. Decided applications are kept out of the retention purge.
+
+Signing sends the applicant a receipt and the team inbox a notice. The disclosure and attestation wording in `src/lib/signing-config.ts` is a starting point; have it reviewed, and bump `SIGNING_TERMS_VERSION` whenever it changes.
 
 ### Dev vs. build
 `astro.config.mjs` only attaches the `@astrojs/cloudflare` adapter for `astro build`/`astro preview`, not `astro dev`. Local dev runs on plain Node/Vite instead of the adapter's workerd emulation, which sidesteps an upstream dev-server bug where a dependency only reachable from an on-demand route (e.g. `free-email-domains` via `/partner`) gets discovered lazily and crashes the runner ([withastro/astro#17921](https://github.com/withastro/astro/issues/17921)). The rate limiters degrade to "unlimited" when absent, so `pnpm dev` behaves the same apart from that. To exercise anything binding-specific, use `pnpm build && pnpm preview` (or `wrangler dev`), not `pnpm dev`.

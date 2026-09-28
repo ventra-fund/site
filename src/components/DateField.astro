@@ -22,9 +22,15 @@ interface Props {
   placeholder?: string;
   required?: boolean;
   class?: string;
+  /** Starting date, YYYY-MM-DD (e.g. a value to confirm on the signing page). Anything else is ignored. */
+  value?: string;
 }
 
-const { name, id = name, min, max, maxToday = false, placeholder = "MM/DD/YYYY", required = false, class: className = "" } = Astro.props;
+const { name, id = name, min, max, maxToday = false, placeholder = "MM/DD/YYYY", required = false, class: className = "", value: rawValue } = Astro.props;
+// A starting value fills all three places the date lives: the typed field (in the same M/D/YYYY
+// shape picking a day writes), the hidden field that is submitted, and the calendar's selection.
+const value = rawValue && /^\d{4}-\d{2}-\d{2}$/.test(rawValue) ? rawValue : undefined;
+const typedValue = value ? (([y, m, d]) => `${Number(m)}/${Number(d)}/${y}`)(value.split("-")) : undefined;
 
 const MONTH_NAMES = [
   "January", "February", "March", "April", "May", "June",
@@ -52,10 +58,11 @@ const YEARS = Array.from({ length: YEAR_MAX - YEAR_MIN + 1 }, (_, i) => YEAR_MAX
     autocomplete="off"
     placeholder={placeholder}
     required={required}
+    value={typedValue}
     data-date-input
     class={cn(inputClass, "pr-10", className)}
   />
-  <input type="hidden" name={name} data-date-value />
+  <input type="hidden" name={name} value={value} data-date-value />
 
   {/* The popover trigger is the icon button itself (data-slot goes straight on it, no wrapper),
       so the library's aria-expanded/aria-controls land on a real button and focus can return to
@@ -75,7 +82,7 @@ const YEARS = Array.from({ length: YEAR_MAX - YEAR_MIN + 1 }, (_, i) => YEAR_MAX
         are different widths and throw off the header's centering (it's a flex row split evenly
         around them, so unequal button widths push the month/year heading off-center). Slotted
         icons of matching size keep the two buttons — and the heading between them — symmetric. */}
-    <calendar-date min={min} max={max}>
+    <calendar-date min={min} max={max} value={value}>
       <span slot="previous" class="inline-flex items-center justify-center">
         <ChevronLeft class="size-4" aria-hidden="true" />
         <span class="sr-only">Previous month</span>

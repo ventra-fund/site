@@ -6,17 +6,42 @@ import { getDocumentBucket, headDocument, type StoredDocument } from "@/lib/serv
 import DocumentActions from "@/components/DocumentActions.astro";
 import { Dialog, DialogClose, DialogContent, DialogTitle, DialogTrigger } from "@/ui/dialog";
 import { X } from "@lucide/astro";
+import { Font } from "astro:assets";
+import ApplicationDecision from "@/components/admin/ApplicationDecision.astro";
+import SignatureRecord from "@/components/admin/SignatureRecord.astro";
 import { DRAFT_FIELDS, DRAFT_FIELD_LABELS, UUID_V4, type DraftField } from "@/lib/draft-config";
 import { formatName, formatPlace, formatTime } from "@/lib/server/admin-format";
+import { DECISION_NOTICES, handleDecisionPost, type DecisionNotice } from "@/lib/server/decision-actions";
+import { getDecision, getLatestRequest, listEvents, listRequestIds } from "@/lib/server/signing";
 
-// One /apply session: what was typed (and when each field was first filled), the signals it
-// arrived with, and its stored statements. Sign-in is enforced by src/middleware.ts.
+// One /apply session: its stored statements, what was typed (and when each field was first
+// filled), the admin's decision and, after an approval, the signing link and the signed record,
+// then the signals it arrived with. Sign-in is enforced by src/middleware.ts.
 export const prerender = false;
 
 const id = Astro.params.id ?? "";
 const db = UUID_V4.test(id) ? await getDraftDb() : undefined;
 const row = db ? await getDraft(db, id) : null;
-if (!row) return new Response("Not found", { status: 404 });
+if (!db || !row) return new Response("Not found", { status: 404 });
+
+if (Astro.request.method === "POST") {
+  // Same guard as the settings form on /admin: the session cookie is SameSite=Lax, and the origin
+  // check makes refusing a cross-site post explicit.
+  if (Astro.request.headers.get("Origin") !== Astro.url.origin) return new Response("Forbidden", { status: 403 });
+  const notice = await handleDecisionPost(db, row, await Astro.request.formData(), {
+    actor: Astro.locals.adminSession!.user.email,
+    origin: Astro.url.origin,
+  });
+  // Post/redirect/get, so a reload doesn't approve (and email) twice.
+  return Astro.redirect(`/admin/drop-offs/${id}?notice=${notice}#decision`, 303);
+}
+const noticeParam = Astro.url.searchParams.get("notice");
+const notice = noticeParam && noticeParam in DECISION_NOTICES ? (noticeParam as DecisionNotice) : null;
+
+const [decision, latestRequest, requestIds] = await Promise.all([getDecision(db, id), getLatestRequest(db, id), listRequestIds(db, id)]);
+const events = await listEvents(db, requestIds);
+const latestViews = latestRequest ? events.filter((e) => e.request_id === latestRequest.id && e.type === "viewed").length : 0;
+const signedRequest = latestRequest?.status === "signed" ? latestRequest : null;
 
 const fields = parseObject(row.fields_json);
 const progress = parseObject(row.field_progress_json);
@@ -51,6 +76,7 @@ const sizeLabel = (bytes: number) => `${(bytes / 1024 / 1024).toFixed(1)} MB`;
 ---
 
 <AdminLayout title={title} current="applications">
+  {signedRequest && <Font cssVariable="--font-signature" slot="head" />}
   <div class="flex flex-col gap-2">
     <a href="/admin/drop-offs" class="text-sm text-primary hover:underline">← Applications</a>
     <div class="flex flex-wrap items-center gap-3">
@@ -58,28 +84,6 @@ const sizeLabel = (bytes: number) => `${(bytes / 1024 / 1024).toFixed(1)} MB`;
       <StatusBadge status={row.status} />
     </div>
   </div>
-
-  <section class="flex flex-col gap-3">
-    <h2 class="text-base font-semibold">Form <span class="font-normal text-muted-foreground">{row.fields_completed}/{row.fields_total}</span></h2>
-    <div class="rounded-md border border-border">
-      <table class="w-full text-left text-sm">
-        <tbody>
-          {DRAFT_FIELDS.map((name) => (
-            <tr class="border-b border-border last:border-0">
-              <th class="w-1/3 px-3 py-2 align-top font-normal text-muted-foreground">{DRAFT_FIELD_LABELS[name]}</th>
-              <td class="break-words px-3 py-2 align-top">
-                {value(name) || <span class="text-muted-foreground">—</span>}
-                {autofilled.has(name) && <span class="ml-2 text-xs text-muted-foreground">(statement)</span>}
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
-    {timeline.length > 1 && (
-      <p class="text-xs text-muted-foreground">Fill order: {timeline.map((n) => DRAFT_FIELD_LABELS[n]).join(" → ")}</p>
-    )}
-  </section>
 
   <section class="flex flex-col gap-3">
     <h2 class="text-base font-semibold">Statements</h2>
@@ -130,6 +134,34 @@ const sizeLabel = (bytes: number) => `${(bytes / 1024 / 1024).toFixed(1)} MB`;
       </ul>
     )}
   </section>
+
+  <section class="flex flex-col gap-3">
+    <h2 class="text-base font-semibold">Form <span class="font-normal text-muted-foreground">{row.fields_completed}/{row.fields_total}</span></h2>
+    <div class="rounded-md border border-border">
+      <table class="w-full text-left text-sm">
+        <tbody>
+          {DRAFT_FIELDS.map((name) => (
+            <tr class="border-b border-border last:border-0">
+              <th class="w-1/3 px-3 py-2 align-top font-normal text-muted-foreground">{DRAFT_FIELD_LABELS[name]}</th>
+              <td class="break-words px-3 py-2 align-top">
+                {value(name) || <span class="text-muted-foreground">—</span>}
+                {autofilled.has(name) && <span class="ml-2 text-xs text-muted-foreground">(statement)</span>}
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+    {timeline.length > 1 && (
+      <p class="text-xs text-muted-foreground">Fill order: {timeline.map((n) => DRAFT_FIELD_LABELS[n]).join(" → ")}</p>
+    )}
+  </section>
+
+  <div id="decision" class="scroll-mt-6">
+    <ApplicationDecision decision={decision} request={latestRequest} views={latestViews} email={value("email")} notice={notice} />
+  </div>
+
+  {signedRequest && <SignatureRecord request={signedRequest} events={events} />}
 
   <section class="flex flex-col gap-3">
     <h2 class="text-base font-semibold">Session</h2>

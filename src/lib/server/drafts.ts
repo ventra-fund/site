@@ -372,11 +372,13 @@ export async function purgeExpired(db: D1Database): Promise<void> {
 
 /**
  * Delete up to `limit` sessions matching `where`, their stored statements first: if the bucket
- * refuses, the rows stay and the next pass tries again rather than orphaning the files.
+ * refuses, the rows stay and the next pass tries again rather than orphaning the files. An
+ * application an admin has decided on is never purged: it may carry a signed agreement
+ * (src/lib/server/signing.ts), which is a record to keep.
  */
 async function purgeRows(db: D1Database, bucket: R2Bucket | undefined, where: string, binds: unknown[], limit = PURGE_BATCH): Promise<number> {
   const { results } = await db
-    .prepare(`select "id", "document_ids_json" from "apply_draft" where ${where} limit ?`)
+    .prepare(`select "id", "document_ids_json" from "apply_draft" where "id" not in (select "draft_id" from "application_decision") and ${where} limit ?`)
     .bind(...binds, limit)
     .all<{ id: string; document_ids_json: string }>();
   if (!results.length) return 0;

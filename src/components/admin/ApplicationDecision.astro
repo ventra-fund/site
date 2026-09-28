@@ -1,0 +1,174 @@
+---
+import QuillEditor from "@/components/QuillEditor.astro";
+import { Check } from "@lucide/astro";
+import { Button } from "@/ui/button";
+import { formatTime } from "@/lib/server/admin-format";
+import { isExpired, type DecisionRow, type SigningRequestRow } from "@/lib/server/signing";
+import { DECISION_NOTICES, type DecisionNotice } from "@/lib/server/decision-actions";
+
+// The decision block on the admin application page: the current decision and where its signing
+// link stands, and (until the application is signed) the form to approve, decline or resend.
+// Posts back to the page itself, handled by src/lib/server/decision-actions.ts.
+interface Props {
+  decision: DecisionRow | null;
+  request: SigningRequestRow | null;
+  /** How many times the latest link was opened. */
+  views: number;
+  /** The address a link would go to, as the application has it. */
+  email: string;
+  notice: DecisionNotice | null;
+}
+
+const { decision, request, views, email, notice } = Astro.props;
+const signed = request?.status === "signed";
+const approved = decision?.decision === "approved";
+const shownNotice = notice ? DECISION_NOTICES[notice] : null;
+// A link that went out and still works: the approve button stands in as "Link sent".
+const liveLink = approved && request?.status === "pending" && !isExpired(request) && request.email_sent_at != null;
+
+// One line on the latest link, most important state first.
+const linkState = !request
+  ? null
+  : signed
+    ? `Signed ${formatTime(request.signed_at)}.`
+    : request.status === "revoked"
+      ? "The last signing link was revoked."
+      : isExpired(request)
+        ? `The signing link sent to ${request.email} expired ${formatTime(request.expires_at)}.`
+        : [
+            request.email_sent_at ? `Signing link sent to ${request.email} ${formatTime(request.email_sent_at)}` : `Signing link created for ${request.email} but not emailed`,
+            `expires ${formatTime(request.expires_at)}`,
+            views ? `opened ${views} time${views === 1 ? "" : "s"}` : "not opened yet",
+            request.consented_at ? "e-sign disclosure accepted" : null,
+          ]
+            .filter(Boolean)
+            .join(" · ") + ".";
+---
+
+<section class="flex flex-col gap-4">
+  <div class="flex flex-wrap items-center gap-3">
+    <h2 class="text-base font-semibold">Decision</h2>
+    {decision && (
+      <span class={`rounded px-2 py-0.5 text-xs font-medium ${approved ? "bg-accent/15 text-accent" : "bg-destructive/10 text-destructive"}`}>
+        {signed ? "Approved · signed" : approved ? "Approved" : "Declined"}
+      </span>
+    )}
+  </div>
+
+  {shownNotice && (
+    <p role="status" class={`text-sm ${shownNotice.bad ? "text-destructive" : "text-muted-foreground"}`}>{shownNotice.text}</p>
+  )}
+
+  {decision && (
+    <div class="flex flex-col gap-2 rounded-md border border-border p-4 text-sm">
+      <p class="text-muted-foreground">
+        {approved ? "Approved" : "Declined"} by {decision.decided_by} · {formatTime(decision.decided_at)}
+      </p>
+      {decision.reason_html
+        ? <div class="decision-reason" set:html={decision.reason_html} />
+        : <p class="text-muted-foreground">No reason given.</p>}
+      {approved && linkState && <p class="text-muted-foreground">{linkState}</p>}
+    </div>
+  )}
+
+  {!signed && (
+    <form method="post" data-decision-form class="flex flex-col gap-3">
+      <span id="decision-reason-label" class="text-sm font-medium">
+        Reason <span class="font-normal text-muted-foreground">(required to decline)</span>
+      </span>
+      <QuillEditor labelledby="decision-reason-label" toolbar="open" surface="bg-background border border-border" minHeight="min-h-28" placeholder="Why this decision?" />
+      <input type="hidden" name="reasonHtml" />
+      <p data-decision-error hidden role="alert" class="text-sm text-destructive"></p>
+      <div class="flex flex-wrap items-center gap-2">
+        {liveLink ? (
+          /* A link is out: sending another takes a second, confirming click (script below). */
+          <Button
+            type="submit"
+            name="action"
+            value="resend"
+            size="sm"
+            variant="outline"
+            data-link-sent
+            class="border-green-600/30 bg-green-600/10 text-green-700 hover:border-green-600/40 hover:bg-green-600/20 hover:text-green-800 dark:text-green-400 dark:hover:text-green-300 data-armed:border-amber-500/50 data-armed:bg-amber-500/15 data-armed:text-amber-700 dark:data-armed:text-amber-300"
+          >
+            <span data-idle-label class="inline-flex items-center gap-1.5"><Check /> Link sent</span>
+            <span data-armed-label hidden>Click again to send a new link</span>
+          </Button>
+        ) : (
+          <Button type="submit" name="action" value="approve" size="sm">
+            {approved ? "Send a new signing link" : "Approve and send signing link"}
+          </Button>
+        )}
+        <Button type="submit" name="action" value="decline" size="sm" variant="outline">Decline</Button>
+      </div>
+      <p class="text-xs text-muted-foreground">
+        {email ? <>Approving emails a signing link to <strong class="font-medium text-foreground">{email}</strong>, and any earlier link stops working.</> : "This application has no email address, so it can't be approved yet."}
+      </p>
+    </form>
+  )}
+</section>
+
+<style is:global>
+  .decision-reason :where(ol) { list-style: decimal; padding-left: 1.25rem; }
+  .decision-reason :where(ul) { list-style: disc; padding-left: 1.25rem; }
+  .decision-reason :where(a) { color: var(--primary); text-decoration: underline; }
+</style>
+
+<script>
+  // How long "Click again to send a new link" waits for the confirming click.
+  const ARMED_MS = 5000;
+
+  // Copy the editor's HTML into the form on submit; a decline needs a reason.
+  document.querySelectorAll<HTMLFormElement>("[data-decision-form]").forEach((form) => {
+    const editorEl = form.querySelector("[data-quill-editor]") as (HTMLElement & { quill?: { getText(): string; getSemanticHTML(): string; focus(): void } }) | null;
+    const hidden = form.querySelector<HTMLInputElement>('input[name="reasonHtml"]')!;
+    const errorEl = form.querySelector<HTMLElement>("[data-decision-error]")!;
+
+    // "Link sent": the first click only arms it; a second click within ARMED_MS sends another link.
+    const sentButton = form.querySelector<HTMLButtonElement>("[data-link-sent]");
+    if (sentButton) {
+      const idle = sentButton.querySelector<HTMLElement>("[data-idle-label]")!;
+      const armed = sentButton.querySelector<HTMLElement>("[data-armed-label]")!;
+      let timer = 0;
+      const setArmed = (on: boolean) => {
+        sentButton.toggleAttribute("data-armed", on);
+        idle.hidden = on;
+        armed.hidden = !on;
+        window.clearTimeout(timer);
+        if (on) timer = window.setTimeout(() => setArmed(false), ARMED_MS);
+      };
+      sentButton.addEventListener("click", (e) => {
+        if (sentButton.hasAttribute("data-armed")) return;
+        e.preventDefault();
+        setArmed(true);
+      });
+      sentButton.addEventListener("blur", () => setArmed(false));
+    }
+
+    form.addEventListener("submit", (e) => {
+      const quill = editorEl?.quill;
+      const hasText = !!quill?.getText().trim();
+      // Sending another link with a new reason typed records it too (a fresh approval); with the
+      // editor empty it's a plain resend that keeps the reason on file.
+      const submitted = (e.submitter as HTMLButtonElement | null)?.value;
+      const action = submitted === "resend" && hasText ? "approve" : submitted;
+      hidden.value = hasText ? quill!.getSemanticHTML() : "";
+      if (action === "decline" && !hasText) {
+        e.preventDefault();
+        errorEl.textContent = "Please give a reason for declining.";
+        errorEl.hidden = false;
+        quill?.focus();
+        return;
+      }
+      errorEl.hidden = true;
+      // One submit at a time: approving sends an email.
+      form.querySelectorAll("button[type=submit]").forEach((b) => b.setAttribute("disabled", ""));
+      // The submitter's name/value is dropped once it is disabled, so carry the action along.
+      const carried = document.createElement("input");
+      carried.type = "hidden";
+      carried.name = "action";
+      carried.value = action ?? "";
+      form.append(carried);
+    });
+  });
+</script>

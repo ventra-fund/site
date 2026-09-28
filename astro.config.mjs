@@ -19,7 +19,8 @@ import tailwindcss from "@tailwindcss/vite";
 // │ below — and know that each addition is another font file on every page.                    │
 // │ The `<Font>` tag in src/layouts/Layout.astro `preload`s the face; keep that.                │
 // │                                                                                             │
-// │ Inter is the only family. A separate heading font (Raleway, `--font-heading`) used to be    │
+// │ Inter is the only site-wide family (Dancing Script is the e-signature face, loaded only where │
+// │ a signature is shown; see its entry). A separate heading font (Raleway, `--font-heading`) used to be    │
 // │ configured here but nothing in the site applied `font-heading`, so it was pure download.   │
 // │ To add one back: add a second entry here with `cssVariable: "--font-heading"`, a matching   │
 // │ `<Font cssVariable="--font-heading" preload />` in Layout.astro, and DON'T redeclare        │
@@ -34,6 +35,17 @@ const BEJAMAS_ASTRO_FONTS = [
     cssVariable: "--font-sans",
     subsets: ["latin"],
     weights: ["400 800"],
+    styles: ["normal"],
+  },
+  // The cursive face a typed e-signature is drawn in (src/lib/signing-config.ts). Only the signing
+  // page and the admin application page render `<Font cssVariable="--font-signature" />`, so no
+  // other page downloads it.
+  {
+    provider: fontProviders.google(),
+    name: "Dancing Script",
+    cssVariable: "--font-signature",
+    subsets: ["latin"],
+    weights: ["400"],
     styles: ["normal"],
   },
 ];
@@ -73,6 +85,9 @@ export default defineConfig({
       BETTER_AUTH_URL: envField.string({ context: "server", access: "secret", optional: true }),
       // Comma-separated; the only addresses that can sign in to /admin.
       ADMIN_EMAILS: envField.string({ context: "server", access: "secret", optional: true }),
+      // 32 random bytes, base64: encrypts the EIN and SSN a signer gives (src/lib/server/signing.ts).
+      // Losing it makes stored identifiers unreadable; rotating it needs a re-encrypt.
+      SIGNING_ENCRYPTION_KEY: envField.string({ context: "server", access: "secret", optional: true }),
     },
   },
   integrations: [],

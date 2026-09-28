@@ -14,6 +14,9 @@ importers:
       '@data-slot/dialog':
         specifier: ^1.0.2
         version: 1.0.2
+      '@data-slot/hover-card':
+        specifier: ^1.0.2
+        version: 1.0.2
       '@data-slot/popover':
         specifier: ^0.2.167
         version: 0.2.167
@@ -528,6 +531,9 @@ packages:
 
   '@data-slot/dialog@1.0.2':
     resolution: {integrity: sha512-Xke0TXqQHYlsW1SGcY/t/bX1Gr3doTq1+fHTngNJ16QThz7xr96VzAXZkTKGJo/bTe4NmO87qpILRSq4QiZfZA==}
+
+  '@data-slot/hover-card@1.0.2':
+    resolution: {integrity: sha512-Itf7MvxLVrmXScg+8NG3V0QY+28YPyhmhOlnRLw35d0mKwMBtxkyYFMMpBMxYRxV3WXuv0ZFyhFjzscjDFhgFg==}
 
   '@data-slot/popover@0.2.167':
     resolution: {integrity: sha512-FoxruBLeLc92rOriDmFfWlCjejY5Zlq6XzRJIf+vyFvJ+3RAMnR0qKZKWg2p5keH4nrN5y/1h/ubAU9NUbohKw==}
@@ -4442,6 +4448,10 @@ snapshots:
   '@data-slot/core@1.0.2': {}
 
   '@data-slot/dialog@1.0.2':
+    dependencies:
+      '@data-slot/core': 1.0.2
+
+  '@data-slot/hover-card@1.0.2':
     dependencies:
       '@data-slot/core': 1.0.2
 

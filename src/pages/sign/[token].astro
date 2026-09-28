@@ -1,0 +1,297 @@
+---
+import { Font } from "astro:assets";
+import Layout from "@/layouts/Layout.astro";
+import { Button } from "@/ui/button";
+import { Checkbox } from "@/ui/checkbox";
+import { Input } from "@/ui/input";
+import DateField from "@/components/DateField.astro";
+import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/ui/hover-card";
+import { CircleHelp } from "@lucide/astro";
+import { getDraftDb, parseObject } from "@/lib/server/drafts";
+import { findByToken, isExpired, recordView, signalsOf } from "@/lib/server/signing";
+import { formatTime } from "@/lib/server/admin-format";
+import { EIN_PATTERN, ESIGN_DISCLOSURE, SIGN_TOKEN, SIGNATURE_ADOPTION, SIGNING_ATTESTATION, SSN_PATTERN } from "@/lib/signing-config";
+
+// Where an approved applicant lands from the approval email (src/lib/server/signing.ts): accept
+// the e-sign disclosure, confirm the application details, give an EIN and SSN, and sign with a
+// typed name. Steps post to /api/sign/[token]. Constraints mirror src/lib/signing-schema.ts.
+export const prerender = false;
+
+// The token is in the URL: keep it out of Referer headers, caches and search results.
+Astro.response.headers.set("Referrer-Policy", "no-referrer");
+Astro.response.headers.set("Cache-Control", "no-store");
+Astro.response.headers.set("X-Robots-Tag", "noindex, nofollow");
+
+const token = Astro.params.token ?? "";
+const db = SIGN_TOKEN.test(token) ? await getDraftDb() : undefined;
+const row = db ? await findByToken(db, token) : null;
+
+type State = "invalid" | "expired" | "revoked" | "signed" | "open";
+const state: State = !row ? "invalid" : row.status === "signed" ? "signed" : row.status === "revoked" ? "revoked" : isExpired(row) ? "expired" : "open";
+if (db && row && state === "open") await recordView(db, row.id, signalsOf(Astro.request));
+if (state === "invalid") Astro.response.status = 404;
+
+const prefill = parseObject(row?.prefill_json ?? "{}");
+const v = (name: string) => (typeof prefill[name] === "string" ? (prefill[name] as string) : "");
+const consented = row?.consented_at != null;
+
+const CLOSED_COPY: Record<Exclude<State, "open">, string> = {
+  invalid: "This signing link isn't valid. Please use the link in the most recent email we sent you.",
+  expired: "This signing link has expired. Reply to the email that brought you here and we'll send you a new one.",
+  revoked: "This signing link is no longer active. A newer one may have been sent, so please check your email.",
+  signed: `This application was signed ${formatTime(row?.signed_at)}. Nothing more is needed; we'll be in touch.`,
+};
+
+const fieldClass = "flex flex-col gap-1.5 text-sm font-medium";
+const EMAIL_PATTERN = "[^@\\s]+@[^@\\s]+\\.[^@\\s]{2,}";
+---
+
+<Layout title="Review and sign" noindex>
+  <Font cssVariable="--font-signature" slot="head" />
+  <main class="w-full min-h-screen px-4 pt-16 pb-20">
+    <div class="mx-auto flex max-w-2xl flex-col gap-8">
+      {/* No visible page title; the sections' headings carry the page. Kept for screen readers. */}
+      <h1 class="sr-only">Review and sign</h1>
+
+      {state !== "open" ? (
+        <p class="rounded-md border border-border p-4 text-sm">{CLOSED_COPY[state]}</p>
+      ) : (
+        <>
+          <section data-step-consent hidden={consented} class="flex flex-col gap-4 rounded-md border border-border p-5">
+            <h2 class="text-lg font-semibold">Electronic records and signatures</h2>
+            {ESIGN_DISCLOSURE.map((p) => <p class="text-sm text-muted-foreground">{p}</p>)}
+            <p data-consent-error hidden role="alert" class="text-sm text-destructive"></p>
+            <Button type="button" class="self-start" data-consent>I agree, continue</Button>
+          </section>
+
+          <form data-sign-form hidden={!consented} novalidate class="flex flex-col gap-8">
+            <div class="flex flex-col gap-5">
+              <h2 class="text-lg font-semibold">
+                Confirm your details <span class="font-normal text-muted-foreground">– Correct anything that's wrong.</span>
+              </h2>
+              <label class={fieldClass}>
+                Legal business name
+                <Input name="legalBusinessName" value={v("legalBusinessName")} required maxlength="300" autocomplete="organization" />
+              </label>
+              <label class={fieldClass}>
+                <span>DBA <span class="font-normal text-muted-foreground">(optional)</span></span>
+                <Input name="dba" value={v("dba")} maxlength="200" />
+              </label>
+              <div class="grid grid-cols-1 gap-5 sm:grid-cols-2">
+                <label class={fieldClass}>
+                  First name
+                  <Input name="firstName" value={v("firstName")} required maxlength="200" autocomplete="given-name" />
+                </label>
+                <label class={fieldClass}>
+                  Last name
+                  <Input name="lastName" value={v("lastName")} required maxlength="200" autocomplete="family-name" />
+                </label>
+              </div>
+              <div class="grid grid-cols-1 gap-5 sm:grid-cols-2">
+                <label class={fieldClass}>
+                  Mobile #
+                  <Input name="mobile" type="tel" value={v("mobile")} required minlength="7" maxlength="30" autocomplete="tel" />
+                </label>
+                <label class={fieldClass}>
+                  Email
+                  <Input name="email" type="email" value={v("email")} required maxlength="254" pattern={EMAIL_PATTERN} autocomplete="email" />
+                </label>
+              </div>
+              <label class={fieldClass}>
+                Home address
+                <Input name="homeAddress" value={v("homeAddress")} required maxlength="300" autocomplete="street-address" />
+              </label>
+              <label class={fieldClass}>
+                Business address
+                <Input name="businessAddress" value={v("businessAddress")} required maxlength="300" />
+              </label>
+              <div class="grid grid-cols-1 gap-5 sm:grid-cols-2">
+                <label class={fieldClass}>
+                  Business start date
+                  <DateField name="businessStartDate" value={v("businessStartDate")} required maxToday />
+                </label>
+                <label class={fieldClass}>
+                  Business industry
+                  <Input name="businessIndustry" value={v("businessIndustry")} required maxlength="200" />
+                </label>
+              </div>
+              <div class="grid grid-cols-1 gap-5 sm:grid-cols-3">
+                <label class={fieldClass}>
+                  Monthly revenue
+                  <Input name="monthlyRevenue" type="number" inputmode="numeric" value={v("monthlyRevenue")} required min="0" max="1000000000" step="1" placeholder="$" />
+                </label>
+                <label class={fieldClass}>
+                  Funding requested
+                  <Input name="fundingAmount" type="number" inputmode="numeric" value={v("fundingAmount")} required min="0" max="1000000000" step="1" placeholder="$" />
+                </label>
+                <label class={fieldClass}>
+                  Estimated FICO
+                  <Input name="ficoScore" type="number" inputmode="numeric" value={v("ficoScore")} required min="300" max="850" step="1" />
+                </label>
+              </div>
+            </div>
+
+            <div class="flex flex-col gap-5">
+              <div class="flex items-center gap-1.5">
+                <h2 class="text-lg font-semibold">Identification</h2>
+                {/* A focusable button, so keyboard users open it too; described by the card's text for screen readers. */}
+                <HoverCard delay={100} closeDelay={150} data-tap-hover-card>
+                  <HoverCardTrigger aria-label="How your identification is protected" aria-describedby="identification-note" class="translate-y-[1.5px] rounded-full text-foreground outline-none hover:opacity-70 focus-visible:ring-3 focus-visible:ring-ring/50">
+                    <CircleHelp class="size-4" aria-hidden="true" />
+                  </HoverCardTrigger>
+                  <HoverCardContent id="identification-note" side="top" class="w-64 p-3">
+                    Encrypted as soon as it reaches us and only seen by the team reviewing your application.
+                  </HoverCardContent>
+                </HoverCard>
+              </div>
+              <div class="grid grid-cols-1 gap-5 sm:grid-cols-2">
+                <label class={fieldClass}>
+                  Business EIN
+                  <Input name="ein" required inputmode="numeric" pattern={EIN_PATTERN} placeholder="12-3456789" autocomplete="off" spellcheck="false" />
+                </label>
+                <label class={fieldClass}>
+                  Your SSN
+                  <Input name="ssn" required inputmode="numeric" pattern={SSN_PATTERN} placeholder="123-45-6789" autocomplete="off" spellcheck="false" />
+                </label>
+              </div>
+            </div>
+
+            <div class="flex flex-col gap-5">
+              <h2 class="text-lg font-semibold">Sign</h2>
+              <label class={fieldClass}>
+                Type your full legal name
+                <Input name="signerName" value={[v("firstName"), v("lastName")].filter(Boolean).join(" ")} required maxlength="200" autocomplete="name" />
+              </label>
+              <div class="flex flex-col gap-1 rounded-md border border-border bg-secondary/40 px-5 pt-4 pb-3" aria-hidden="true">
+                <span data-signature-preview class="min-h-14 truncate text-5xl leading-tight" style="font-family: var(--font-signature), cursive"></span>
+                <span class="border-t border-foreground/30 pt-1 text-xs text-muted-foreground">Signature</span>
+              </div>
+              {/* Both agreements alike: box top-aligned with the first line of its wrapping text. */}
+              <div class="flex flex-col gap-3">
+                {[
+                  { id: "sign-attest", name: "attest", text: SIGNING_ATTESTATION },
+                  { id: "sign-adopt", name: "adopt", text: SIGNATURE_ADOPTION },
+                ].map((c) => (
+                  <Checkbox id={c.id} name={c.name} required labelClass="items-start [&>span:first-child]:mt-0.5">
+                    <span class="text-sm">{c.text}</span>
+                  </Checkbox>
+                ))}
+              </div>
+            </div>
+
+            <p data-sign-error hidden role="alert" class="text-sm text-destructive"></p>
+            <Button type="submit" size="lg" class="self-start" data-sign-submit>Adopt and sign</Button>
+          </form>
+
+          <p data-sign-done hidden role="status" class="rounded-md border border-border p-4 text-sm">
+            Thank you. Your application is signed, and a receipt is on its way to your email. We'll be in touch with your offer.
+          </p>
+        </>
+      )}
+    </div>
+  </main>
+</Layout>
+
+<script>
+  import { markServerIssues, setupValidation, showMessage, validateForm, type FieldIssue } from "@/lib/form";
+  import { EIN_GROUPS, SSN_GROUPS, maskIdentifierInput } from "@/lib/identifier-format";
+
+  const CLOSED: Record<string, string> = {
+    already_signed: "This application has already been signed.",
+    revoked: "This signing link is no longer active. Please check your email for a newer one.",
+    expired: "This signing link has expired. Reply to our email and we'll send you a new one.",
+    not_found: "This signing link isn't valid. Please use the link in the most recent email we sent you.",
+    too_many_requests: "Too many attempts from your network in the last minute. Please wait a minute and try again.",
+  };
+  const GENERIC = "Something went wrong. Please try again.";
+
+  // Hover cards ignore touch, and iOS doesn't focus a tapped button, so a tap on the "?" toggles it.
+  document.querySelectorAll<HTMLElement>("[data-tap-hover-card]").forEach((card) => {
+    let open = false;
+    card.addEventListener("hover-card:change", (e) => { open = !!(e as CustomEvent<{ open: boolean }>).detail?.open; });
+    card.querySelector('[data-slot="hover-card-trigger"]')?.addEventListener("pointerup", (e) => {
+      if ((e as PointerEvent).pointerType !== "touch") return;
+      card.dispatchEvent(new CustomEvent("hover-card:set", { detail: { open: !open } }));
+    });
+  });
+
+  const url = `/api/sign/${location.pathname.split("/").pop()}`;
+  const post = async (body: unknown) => {
+    const res = await fetch(url, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
+    const data = (await res.json().catch(() => ({}))) as { error?: string; fields?: FieldIssue[] };
+    return { ok: res.ok, data };
+  };
+
+  const consentStep = document.querySelector<HTMLElement>("[data-step-consent]");
+  const form = document.querySelector<HTMLFormElement>("[data-sign-form]");
+  const done = document.querySelector<HTMLElement>("[data-sign-done]");
+
+  // Step 1: the disclosure.
+  const consentButton = document.querySelector<HTMLButtonElement>("[data-consent]");
+  consentButton?.addEventListener("click", async () => {
+    const errorEl = document.querySelector<HTMLElement>("[data-consent-error]")!;
+    consentButton.disabled = true;
+    errorEl.hidden = true;
+    try {
+      const { ok, data } = await post({ action: "consent" });
+      if (!ok) throw new Error(data.error ?? "");
+      consentStep!.hidden = true;
+      form!.hidden = false;
+      form!.querySelector<HTMLInputElement>("input")?.focus();
+    } catch (err) {
+      showMessage(errorEl, CLOSED[(err as Error).message] ?? GENERIC);
+      consentButton.disabled = false;
+    }
+  });
+
+  // Step 2: details, identifiers and the signature.
+  if (form) {
+    const errorEl = form.querySelector<HTMLElement>("[data-sign-error]")!;
+    const submit = form.querySelector<HTMLButtonElement>("[data-sign-submit]")!;
+    const nameInput = form.querySelector<HTMLInputElement>('input[name="signerName"]')!;
+    const preview = form.querySelector<HTMLElement>("[data-signature-preview]")!;
+    const drawSignature = () => { preview.textContent = nameInput.value.trim(); };
+    nameInput.addEventListener("input", drawSignature);
+    drawSignature();
+    maskIdentifierInput(form.querySelector<HTMLInputElement>('input[name="ein"]')!, EIN_GROUPS);
+    maskIdentifierInput(form.querySelector<HTMLInputElement>('input[name="ssn"]')!, SSN_GROUPS);
+    setupValidation(form);
+
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      errorEl.hidden = true;
+      if (!validateForm(form, errorEl)) return;
+      const value = (name: string) => (form.elements.namedItem(name) as HTMLInputElement).value.trim();
+      const fields = Object.fromEntries(
+        ["legalBusinessName", "dba", "firstName", "lastName", "mobile", "email", "monthlyRevenue", "homeAddress", "businessAddress", "businessStartDate", "businessIndustry", "ficoScore", "fundingAmount"].map((n) => [n, value(n)]),
+      );
+      submit.disabled = true;
+      try {
+        const { ok, data } = await post({
+          action: "sign",
+          fields,
+          ein: value("ein"),
+          ssn: value("ssn"),
+          signerName: value("signerName"),
+          attest: (form.elements.namedItem("attest") as HTMLInputElement).checked,
+          adopt: (form.elements.namedItem("adopt") as HTMLInputElement).checked,
+        });
+        if (ok) {
+          form.hidden = true;
+          done!.hidden = false;
+          done!.scrollIntoView({ behavior: "smooth", block: "center" });
+          return;
+        }
+        if (data.error === "invalid_body" && data.fields) {
+          // The server names confirmed fields `fields.<name>`; the inputs are just `<name>`.
+          markServerIssues(form, data.fields.map((f) => ({ ...f, name: f.name.replace(/^fields\./, "") })), errorEl);
+        } else {
+          showMessage(errorEl, CLOSED[data.error ?? ""] ?? GENERIC);
+        }
+      } catch {
+        showMessage(errorEl, `${GENERIC} Check your connection first.`);
+      }
+      submit.disabled = false;
+    });
+  }
+</script>

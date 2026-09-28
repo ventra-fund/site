@@ -46,6 +46,14 @@
 			"name": "DRAFT_RATE_LIMIT",
 			"namespace_id": "1004",
 			"simple": { "limit": 12, "period": 60 }
+		},
+		// The signing link's steps (/api/sign/[token]: accept the disclosure, then sign). A signer
+		// needs two, plus a few retries after a mistyped EIN or SSN; the link token is already the
+		// real gate, this only stops a script guessing at it from one IP.
+		{
+			"name": "SIGN_RATE_LIMIT",
+			"namespace_id": "1005",
+			"simple": { "limit": 10, "period": 60 }
 		}
 	],
 	// Stored copies of uploaded statements (src/lib/server/documents.ts), kept with the drop-off
