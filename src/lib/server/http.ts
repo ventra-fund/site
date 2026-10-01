@@ -7,8 +7,8 @@ import type { ZodError } from 'astro/zod';
 // 200 KB even with markup). Anything larger is refused before it's parsed.
 export const MAX_BODY_BYTES = 1_000_000;
 
-export const json = (status: number, body: Record<string, unknown>) =>
-  new Response(JSON.stringify(body), { status, headers: { 'Content-Type': 'application/json' } });
+export const json = (status: number, body: Record<string, unknown>, headers: Record<string, string> = {}) =>
+  new Response(JSON.stringify(body), { status, headers: { 'Content-Type': 'application/json', ...headers } });
 
 // Multipart framing on top of a request's files and fields: boundaries, part headers.
 const MULTIPART_OVERHEAD_BYTES = 64 * 1024;

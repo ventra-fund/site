@@ -88,6 +88,9 @@ export default defineConfig({
       // 32 random bytes, base64: encrypts the EIN and SSN a signer gives (src/lib/server/signing.ts).
       // Losing it makes stored identifiers unreadable; rotating it needs a re-encrypt.
       SIGNING_ENCRYPTION_KEY: envField.string({ context: "server", access: "secret", optional: true }),
+      // The public phone number, E.164 (+15555550123). Secret so it never lands in the repo or the
+      // static build: only /api/contact/reveal reads it, behind Turnstile (docs/contact-reveal.md).
+      CONTACT_PHONE: envField.string({ context: "server", access: "secret", optional: true }),
     },
   },
   integrations: [],

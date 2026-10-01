@@ -17,6 +17,9 @@ pnpm-debug.log*
 .env
 .env.*
 !.env.example
+# wrangler's local secrets file (same values as .env)
+.dev.vars
+.dev.vars.*
 
 # macOS-specific files
 .DS_Store

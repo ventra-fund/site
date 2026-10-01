@@ -1,5 +1,5 @@
 {
-	"name": "ventra-fund",
+	"name": "site",
 	"main": "@astrojs/cloudflare/entrypoints/server",
 	// Workers runtime behaviour is pinned to this date; bump it deliberately when adopting newer runtime changes.
 	"compatibility_date": "2026-09-20",
@@ -54,6 +54,13 @@
 			"name": "SIGN_RATE_LIMIT",
 			"namespace_id": "1005",
 			"simple": { "limit": 10, "period": 60 }
+		},
+		// The contact reveal (/api/contact/reveal): one call to show the number and one per Copy or
+		// Call, each behind its own Turnstile token. 12 is far above a person and still stops a script.
+		{
+			"name": "CONTACT_RATE_LIMIT",
+			"namespace_id": "1006",
+			"simple": { "limit": 12, "period": 60 }
 		}
 	],
 	// Stored copies of uploaded statements (src/lib/server/documents.ts), kept with the drop-off

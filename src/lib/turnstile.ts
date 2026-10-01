@@ -293,6 +293,57 @@ export function takeTurnstileToken(widget: TurnstileWidget): string | undefined 
   return token || undefined;
 }
 
+/**
+ * Resolve with a fresh token, for an action taken on click rather than behind a gated button (the
+ * contact reveal). Uses a token already waiting if there is one; otherwise mounts the widget
+ * invisible-first and, like gateOnTurnstile, switches it to visible after 5s so a person can solve
+ * it. Rejects when the script can't load or no token arrives within `timeoutMs`. The token is
+ * consumed, so it is never handed to a second request.
+ */
+export function awaitTurnstileToken(widget: TurnstileWidget, timeoutMs = 60_000): Promise<string> {
+  const existing = widget.consumeToken();
+  if (existing) return Promise.resolve(existing);
+  return new Promise((resolve, reject) => {
+    let done = false;
+    const stop = () => {
+      done = true;
+      clearInterval(poll);
+      clearTimeout(fallback);
+      clearTimeout(deadline);
+    };
+    const finish = () => {
+      if (done) return;
+      const token = widget.consumeToken();
+      if (!token) return;
+      stop();
+      resolve(token);
+    };
+    const fail = (err: Error) => {
+      if (done) return;
+      stop();
+      reject(err);
+    };
+    // Same safety net as gateOnTurnstile: an interaction-only challenge can produce a token without
+    // invoking the callback, and a widget already rendered keeps its first callback after a reset.
+    const poll = setInterval(finish, 300);
+    const fallback = setTimeout(() => {
+      if (done) return;
+      widget.dataset.appearance = 'always';
+      if (widget.isRendered) {
+        widget.unmount();
+        widget.mount(finish).catch(fail);
+      }
+    }, 5000);
+    const deadline = setTimeout(() => fail(new Error('turnstile_timeout')), timeoutMs);
+    widget.mount(finish).catch(fail);
+  });
+}
+
+/** After a request spent the widget's token: start solving the next one in the background. */
+export function refreshTurnstile(widget: TurnstileWidget): void {
+  widget.reset();
+}
+
 declare global {
   interface HTMLElementTagNameMap {
     'turnstile-widget': TurnstileWidget;
