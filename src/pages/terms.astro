@@ -1,0 +1,99 @@
+---
+import LegalPage from '@/components/LegalPage.astro';
+import type { LegalSection, Overview } from '@/components/legal-overview';
+import BriefcaseBusiness from '@lucide/astro/icons/briefcase-business';
+import Mail from '@lucide/astro/icons/mail';
+import Signature from '@lucide/astro/icons/signature';
+import MapPin from '@lucide/astro/icons/map-pin';
+import ClipboardList from '@lucide/astro/icons/clipboard-list';
+import Gavel from '@lucide/astro/icons/gavel';
+import Phone from '@lucide/astro/icons/phone';
+import ShieldCheck from '@lucide/astro/icons/shield-check';
+
+// Ported terms, keeping what holds for this site. Left out on purpose, pending
+// a decision or counsel: who funds (direct funder vs. funding partners), governing law and venue,
+// the mailing address, and any promise about marketing calls. Credit is a soft inquiry only, at
+// signing (src/lib/signing-config.ts). docs/privacy-terms-checklist.md.
+
+const overview: Overview = {
+  groups: [
+    {
+      title: 'What we provide',
+      items: [
+        { icon: BriefcaseBusiness, label: 'Business use only', detail: 'Our financing is for business purposes, never personal use.' },
+        { icon: MapPin, label: 'US businesses', detail: 'We work with businesses based in the United States.' },
+        { icon: ShieldCheck, label: 'No hard credit pull', detail: 'Applying involves no credit check. Signing involves a soft inquiry only.' },
+        { icon: Signature, label: 'No commitment until signed', detail: "An approval isn't a commitment to fund until a funding agreement is signed." },
+      ],
+    },
+    {
+      title: 'What we ask of you',
+      items: [
+        { icon: ClipboardList, label: 'Accurate information', detail: 'What you tell us must be true and complete.' },
+        { icon: Gavel, label: 'Authority to sign', detail: 'You must be authorized to act for the business.' },
+      ],
+    },
+    {
+      title: 'How we contact you',
+      items: [
+        { icon: Mail, label: 'Email', detail: 'Updates about your application.' },
+        { icon: Phone, label: 'Calls or texts', detail: 'About your application, at the number you provide.' },
+      ],
+    },
+  ],
+};
+
+const sections: LegalSection[] = [
+  {
+    heading: 'Agreement to these terms',
+    body: [
+      'By using the Ventra Fund website, applications, and services ("Services"), you agree to these Terms of Service ("Terms"). If you do not agree, do not use the Services.',
+      'You must be at least 18 years old and authorized to act on behalf of the business you represent. By submitting or signing an application, you confirm that you have the legal authority to bind that business.',
+      'We may update these Terms from time to time. Material changes will be posted on this page with a revised "Last updated" date. Your continued use of the Services after changes take effect constitutes acceptance of the new Terms.',
+    ],
+  },
+  {
+    heading: 'Our service',
+    body: [
+      'Our service includes: (a) an online application that collects business and financial information; (b) review of the information and bank statements you provide; and (c) for approved applications, a link to confirm your details and sign electronically.',
+      'The application suggests addresses as you type, using a third-party address-lookup service. The suggestions are a convenience and are not verified by us; you are responsible for confirming that the addresses you submit are accurate and complete.',
+      'An approval of your application is not a commitment to fund. Financing is committed only once a funding agreement is signed and all of its conditions are satisfied, including verification of your identity and your business.',
+      'Applying does not involve a credit check. When you sign an approved application, you authorize a soft credit inquiry, which does not affect your credit score. We never run a hard pull.',
+      'All financing we offer is commercial financing for business purposes only. It is not a consumer loan, personal loan, or consumer credit product. By applying, you certify that the financing will be used solely for business purposes.',
+    ],
+  },
+  {
+    heading: 'Electronic communications',
+    body: [
+      'You agree to receive communications about your application electronically, including by email. We may also call or text the phone number you provide about your application.',
+    ],
+  },
+  {
+    heading: 'Limitation of liability',
+    body: [
+      'To the fullest extent permitted by law, Ventra Fund and its affiliates, officers, employees, and agents are not liable for any indirect, incidental, special, consequential, or punitive damages, including loss of profits, data, or business opportunities, arising from or related to your use of the Services.',
+      'Our total liability for any claim arising from these Terms or the Services shall not exceed the greater of (a) the fees you paid to us in the twelve months preceding the claim, or (b) $100.',
+      'We do not guarantee that any financing offer will be presented, that any offer will be funded, or that the Services will be uninterrupted or error-free. The Services are provided "as is" and "as available" without warranties of any kind.',
+    ],
+  },
+  {
+    heading: 'Disputes',
+    body: [
+      'We each agree to bring any claim individually, not as part of a class action or representative proceeding. If any provision of these Terms is found unenforceable, the remaining provisions remain in effect.',
+    ],
+  },
+  {
+    heading: 'Contact',
+    body: ['Ventra Fund. Reach us by phone, or through the contact form on our website.'],
+    contacts: ['phone'],
+  },
+];
+---
+
+<LegalPage
+  title="Terms of Service"
+  lede="The terms that govern your use of Ventra Fund."
+  lastUpdated="October 4, 2026"
+  sections={sections}
+  overview={overview}
+/>

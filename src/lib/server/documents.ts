@@ -5,7 +5,8 @@ import { getBinding } from './bindings';
 // the filename, sniffed type and extraction job id as object metadata. Written by
 // /api/apply/upload so a statement from an application that is never submitted still reaches the
 // drop-off record (src/lib/server/drafts.ts), whose purge deletes a session's documents along with
-// it; an R2 lifecycle rule on `apply/` backstops copies no session ever claimed. The submission
+// it, and sweeps copies no session ever claimed. There must be no R2 lifecycle rule on `apply/`: it
+// would delete the statements of applications that have to be kept (README). The submission
 // itself doesn't read from here: the browser re-sends the files (see src/pages/api/apply.ts).
 // Without the binding (`pnpm dev`) nothing is stored and uploads work as before.
 //
@@ -30,6 +31,7 @@ export interface R2Bucket {
   head(key: string): Promise<R2Object | null>;
   get(key: string): Promise<R2ObjectBody | null>;
   delete(keys: string | string[]): Promise<void>;
+  list(options: { prefix: string; limit?: number; cursor?: string }): Promise<{ objects: { key: string; uploaded: Date }[]; truncated: boolean; cursor?: string }>;
 }
 
 export interface DocumentMetadata {
@@ -98,4 +100,16 @@ export async function getDocument(bucket: R2Bucket, id: string): Promise<(Stored
   const obj = await bucket.get(keyFor(id));
   if (!obj) return null;
   return { ...fromObject(id, obj), bytes: await obj.arrayBuffer() };
+}
+
+/**
+ * One page of stored documents, in key order, with when each was uploaded (seconds). `cursor` is
+ * where the previous page left off; the returned one is absent on the last page.
+ */
+export async function listDocuments(bucket: R2Bucket, limit: number, cursor?: string): Promise<{ documents: { id: string; uploadedAt: number }[]; cursor?: string }> {
+  const page = await bucket.list({ prefix: KEY_PREFIX, limit, ...(cursor ? { cursor } : {}) });
+  const documents = page.objects
+    .map((o) => ({ id: o.key.slice(KEY_PREFIX.length), uploadedAt: Math.floor(o.uploaded.getTime() / 1000) }))
+    .filter((d) => isDocumentId(d.id));
+  return { documents, cursor: page.truncated ? page.cursor : undefined };
 }

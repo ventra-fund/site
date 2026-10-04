@@ -39,6 +39,9 @@ export const applyRequest = z.object({
   ficoScore: z.coerce.number({ error: 'Please enter your estimated FICO score.' }).int().min(300).max(850),
   fundingAmount: money('requested funding amount'),
 
+  // The Terms / Privacy Policy tick beside the submit button: no application is sent without it.
+  consent: z.literal(true, { error: 'Please agree to the Terms of Service and Privacy Policy.' }),
+
   // Extraction job ids handed out by /api/apply/upload, for the "Statements:" summary in the
   // email. The statements themselves travel as files next to this payload (see /api/apply).
   jobIds: z.array(z.string().regex(EXTRACT_JOB_ID)).max(MAX_UPLOAD_FILES, `You can attach up to ${MAX_UPLOAD_FILES} statements.`).default([]),

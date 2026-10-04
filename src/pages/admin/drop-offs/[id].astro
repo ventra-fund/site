@@ -48,7 +48,7 @@ const progress = parseObject(row.field_progress_json);
 const autofilled = new Set(parseIds(row.autofilled_json));
 const jobIds = parseIds(row.job_ids_json);
 
-// Stored statements; one that has aged out of the bucket (lifecycle rule) shows as missing.
+// Stored statements; one that is no longer in the bucket shows as missing.
 const bucket = await getDocumentBucket();
 const documents: { id: string; doc: StoredDocument | null }[] = await Promise.all(
   parseIds(row.document_ids_json).map(async (docId) => ({ id: docId, doc: bucket ? await headDocument(bucket, docId).catch(() => null) : null })),

@@ -74,7 +74,7 @@
 	],
 	// Stored copies of uploaded statements (src/lib/server/documents.ts), kept with the drop-off
 	// sessions in DRAFTS_DB and deleted by the same purge. One-time setup, see README: create the
-	// bucket and add the 180-day lifecycle rule on `apply/` that backstops unclaimed copies.
+	// bucket. No lifecycle rule: it would delete statements of applications that must be kept.
 	"r2_buckets": [
 		{
 			"binding": "DOCUMENTS",

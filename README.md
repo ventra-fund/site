@@ -38,13 +38,16 @@ The field only accepts a full address (`src/lib/address-field.ts`). Picking a su
 ### Drop-offs (unsubmitted applications)
 The apply page saves what the visitor has typed as they go (`src/lib/apply-draft.ts`), so an abandoned application still reaches the team. Nothing is sent until a Turnstile check passes: the first save spends one token on `/api/apply/session`, which records the session's signals (IP from `CF-Connecting-IP`, country/city/ASN from `request.cf`, user agent, referrer, UTM) in the `DRAFTS_DB` D1 database and returns a draft id; later saves go to `/api/apply/draft` with that id (debounced, plus a `sendBeacon` when the page is hidden), capped by `DRAFT_RATE_LIMIT` (12 per 60 s). A successful `/api/apply` marks the session converted, or opens a converted one when the page never got as far as minting a session, so every sent application is listed. The same application (fields and statement bytes) can only be sent once: `/api/apply` claims its hash in `apply_submission` before emailing and answers 409 `duplicate_application` to a repeat. See `src/lib/server/drafts.ts`.
 
-Retention is set in the `app_setting` table (defaults: unsubmitted drafts 30 days after their last save, converted sessions 90 days, at most 5000 unsubmitted drafts, beyond which the oldest without an email or mobile go first) and applied lazily: a purge pass runs at most hourly, triggered by new sessions and admin page loads, and deletes each session's stored statements with it. Changing a setting re-scopes existing rows on the next pass.
+Retention is set in the `app_setting` table (defaults: unsubmitted drafts 30 days after their last save, submitted applications nobody has decided on 366 days, at most 5000 unsubmitted drafts, beyond which the oldest without an email or mobile go first) and applied lazily: a purge pass runs at most hourly, triggered by new sessions and admin page loads, and deletes each session's stored statements with it. Changing a setting re-scopes existing rows on the next pass.
+
+The numbers mirror the privacy policy (`src/pages/privacy.astro`, "How long we keep it"), so change the two together. A submitted application is kept at least 12 months (`APPLICATION_RETENTION_DAYS` in `src/lib/server/drafts.ts`; the admin setting can only raise it), the record retention period for business credit under ECOA / Regulation B (12 CFR § 1002.12). An application an admin has approved or declined is never purged, which covers the 12 months after a decision and the 7 years promised for signed ones. The same pass deletes stored statements no session ever claimed, 30 days after upload (`UNCLAIMED_DOCUMENT_DAYS`), a page of the bucket at a time.
 
 One-time setup (production), then `pnpm migrate:remote` after any schema change:
 ```sh
 npx wrangler r2 bucket create ventra-fund-documents
-# Backstop for statement copies no session ever claimed; keep it above the longest retention setting.
-npx wrangler r2 bucket lifecycle add ventra-fund-documents apply-backstop apply/ --expire-days 180
+# No lifecycle rule on the bucket: it would delete the statements of applications that must be kept.
+# If the earlier 180-day rule was added, remove it:
+npx wrangler r2 bucket lifecycle remove ventra-fund-documents --name apply-backstop
 pnpm migrate:remote
 ```
 Locally, `pnpm migrate:local` before `pnpm build && pnpm preview`. Under local preview `CF-Connecting-IP` and `request.cf` are absent, so those columns stay empty. Under `pnpm dev` there are no bindings and capture is off.

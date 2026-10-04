@@ -42,7 +42,7 @@ const stats = funnel
 
 const settingFields: { key: keyof DraftSettings; label: string }[] = [
   { key: "baseTtlDays", label: "Keep drafts (days)" },
-  { key: "convertedTtlDays", label: "Keep submitted (days)" },
+  { key: "convertedTtlDays", label: "Keep undecided submissions (days, 12 months minimum)" },
   { key: "maxDraftRows", label: "Max drafts" },
 ];
 ---

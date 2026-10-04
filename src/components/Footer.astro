@@ -30,6 +30,13 @@ import LinkedIn from "@/components/LinkedIn.astro";
         <LinkGroupItem><a href="#" class="inline-flex items-center gap-2"><LinkedIn class="size-5 shrink-0" />LinkedIn</a></LinkGroupItem>
       </LinkGroupList>
     </LinkGroup>
+    <LinkGroup>
+      <LinkGroupTitle>Legal</LinkGroupTitle>
+      <LinkGroupList>
+        <LinkGroupItem><a href="/privacy">Privacy</a></LinkGroupItem>
+        <LinkGroupItem><a href="/terms">Terms</a></LinkGroupItem>
+      </LinkGroupList>
+    </LinkGroup>
     <div class="w-full">
       <!-- VF mark with the hero's grainy gradient: the gradient-filled mark, then the same shape filled with the grain tile and overlay-blended on top -->
       <svg class="isolate h-auto w-full max-w-md" viewBox="0 0 1192 713" role="img" aria-label="Ventra Fund" xmlns="http://www.w3.org/2000/svg">
@@ -49,5 +56,6 @@ import LinkedIn from "@/components/LinkedIn.astro";
         <use href="#wordmark" fill="url(#wordmark-grain)" opacity="0.6" style="mix-blend-mode: overlay" />
       </svg>
     </div>
+    <p class="w-full text-sm text-muted-foreground">© {new Date().getFullYear()} Ventra Fund</p>
   </div>
 </footer>

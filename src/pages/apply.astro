@@ -27,6 +27,12 @@ const EMAIL_PATTERN = "[^@\\s]+@[^@\\s]+\\.[^@\\s]{2,}";
         <div class="mx-auto flex max-w-2xl flex-col gap-8">
             <div class="flex flex-col gap-3">
                 <h1 class="text-3xl font-bold text-accent sm:text-5xl">Apply for funding</h1>
+                {/* Notice at collection: shown before anything is typed, because progress is saved as it
+                    is entered (not only on submit). Keep in step with /privacy. */}
+                <p class="text-sm text-muted-foreground">
+                    We save your answers as you type, before you submit, so our team can follow up. See our
+                    <a href="/privacy" class="underline hover:text-foreground" target="_blank" rel="noopener">Privacy Policy</a>.
+                </p>
             </div>
 
             <form data-apply-form novalidate class="flex flex-col gap-8">
@@ -140,6 +146,15 @@ const EMAIL_PATTERN = "[^@\\s]+@[^@\\s]+\\.[^@\\s]{2,}";
                         </label>
                     </div>
                 </div>
+
+                {/* Required here and by /api/apply (`consent` in src/lib/apply-schema.ts). */}
+                <Checkbox id="ap-consent" name="consent" required labelClass="items-start [&>span:first-child]:mt-0.5">
+                    <span class="text-sm">
+                        I agree to the <a href="/terms" class="underline" target="_blank" rel="noopener">Terms of Service</a>
+                        and <a href="/privacy" class="underline" target="_blank" rel="noopener">Privacy Policy</a>, and I'm
+                        authorized to apply on behalf of this business.
+                    </span>
+                </Checkbox>
 
                 <Turnstile action={APPLY_TURNSTILE_ACTION} />
 
@@ -337,6 +352,7 @@ const EMAIL_PATTERN = "[^@\\s]+@[^@\\s]+\\.[^@\\s]{2,}";
                     businessIndustry: field('businessIndustry'),
                     ficoScore: Number(field('ficoScore')),
                     fundingAmount: Number(field('fundingAmount')),
+                    consent: data.get('consent') !== null,
                     jobIds,
                     autofilled: autofillInputs.filter(isAutofilled).map((i) => i.name),
                     draftId: capture.getDraftId(),

@@ -1,5 +1,5 @@
 import { getBinding } from './bindings';
-import { deleteDocuments, getDocumentBucket, type R2Bucket } from './documents';
+import { deleteDocuments, getDocumentBucket, listDocuments, type R2Bucket } from './documents';
 import { DRAFT_FIELDS, type DraftField } from '@/lib/draft-config';
 
 // Drop-off capture for /apply: what a visitor typed before (or without) submitting, kept in the
@@ -44,13 +44,23 @@ const DAY = 86_400;
 export interface DraftSettings {
   /** Days an unsubmitted draft is kept after its last save. */
   baseTtlDays: number;
-  /** Days a converted (submitted) session is kept after it converted. */
+  /** Days a submitted application nobody has decided on is kept after it was submitted. */
   convertedTtlDays: number;
   /** Above this many unsubmitted drafts, the oldest ones without contact details go first. */
   maxDraftRows: number;
 }
 
-const DEFAULT_SETTINGS: DraftSettings = { baseTtlDays: 30, convertedTtlDays: 90, maxDraftRows: 5000 };
+/**
+ * The shortest a submitted application may be kept: 12 months, the record retention period for
+ * business credit applications under the Equal Credit Opportunity Act (Regulation B, 12 CFR
+ * § 1002.12). A day over 365 so a leap year is covered. Published in the privacy policy
+ * (src/pages/privacy.astro, "How long we keep it"); change the two together.
+ */
+export const APPLICATION_RETENTION_DAYS = 366;
+/** Days a stored statement no session ever claimed is kept before the purge deletes it. */
+export const UNCLAIMED_DOCUMENT_DAYS = 30;
+
+const DEFAULT_SETTINGS: DraftSettings = { baseTtlDays: 30, convertedTtlDays: APPLICATION_RETENTION_DAYS, maxDraftRows: 5000 };
 
 const SETTING_KEYS: Record<keyof DraftSettings, string> = {
   baseTtlDays: 'base_ttl_days',
@@ -59,18 +69,22 @@ const SETTING_KEYS: Record<keyof DraftSettings, string> = {
 };
 
 /**
- * Bounds a stored or submitted value must sit in; anything outside falls back to the default.
- * The day caps stay under the 180-day R2 lifecycle rule on `apply/` (README), so a session never
- * outlives the statements it lists.
+ * Bounds a stored or submitted value must sit in; anything outside falls back to the default (so
+ * a `converted_ttl_days` saved under the old 90-day default reads as the 12-month minimum).
+ * Submitted applications can be kept longer than the minimum, never shorter.
  */
 export const SETTING_BOUNDS: Record<keyof DraftSettings, [number, number]> = {
   baseTtlDays: [1, 90],
-  convertedTtlDays: [1, 180],
+  convertedTtlDays: [APPLICATION_RETENTION_DAYS, 3650],
   maxDraftRows: [100, 100_000],
 };
 
 const UPSERT_SETTING = 'insert into "app_setting" ("key", "value") values (?, ?) on conflict ("key") do update set "value" = excluded."value"';
 const LAST_PURGE_KEY = 'last_purge_at';
+/** Where the unclaimed-statement sweep left off in the bucket listing; '' starts over. */
+const UNCLAIMED_CURSOR_KEY = 'unclaimed_cursor';
+/** Stored statements looked at per pass. */
+const UNCLAIMED_PAGE = 200;
 const PURGE_INTERVAL = 3600;
 // D1 binds at most 100 parameters per statement, and the delete binds one per row.
 const PURGE_BATCH = 100;
@@ -366,18 +380,47 @@ export async function purgeExpired(db: D1Database): Promise<void> {
     const evicted = excess > 0
       ? await purgeRows(db, bucket, `"status" = 'draft' and "has_contact" = 0 order by "last_active_at"`, [], Math.min(excess, PURGE_BATCH))
       : 0;
+    const unclaimed = bucket ? await purgeUnclaimedDocuments(db, bucket, t) : 0;
     const total = drafts + converted + evicted;
-    if (total) console.log(`[drafts] purged ${total} (expired drafts ${drafts}, converted ${converted}, over cap ${evicted})`);
+    if (total || unclaimed) console.log(`[drafts] purged ${total} (expired drafts ${drafts}, converted ${converted}, over cap ${evicted}), unclaimed statements ${unclaimed}`);
   } catch (err) {
     console.error('[drafts] purge failed', err);
   }
 }
 
 /**
+ * Delete stored statements no session lists: an upload whose application was never saved or sent.
+ * Walks the bucket one page per pass (the cursor is kept in app_setting) and only touches copies
+ * older than UNCLAIMED_DOCUMENT_DAYS, long after the page that uploaded them could still claim
+ * them. A statement any session lists, decided or not, is left alone: it goes when its session does.
+ */
+async function purgeUnclaimedDocuments(db: D1Database, bucket: R2Bucket, t: number): Promise<number> {
+  const stored = await db.prepare('select "value" from "app_setting" where "key" = ?').bind(UNCLAIMED_CURSOR_KEY).first<{ value: string }>();
+  const page = await listDocuments(bucket, UNCLAIMED_PAGE, stored?.value || undefined);
+  const old = page.documents.filter((d) => d.uploadedAt < t - UNCLAIMED_DOCUMENT_DAYS * DAY).map((d) => d.id);
+
+  const claimed = new Set<string>();
+  // One bound id per condition, well under D1's 100-parameter cap.
+  for (let i = 0; i < old.length; i += 50) {
+    const chunk = old.slice(i, i + 50);
+    const { results } = await db
+      .prepare(`select "document_ids_json" from "apply_draft" where ${chunk.map(() => 'instr("document_ids_json", ?) > 0').join(' or ')}`)
+      .bind(...chunk)
+      .all<{ document_ids_json: string }>();
+    for (const r of results) for (const id of parseIds(r.document_ids_json)) claimed.add(id);
+  }
+  const unclaimed = old.filter((id) => !claimed.has(id));
+  if (unclaimed.length) await deleteDocuments(bucket, unclaimed);
+  await db.prepare(UPSERT_SETTING).bind(UNCLAIMED_CURSOR_KEY, page.cursor ?? '').run();
+  return unclaimed.length;
+}
+
+/**
  * Delete up to `limit` sessions matching `where`, their stored statements first: if the bucket
  * refuses, the rows stay and the next pass tries again rather than orphaning the files. An
- * application an admin has decided on is never purged: it may carry a signed agreement
- * (src/lib/server/signing.ts), which is a record to keep.
+ * application an admin has decided on is never purged: the privacy policy promises at least 12
+ * months after the decision (APPLICATION_RETENTION_DAYS) and, once signed, at least 7 years
+ * (src/lib/server/signing.ts), and keeping it without an end date meets both.
  */
 async function purgeRows(db: D1Database, bucket: R2Bucket | undefined, where: string, binds: unknown[], limit = PURGE_BATCH): Promise<number> {
   const { results } = await db

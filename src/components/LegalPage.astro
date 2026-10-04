@@ -1,0 +1,40 @@
+---
+// Shared shell for the legal pages (/privacy, /terms). "Last updated" renders only once a page sets
+// `lastUpdated`; an optional `overview` renders the at-a-glance table above the text.
+import Layout from '@/layouts/Layout.astro';
+import Footer from '@/components/Footer.astro';
+import LegalOverview from '@/components/LegalOverview.astro';
+import ContactReveal from '@/components/ContactReveal.astro';
+import type { LegalSection, Overview } from '@/components/legal-overview';
+
+interface Props { title: string; lede: string; lastUpdated: string | null; sections: LegalSection[]; overview?: Overview }
+
+const { title, lede, lastUpdated, sections, overview } = Astro.props;
+---
+
+<Layout title={title}>
+  <main class="w-full min-h-screen px-4 pt-30 pb-20">
+    <div class="mx-auto flex max-w-2xl flex-col gap-10">
+      <div class="flex flex-col gap-3">
+        <h1 class="text-3xl font-bold text-accent sm:text-5xl">{title}</h1>
+        <p class="text-lg text-muted-foreground">{lede}</p>
+      </div>
+      {overview && <LegalOverview overview={overview} />}
+      <article class="flex flex-col gap-8">
+        {lastUpdated && <p class="text-sm text-muted-foreground">Last updated: {lastUpdated}</p>}
+        {sections.map((s) => (
+          <section class="flex flex-col gap-3">
+            <h2 class="text-xl font-semibold">{s.heading}</h2>
+            {s.body.map((para) => <p class="text-sm leading-relaxed text-muted-foreground">{para}</p>)}
+            {s.contacts && (
+              <div class="flex flex-col gap-1.5 text-sm">
+                {s.contacts.map((c) => <ContactReveal contact={c} />)}
+              </div>
+            )}
+          </section>
+        ))}
+      </article>
+    </div>
+  </main>
+  <Footer />
+</Layout>

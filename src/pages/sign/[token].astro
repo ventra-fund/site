@@ -154,6 +154,16 @@ const EMAIL_PATTERN = "[^@\\s]+@[^@\\s]+\\.[^@\\s]{2,}";
                   <Input name="ssn" required inputmode="numeric" pattern={SSN_PATTERN} placeholder="123-45-6789" autocomplete="off" spellcheck="false" />
                 </label>
               </div>
+              {/* At the point of collection: what the identifiers are for. The authorization itself is
+                  in the attestation below (src/lib/signing-config.ts). */}
+              <p class="text-xs text-muted-foreground">
+                Your EIN and SSN are used to verify your identity and your business, including a soft credit
+                inquiry (a consumer report under the Fair Credit Reporting Act). A soft inquiry does not affect
+                your credit score, and we never run a hard pull. You have the right to request a copy of any
+                consumer report obtained. Your EIN and SSN are stored encrypted and accessed only by authorized
+                staff on logged request. See our
+                <a href="/privacy" class="underline hover:text-foreground" target="_blank" rel="noopener">Privacy Policy</a>.
+              </p>
             </div>
 
             <div class="flex flex-col gap-5">
