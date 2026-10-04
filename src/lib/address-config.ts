@@ -9,7 +9,18 @@ export const ADDRESS_SUGGESTION_LIMIT = 5;
 /** How long the page waits after the last keystroke before asking. */
 export const ADDRESS_DEBOUNCE_MS = 250;
 
-/** One suggested address: the line that goes in the field, and its parts for the record. */
+/**
+ * How long address lookups must have been failing before a field accepts an address that was
+ * neither picked from the suggestions nor typed in full. Until then it asks for a suggested one.
+ */
+export const ADDRESS_OUTAGE_GRACE_MS = 10_000;
+/** While lookups are failing, how often a field with an unpicked address tries again. */
+export const ADDRESS_OUTAGE_RETRY_MS = 3_000;
+
+/**
+ * One suggested address: the line that goes in the field, and its parts. Always complete (house
+ * number, street, city, state and ZIP), since picking one is what makes an address acceptable.
+ */
 export interface AddressSuggestion {
   /** One line, as it is put in the field: "265 Canal Street, New York, NY 10013". */
   text: string;

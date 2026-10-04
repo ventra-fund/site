@@ -40,9 +40,9 @@ export async function suggestAddresses(tag: string, apiKey: string, query: strin
   const params = new URLSearchParams({
     q: query,
     countrycodes: 'us',
-    // Spares: matches without a street (a bare city) and repeats of one address (a shop and the
-    // building it is in) are dropped below.
-    limit: String(ADDRESS_SUGGESTION_LIMIT + 3),
+    // Spares: incomplete matches (a bare street or city) and repeats of one address (a shop and
+    // the building it is in) are dropped below.
+    limit: String(ADDRESS_SUGGESTION_LIMIT * 2),
     dedupe: '1',
     // Always a `city`, whatever the place is tagged as (town, village, hamlet).
     normalizecity: '1',
@@ -85,13 +85,15 @@ export async function suggestAddresses(tag: string, apiKey: string, query: strin
   const seen = new Set<string>();
   const suggestions: AddressSuggestion[] = [];
   for (const { address: a } of results) {
-    if (!a?.road || !a.city || !a.state_code) continue;
-    const street = [a.house_number, a.road].filter(Boolean).join(' ');
+    // Only complete addresses: the form accepts nothing but a picked suggestion, so each one has
+    // to be a full address. A bare street, a city or a place without a house number is left out.
+    if (!a?.house_number || !a.road || !a.city || !a.state_code || !a.postcode) continue;
+    const street = `${a.house_number} ${a.road}`;
     const state = a.state_code.toUpperCase();
-    const zip = a.postcode ?? '';
+    const zip = a.postcode;
     // The provider's own display line carries neighbourhoods and counties; this is how the
     // address would be written on an envelope.
-    const text = `${street}, ${a.city}, ${[state, zip].filter(Boolean).join(' ')}`;
+    const text = `${street}, ${a.city}, ${state} ${zip}`;
     if (seen.has(text)) continue;
     seen.add(text);
     suggestions.push({ text, street, city: a.city, state, zip });

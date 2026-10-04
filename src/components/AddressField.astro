@@ -1,8 +1,10 @@
 ---
 // One-line address input with suggestions as the visitor types (src/lib/address-field.ts, fed by
-// /api/address/suggest). It is still a plain <input name=…>: the form reads, validates and
-// pre-fills it like any other field, and what's typed is kept whether or not a suggestion is
-// picked. Without suggestions (no provider key, quota, offline) it is simply a text input.
+// /api/address/suggest). It is still a plain <input name=…>, so the form reads and pre-fills it
+// like any other field, but it is only valid holding a full address: one picked from the
+// suggestions (a suite or unit may be added afterwards), or one typed out with every part (street,
+// city, state, ZIP; src/lib/address-shape.ts). Only when lookups have been failing for a while (no
+// provider key, quota, outage) is anything else accepted.
 //
 // Don't wrap it in a <label>: the suggestion list would become part of the input's accessible
 // name. Give the label a `for` pointing at `id` instead.
@@ -54,6 +56,8 @@ const listId = `${id}-suggestions`;
     class="absolute top-full left-0 z-50 mt-1.5 max-h-72 w-full overflow-y-auto overscroll-contain rounded-lg bg-popover p-1 text-popover-foreground shadow-md ring-1 ring-foreground/10"
   ></ul>
   <p data-address-status role="status" class="sr-only"></p>
+  <!-- Why the field was refused. aria-hidden: form.ts already gives screen readers the same text. -->
+  <p data-address-error hidden aria-hidden="true" class="mt-1.5 text-sm font-normal text-destructive"></p>
 </div>
 
 <script>
