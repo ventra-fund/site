@@ -4,6 +4,7 @@ import Footer from "@/components/Footer.astro";
 import Turnstile from "@/components/Turnstile.astro";
 import DateField from "@/components/DateField.astro";
 import AutofillBadge from "@/components/AutofillBadge.astro";
+import AddressField from "@/components/AddressField.astro";
 import { Button } from "@/ui/button";
 import { Checkbox } from "@/ui/checkbox";
 import { Input } from "@/ui/input";
@@ -101,15 +102,16 @@ const EMAIL_PATTERN = "[^@\\s]+@[^@\\s]+\\.[^@\\s]{2,}";
                 <div class="flex flex-col gap-5">
                     <h2 class="text-lg font-semibold">Addresses</h2>
 
-                    <label class={fieldClass}>
-                        Home address
-                        <Input name="homeAddress" type="text" required maxlength="300" autocomplete="street-address" />
-                    </label>
+                    <!-- Not wrapped in a <label>, unlike the other fields: see AddressField.astro. -->
+                    <div class={fieldClass} data-field>
+                        <label for="homeAddress">Home address</label>
+                        <AddressField name="homeAddress" required placeholder="Street address, city, state, ZIP" />
+                    </div>
 
-                    <label class={fieldClass}>
-                        <span class={labelRowClass}>Business address <AutofillBadge /></span>
-                        <Input name="businessAddress" type="text" required maxlength="300" class={autofillClass} />
-                    </label>
+                    <div class={fieldClass} data-field>
+                        <span class={labelRowClass}><label for="businessAddress">Business address</label> <AutofillBadge /></span>
+                        <AddressField name="businessAddress" required placeholder="Include your suite or unit, if any" class={autofillClass} />
+                    </div>
 
                     <Checkbox id="ap-same-address" name="sameAsHome">Same as home address</Checkbox>
                 </div>
@@ -194,7 +196,8 @@ const EMAIL_PATTERN = "[^@\\s]+@[^@\\s]+\\.[^@\\s]{2,}";
         // edit it, so what reaches the server as `autofilled` is exactly the untouched values.
         const autofillInputs = AUTOFILL_FIELDS.map((name) => form.querySelector<HTMLInputElement>(`input[name="${name}"]`)!);
         const noteEl = form.querySelector<HTMLElement>('[data-autofill-note]')!;
-        const badgeFor = (input: HTMLInputElement) => input.closest('label')?.querySelector<HTMLElement>('[data-autofill-badge]') ?? null;
+        // `[data-field]`: the address fields, whose label can't wrap the input.
+        const badgeFor = (input: HTMLInputElement) => input.closest('label, [data-field]')?.querySelector<HTMLElement>('[data-autofill-badge]') ?? null;
         function setAutofilled(input: HTMLInputElement, on: boolean) {
             if (on) input.dataset.autofilled = 'true';
             else delete input.dataset.autofilled;

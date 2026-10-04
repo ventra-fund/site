@@ -12,14 +12,14 @@ Re-check this list against the code before drafting, then keep it current as fea
 - **Contact and partner forms** (`/api/contact`, `/api/partner`): name, email, message, and partner role/interests. Emailed through Resend and not stored
 - **E-sign** (`src/lib/server/signing.ts`): confirmed application fields, EIN, SSN (both encrypted), typed signature, and for each signer step their IP, browser (user agent), country and city
 - **Every form**: Cloudflare Turnstile bot check, per-IP rate limiting
-- **Planned:** Google Places / Address Validation (`docs/address-autocomplete-checklist.md`). Add Google to the processor list once it ships
+- **Address suggestions** (`docs/address-autocomplete-checklist.md`): what's typed in the address fields is sent to LocationIQ, through the Worker, to fetch suggestions. Add LocationIQ to the processor list
 
 ## Privacy policy
 
 - [ ] Lists each category above and why it's collected (underwriting, contacting the applicant, fraud and bot prevention, legal records)
 - [ ] Says plainly that partially completed applications are saved before submit, and for how long
 - [ ] Discloses sharing with **funding partners** and credit checks (the signing attestation already authorizes "Ventra Fund and its funding partners" to pull business and personal credit)
-- [ ] Names or describes service providers: Cloudflare (hosting, D1, R2, Turnstile), Resend (email), LlamaCloud (statement reading), Google Fonts, and Google Maps once added
+- [ ] Names or describes service providers: Cloudflare (hosting, D1, R2, Turnstile), Resend (email), LlamaCloud (statement reading), Google Fonts, LocationIQ (address suggestions)
 - [ ] Retention for each store: drafts, submissions, uploaded statements (180-day R2 lifecycle backstop), signing records and audit trail (currently no purge), contact emails
 - [ ] Security summary: SSN/EIN encrypted, masked in admin, reveals logged
 - [ ] How to request access, correction or deletion, and who to contact

@@ -61,6 +61,15 @@
 			"name": "CONTACT_RATE_LIMIT",
 			"namespace_id": "1006",
 			"simple": { "limit": 12, "period": 60 }
+		},
+		// Address suggestions (/api/address/suggest). The page asks at most once per 250 ms pause in
+		// typing (ADDRESS_DEBOUNCE_MS in src/lib/address-config.ts), so two addresses typed out are
+		// about 30 to 40 calls; 60 leaves room for corrections and still caps what one IP can take
+		// from the provider's daily quota.
+		{
+			"name": "ADDRESS_RATE_LIMIT",
+			"namespace_id": "1007",
+			"simple": { "limit": 60, "period": 60 }
 		}
 	],
 	// Stored copies of uploaded statements (src/lib/server/documents.ts), kept with the drop-off
