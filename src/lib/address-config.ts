@@ -9,11 +9,8 @@ export const ADDRESS_SUGGESTION_LIMIT = 5;
 /** How long the page waits after the last keystroke before asking. */
 export const ADDRESS_DEBOUNCE_MS = 250;
 
-/**
- * How long address lookups must have been failing before a field accepts an address that was
- * neither picked from the suggestions nor typed in full. Until then it asks for a suggested one.
- */
-export const ADDRESS_OUTAGE_GRACE_MS = 10_000;
+/** How long a field keeps retrying on its own once address lookups start failing. */
+export const ADDRESS_OUTAGE_RETRY_WINDOW_MS = 10_000;
 /** While lookups are failing, how often a field with an unpicked address tries again. */
 export const ADDRESS_OUTAGE_RETRY_MS = 3_000;
 

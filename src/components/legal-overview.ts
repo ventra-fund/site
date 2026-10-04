@@ -2,8 +2,10 @@
 // renders. Ported.
 import type { ContactKey } from '@/lib/contact/keys';
 
+/** A paragraph that ends in a link, e.g. a provider's required credit. */
+export interface LegalLinkedParagraph { text: string; link: { label: string; href: string } }
 /** `contacts`: details shown after the body through the anti-scrape reveal (ContactReveal). */
-export interface LegalSection { heading: string; body: string[]; contacts?: ContactKey[] }
+export interface LegalSection { heading: string; body: (string | LegalLinkedParagraph)[]; contacts?: ContactKey[] }
 
 // An icon component, e.g. a default import from '@lucide/astro/icons/<name>'.
 // eslint-disable-next-line @typescript-eslint/no-explicit-any

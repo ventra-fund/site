@@ -25,7 +25,11 @@ const { title, lede, lastUpdated, sections, overview } = Astro.props;
         {sections.map((s) => (
           <section class="flex flex-col gap-3">
             <h2 class="text-xl font-semibold">{s.heading}</h2>
-            {s.body.map((para) => <p class="text-sm leading-relaxed text-muted-foreground">{para}</p>)}
+            {s.body.map((para) => (
+              <p class="text-sm leading-relaxed text-muted-foreground">
+                {typeof para === 'string' ? para : <>{para.text} <a href={para.link.href} class="underline" target="_blank" rel="noopener">{para.link.label}</a></>}
+              </p>
+            ))}
             {s.contacts && (
               <div class="flex flex-col gap-1.5 text-sm">
                 {s.contacts.map((c) => <ContactReveal contact={c} />)}

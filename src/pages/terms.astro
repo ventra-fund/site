@@ -56,7 +56,11 @@ const sections: LegalSection[] = [
     heading: 'Our service',
     body: [
       'Our service includes: (a) an online application that collects business and financial information; (b) review of the information and bank statements you provide; and (c) for approved applications, a link to confirm your details and sign electronically.',
-      'The application suggests addresses as you type, using a third-party address-lookup service. The suggestions are a convenience and are not verified by us; you are responsible for confirming that the addresses you submit are accurate and complete.',
+      // The link is the credit LocationIQ's free plan asks for, in their wording.
+      {
+        text: 'The application suggests addresses as you type, using a third-party address-lookup service. The suggestions are a convenience and are not verified by us; you are responsible for confirming that the addresses you submit are accurate and complete.',
+        link: { label: 'Search by LocationIQ.com', href: 'https://locationiq.com' },
+      },
       'An approval of your application is not a commitment to fund. Financing is committed only once a funding agreement is signed and all of its conditions are satisfied, including verification of your identity and your business.',
       'Applying does not involve a credit check. When you sign an approved application, you authorize a soft credit inquiry, which does not affect your credit score. We never run a hard pull.',
       'All financing we offer is commercial financing for business purposes only. It is not a consumer loan, personal loan, or consumer credit product. By applying, you certify that the financing will be used solely for business purposes.',

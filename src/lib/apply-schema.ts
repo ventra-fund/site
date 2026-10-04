@@ -2,6 +2,7 @@ import { z } from 'astro/zod';
 import { emailAddress, singleLine, turnstileToken } from './message-schema';
 import { AUTOFILL_FIELDS, EXTRACT_JOB_ID, MAX_UPLOAD_FILES } from './upload-config';
 import { DRAFT_FIELDS, UUID_V4, MAX_DRAFT_VALUE } from './draft-config';
+import { isFullAddress } from './address-shape';
 
 // The apply form's rules, enforced by the /api/apply endpoint. Server-only: the page script does
 // its own lightweight checks for friendly errors, so zod stays out of the client bundle. Keep the
@@ -15,6 +16,9 @@ export const MAX_LINE = 300;
 const name = (label: string) => z.string().trim().min(1, `Please enter your ${label}.`).max(MAX_NAME, 'That name is too long.');
 const money = (label: string) => z.coerce.number({ error: `Please enter your ${label}.` }).min(0).max(1_000_000_000);
 const line = (label: string, max = MAX_LINE) => z.string().trim().min(1, `Please enter your ${label}.`).max(max, 'That entry is too long.');
+// The same shape check the page falls back on (address-shape.ts): every suggested address passes
+// it, and so does one typed in full while the suggestion provider is down.
+const address = (label: string) => line(label).refine(isFullAddress, { message: 'Please enter a full address: street number and name, city, state and ZIP code.' });
 
 /** Today as YYYY-MM-DD in UTC; a start date can't be later than this. */
 const todayIso = () => new Date().toISOString().slice(0, 10);
@@ -30,8 +34,8 @@ export const applyRequest = z.object({
   email: emailAddress,
   monthlyRevenue: money('monthly business revenue'),
 
-  homeAddress: line('home address'),
-  businessAddress: line('business address'),
+  homeAddress: address('home address'),
+  businessAddress: address('business address'),
 
   businessStartDate: z.iso.date({ error: 'Please enter your business start date.' })
     .refine((d) => d <= todayIso(), { message: "The start date can't be in the future." }),

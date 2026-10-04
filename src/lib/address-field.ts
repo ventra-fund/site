@@ -1,6 +1,6 @@
 import {
   ADDRESS_DEBOUNCE_MS,
-  ADDRESS_OUTAGE_GRACE_MS,
+  ADDRESS_OUTAGE_RETRY_WINDOW_MS,
   ADDRESS_OUTAGE_RETRY_MS,
   ADDRESS_QUERY_MIN,
   type AddressSuggestResponse,
@@ -17,9 +17,8 @@ import { isFullAddress, missingAddressParts } from './address-shape';
 // are left standing. An address the provider doesn't know (new construction, rural routes) can be
 // typed out instead, and is accepted when it has every part of a full address (address-shape.ts).
 // Anything else ("WTC7") is invalid, the form won't submit, and the field says which parts are
-// missing. The one way past is an outage:
-// when lookups have been failing for ADDRESS_OUTAGE_GRACE_MS, what's typed is accepted, so a
-// provider that is down can't stop applications.
+// missing. Typing it in full is also what keeps applications coming while the provider is down:
+// there is no other way past, and /api/apply runs the same shape check (apply-schema.ts).
 //
 // Validity is published through the input's custom validity, so src/lib/form.ts treats it like
 // any other constraint. It is recomputed whenever it can be read: on every input event and just
@@ -33,14 +32,15 @@ import { isFullAddress, missingAddressParts } from './address-shape';
 
 const SUGGEST_URL = '/api/address/suggest';
 
-/** "That address is missing the city, state and ZIP code. Add them, or choose a suggested address." */
-function missingMessage(value: string): string {
+/**
+ * "That address is missing the city, state and ZIP code. Add them, or choose a suggested address."
+ * While lookups are failing there are no suggestions to choose from, so it only says "Add them."
+ */
+function missingMessage(value: string, suggesting: boolean): string {
   const parts = missingAddressParts(value);
   const list = parts.length > 1 ? `${parts.slice(0, -1).join(', ')} and ${parts.at(-1)}` : parts[0];
-  return `That address is missing the ${list}. Add ${parts.length > 1 ? 'them' : 'it'}, or choose a suggested address.`;
+  return `That address is missing the ${list}. Add ${parts.length > 1 ? 'them' : 'it'}${suggesting ? ', or choose a suggested address' : ''}.`;
 }
-/** While lookups are failing, before the outage has lasted long enough to accept what's typed. */
-const MESSAGE_OUTAGE = 'Use a suggested address.';
 
 const OPTION_CLASS =
   'group/option flex cursor-default flex-col rounded-sm px-2 py-1.5 text-sm font-normal select-none data-highlighted:bg-accent data-highlighted:text-accent-foreground';
@@ -61,7 +61,7 @@ function isPicked(value: string): boolean {
 // Lookups failing since this time (0: they work, as far as is known). Shared by the fields: the
 // provider is down for all of them or none.
 let downSince = 0;
-const outageOver = () => downSince > 0 && Date.now() - downSince >= ADDRESS_OUTAGE_GRACE_MS;
+const retriesSpent = () => downSince > 0 && Date.now() - downSince >= ADDRESS_OUTAGE_RETRY_WINDOW_MS;
 
 export function setupAddressField(root: HTMLElement) {
   const input = root.querySelector<HTMLInputElement>('[data-address-input]');
@@ -87,9 +87,7 @@ function attach(input: HTMLInputElement, list: HTMLElement, status: HTMLElement,
   function refreshValidity() {
     const value = input.value.trim();
     let message = '';
-    if (value && !isPicked(value) && !isFullAddress(value) && !outageOver()) {
-      message = downSince ? MESSAGE_OUTAGE : missingMessage(value);
-    }
+    if (value && !isPicked(value) && !isFullAddress(value)) message = missingMessage(value, !downSince);
     input.setCustomValidity(message);
     // Once shown, the reason under the field follows the field's state and goes when it is valid.
     if (!message) error.hidden = true;
@@ -176,13 +174,12 @@ function attach(input: HTMLInputElement, list: HTMLElement, status: HTMLElement,
     if (request !== mine) return;
 
     if (!body || body.degraded) {
-      // The provider, our endpoint or the connection failed. Keep trying while the field still
-      // needs an answer; once the outage has lasted long enough the field stops insisting.
+      // The provider, our endpoint or the connection failed. Keep trying for a while as long as
+      // the field still needs an answer; the next keystroke or focus asks again either way.
       downSince ||= Date.now();
       suggestions = [];
       render();
-      // No further once the outage has lasted long enough for the field to accept what's typed.
-      if (!outageOver()) retryTimer = setTimeout(() => { if (input.value.trim() === query && !isPicked(query) && !isFullAddress(query)) void ask(query); }, ADDRESS_OUTAGE_RETRY_MS);
+      if (!retriesSpent()) retryTimer = setTimeout(() => { if (input.value.trim() === query && !isPicked(query) && !isFullAddress(query)) void ask(query); }, ADDRESS_OUTAGE_RETRY_MS);
     } else {
       downSince = 0;
       suggestions = body.suggestions;
