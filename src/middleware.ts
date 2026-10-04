@@ -1,5 +1,7 @@
 import { defineMiddleware } from 'astro:middleware';
+import type { APIContext } from 'astro';
 import { json } from '@/lib/server/http';
+import { applySecurityHeaders } from '@/lib/server/security-headers';
 
 // One guard for everything behind admin sign-in, so a new page or endpoint can't forget it:
 // /admin/* (except the sign-in page itself) redirects to sign-in, /api/admin/* answers 401.
@@ -10,7 +12,7 @@ const ADMIN_PAGE = /^\/admin(\/|$)/;
 const ADMIN_API = /^\/api\/admin(\/|$)/;
 const SIGN_IN = /^\/admin\/sign-in\/?$/;
 
-export const onRequest = defineMiddleware(async (context, next) => {
+async function guardAdmin(context: APIContext, next: () => Promise<Response>): Promise<Response> {
   const path = context.url.pathname;
   const isPage = ADMIN_PAGE.test(path) && !SIGN_IN.test(path);
   const isApi = ADMIN_API.test(path);
@@ -26,4 +28,12 @@ export const onRequest = defineMiddleware(async (context, next) => {
   response.headers.set('X-Robots-Tag', 'noindex, nofollow');
   response.headers.set('Cache-Control', 'no-store');
   return response;
+}
+
+export const onRequest = defineMiddleware(async (context, next) => {
+  const response = await guardAdmin(context, next);
+  // Everything the Worker answers gets the security headers here, since public/_headers only
+  // reaches static files. Not under `pnpm dev`, whose inline scripts the CSP would block (and
+  // where _headers isn't applied either).
+  return import.meta.env.PROD ? applySecurityHeaders(response) : response;
 });

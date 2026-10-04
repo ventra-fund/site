@@ -96,6 +96,12 @@ export default defineConfig({
   integrations: [],
   vite: {
     plugins: [tailwindcss()],
+    build: {
+      // Astro prints a small <script> into the page instead of linking it, and the Content Security
+      // Policy (src/lib/server/security-headers.ts, public/_headers) allows no inline scripts.
+      // `false` for scripts keeps every one a file under /_astro; everything else keeps the default.
+      assetsInlineLimit: (filePath) => (/\.m?js$/.test(filePath) ? false : undefined),
+    },
   },
   prefetch: {
     defaultStrategy: 'viewport'

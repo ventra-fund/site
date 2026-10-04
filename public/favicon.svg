@@ -1,7 +1,14 @@
-<svg viewBox="0 -239.5 1192 1192" xmlns="http://www.w3.org/2000/svg">
-  <style>
-    path { fill: #000; }
-    @media (prefers-color-scheme: dark) { path { fill: #fff; } }
-  </style>
-  <path d="M0 0 L233 0 L381.68 362.64 L563 0 L1192 0 L1161.5 61 L599.5 61 L370.66 518.68 L183.01 61 L100.01 61 L342.32 652 L388 652 L646.5 135 L1144.5 135 L1046 332 L771 332 L734.5 405 L1009.5 405 L918.5 587 L643.5 587 L580.5 713 L509.5 713 L603 526 L879 526 L909 466 L633 466 L730.5 271 L1006.5 271 L1044 196 L693 196 L434.5 713 L292.33 713 Z" />
+<svg width="512" height="512" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="v-gradient" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#0096a8" />
+      <stop offset="1" stop-color="#002b48" />
+    </linearGradient>
+  </defs>
+  <rect width="512" height="512" fill="url(#v-gradient)" />
+  <path
+    d="M0 0 L233 0 L381.68 362.64 L563 0 L1192 0 L1161.5 61 L599.5 61 L370.66 518.68 L183.01 61 L100.01 61 L342.32 652 L388 652 L646.5 135 L1144.5 135 L1046 332 L771 332 L734.5 405 L1009.5 405 L918.5 587 L643.5 587 L580.5 713 L509.5 713 L603 526 L879 526 L909 466 L633 466 L730.5 271 L1006.5 271 L1044 196 L693 196 L434.5 713 L292.33 713 Z"
+    fill="white"
+    transform="translate(66,142.3) scale(0.3188)"
+  />
 </svg>

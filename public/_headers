@@ -1,8 +1,12 @@
-# Served by Cloudflare Workers static assets for every response (see wrangler.jsonc `assets`).
-# The API routes set their own Content-Type; everything else here is safe for JSON too.
+# Applied by Cloudflare Workers static assets to static files only: the prerendered pages, /_astro,
+# /media. Anything the Worker answers itself (the admin pages, the signing page, /api) never gets
+# these; src/middleware.ts adds the same set there from src/lib/server/security-headers.ts, which
+# also explains each CSP directive. KEEP THE TWO IN STEP: a change here belongs there too.
 /*
   Strict-Transport-Security: max-age=31536000; includeSubDomains
   X-Content-Type-Options: nosniff
+  X-Frame-Options: DENY
   Referrer-Policy: strict-origin-when-cross-origin
-  Permissions-Policy: camera=(), microphone=(), geolocation=()
-  Content-Security-Policy: frame-ancestors 'none'
+  Permissions-Policy: camera=(), microphone=(), geolocation=(), payment=(), usb=()
+  Cross-Origin-Opener-Policy: same-origin
+  Content-Security-Policy: default-src 'self'; script-src 'self' https://challenges.cloudflare.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self'; frame-src https://challenges.cloudflare.com; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'
