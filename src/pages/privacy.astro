@@ -1,0 +1,111 @@
+---
+import LegalPage from '@/components/LegalPage.astro';
+import type { LegalSection, Overview } from '@/components/legal-overview';
+import Mail from '@lucide/astro/icons/mail';
+import BriefcaseBusiness from '@lucide/astro/icons/briefcase-business';
+import Landmark from '@lucide/astro/icons/landmark';
+import IdCard from '@lucide/astro/icons/id-card';
+import SearchCheck from '@lucide/astro/icons/search-check';
+import MonitorSmartphone from '@lucide/astro/icons/monitor-smartphone';
+import MapPin from '@lucide/astro/icons/map-pin';
+
+// Ported merchant privacy policy and reworded to what this site does (see the
+// inventory in docs/privacy-terms-checklist.md). Keep it in step with the code: the retention
+// numbers are the defaults and APPLICATION_RETENTION_DAYS in src/lib/server/drafts.ts, the providers are the ones the Worker calls.
+
+const overview: Overview = {
+  groups: [
+    {
+      title: 'Data linked to you',
+      items: [
+        { icon: Mail, label: 'Contact info', detail: 'To contact you about your application.' },
+        { icon: Landmark, label: 'Bank statements', detail: 'To pre-fill your application and to review it.' },
+        { icon: BriefcaseBusiness, label: 'Business info', detail: 'To verify the business exists, and for financial due diligence.' },
+        { icon: IdCard, label: 'SSN and EIN', detail: 'Provided by you when you sign an approved application, only for verification and the soft credit inquiry.' },
+        { icon: SearchCheck, label: 'Soft credit inquiry', detail: 'Only when you sign. It does not affect your credit score. Never a hard pull.' },
+        { icon: MonitorSmartphone, label: 'Device info', detail: 'Your browser type, recorded with your application and your signature.' },
+        { icon: MapPin, label: 'Approximate location', detail: 'A fraud-prevention signal, and part of your signature record.' },
+      ],
+    },
+    {
+      title: 'Not used to track you',
+      note: "We don't use advertising or cross-site tracking tools, so nothing you do here is used to track you across other companies' apps and websites.",
+    },
+  ],
+};
+
+const sections: LegalSection[] = [
+  {
+    heading: 'Who we are',
+    body: ['Ventra Fund. Reach us by phone, or through the contact form on our website.'],
+    contacts: ['phone'],
+  },
+  {
+    heading: 'What we collect',
+    body: [
+      'Application details you enter: your name, mobile number, email, home address, legal business name and DBA, business address, business start date, industry, requested amount, monthly revenue, and self-reported credit score.',
+      'What you type in the address fields, as you type it: it is sent through our servers to an address-lookup provider (LocationIQ) so we can suggest matching addresses, together with a rough area (a region roughly 70 miles around the approximate location derived from your IP address) so nearby addresses are listed first. We do not send that provider your IP address, name, or any other application detail.',
+      'Progress as you fill in the application form, saved as you type (before you submit), so our team can follow up on an application that was started but not sent.',
+      'Bank statements you upload, and the figures we extract from them to pre-fill and review your application. Statements are sent to a document-processing provider (LlamaCloud) for extraction, and are sent to our team with your application.',
+      'When you sign an approved application: your SSN and EIN, used to verify your identity and business. They are stored encrypted and shown to authorized staff only on explicit request, which is logged.',
+      'When you sign an approved application: the results of a soft credit inquiry on you and your business, which you authorize us and our funding partners to make to confirm the information you provided. A soft inquiry does not affect your credit score. We do not check your credit when you apply, and we never run a hard pull.',
+      'Your signature record: the name you type as your signature, the details you confirmed, and the time, IP address, browser, and approximate location of each step of signing.',
+      'Technical information from your browser: IP address, approximate location and network derived from it, browser type, the page that referred you, and any campaign tags in the link you followed.',
+      'Messages you send through the contact and partner forms: your name, email, and message, and for partners your role and interests. They are emailed to our team and are not stored in our application database.',
+    ],
+  },
+  {
+    heading: 'How we use it',
+    body: [
+      'Underwriting: We use your application details and bank statements to assess your eligibility for financing.',
+      'Address suggestions: We use what you type in the address fields, and your approximate location, only to suggest complete addresses for you to pick from.',
+      'Identity verification: After you sign, we use your SSN and EIN to verify your identity and your business, including through a soft credit inquiry.',
+      'Fraud prevention: We use device information, IP address, and approximate location to detect and prevent fraudulent applications and automated abuse.',
+      'Communications: We use your contact information to send updates about your application.',
+      'Attribution: We use the referring page and campaign tags to understand how applicants find us.',
+      'Legal obligations: We may disclose your information when required by law, regulation, court order, or government request.',
+    ],
+  },
+  {
+    heading: 'Who we share it with',
+    body: [
+      'Service providers: We share information with vendors who perform services on our behalf, including: cloud hosting and bot protection (Cloudflare), email delivery (Resend), address lookup (LocationIQ, for address suggestions as you type), document processing (LlamaCloud, for bank statement extraction), and consumer reporting agencies (for soft credit inquiries).',
+      'Funding partners: With the authorization you give when you sign, we share your application with funding partners so they can verify it, including through a soft credit inquiry.',
+      'Legal requirements: We may disclose information to comply with applicable laws, regulations, court orders, or government requests.',
+      'Business transfers: In the event of a merger, acquisition, or sale of assets, your information may be transferred as part of the transaction, subject to the same privacy commitments.',
+    ],
+  },
+  {
+    heading: 'How long we keep it',
+    body: [
+      'Progress data from applications that are never submitted is deleted after a retention period set by our team, currently 30 days after the last change. Our team may change this period.',
+      'Submitted applications (including all entered data and uploaded bank statements) are retained for a minimum of 12 months after the application decision, or after submission where no decision has been made, consistent with the Equal Credit Opportunity Act (ECOA) and Regulation B (12 CFR § 1002.12) record retention requirements for business credit.',
+      'Bank statements and extracted financial data are retained for the same period as the associated application. An uploaded statement that never became part of a saved application is deleted about 30 days after upload.',
+      'For approved applications you have signed: all application data, signing records, and any financing agreements and payment records are retained for at least 7 years after the final payment, or longer as required by applicable law or regulation.',
+      'SSN and EIN: Retained for as long as the signed application they belong to, stored encrypted with access logging.',
+      'Application emails and contact and partner messages stay in our team mailbox.',
+      'You may request deletion of your data at any time. Where we are required to retain certain records by law, we will delete what we can and inform you of what must be retained.',
+    ],
+  },
+  {
+    heading: 'Your choices and rights',
+    body: [
+      'Access: You may request a copy of the personal information we hold about you.',
+      'Correction: You may request correction of inaccurate or incomplete information.',
+      'Deletion: You may request deletion of your data. Where we must retain certain records by law, we will delete what we can.',
+      'State-specific rights: If you are a resident of California (CCPA/CPRA), Virginia (VCDPA), Colorado (CPA), Connecticut (CTDPA), Utah (UCPA), or other states with comprehensive privacy laws, you may have additional rights, including access, correction, deletion, the right to non-discrimination for exercising your rights, and the right to appeal a denial of a request. To exercise these rights, contact us using the information below.',
+      'Do Not Sell/Share: We do not sell your personal information, and we do not share it for cross-context behavioral advertising.',
+      'Contact: To exercise any of these rights or ask questions about this policy, call us or use the contact form on our website.',
+    ],
+    contacts: ['phone'],
+  },
+];
+---
+
+<LegalPage
+  title="Privacy Policy"
+  lede="How we collect, use, and protect the information you share with us."
+  lastUpdated="October 4, 2026"
+  sections={sections}
+  overview={overview}
+/>

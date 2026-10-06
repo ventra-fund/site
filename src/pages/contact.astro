@@ -3,6 +3,7 @@ import Layout from "@/layouts/Layout.astro";
 import Footer from "@/components/Footer.astro";
 import QuillEditor from "@/components/QuillEditor.astro";
 import Turnstile from "@/components/Turnstile.astro";
+import ContactReveal from "@/components/ContactReveal.astro";
 import { Button } from "@/ui/button";
 import { Input } from "@/ui/input";
 
@@ -14,7 +15,10 @@ const EMAIL_PATTERN = "[^@\\s]+@[^@\\s]+\\.[^@\\s]{2,}";
         <div class="mx-auto flex max-w-2xl flex-col gap-8">
             <div class="flex flex-col gap-3">
                 <h1 class="text-3xl font-bold text-accent sm:text-5xl">Contact us</h1>
-                <p class="text-lg text-muted-foreground">Questions about financing with Ventra Fund? Send us a message and we'll get back to you. Otherwise, call us at (###) ###-####</p>
+                <p class="text-lg text-muted-foreground">Questions about financing with Ventra Fund? Send us a message and we'll get back to you.</p>
+                {/* The number sits behind the anti-scrape reveal (docs/contact-reveal.md): it is never in this page. */}
+                <p class="text-lg text-muted-foreground">Prefer to talk? Call us: <ContactReveal contact="phone" /></p>
+                <noscript><p class="text-sm text-muted-foreground">Turn on JavaScript to see our phone number, or send us a message below.</p></noscript>
             </div>
 
             <form data-contact-form novalidate class="flex flex-col gap-5">
@@ -40,6 +44,11 @@ const EMAIL_PATTERN = "[^@\\s]+@[^@\\s]+\\.[^@\\s]{2,}";
                 <p data-contact-success hidden role="status" class="text-sm font-medium text-accent">Thanks, your message was sent. We'll be in touch.</p>
 
                 <Button type="submit" size="lg" class="self-start" data-contact-submit data-label="Send message" disabled>Checking security…</Button>
+                {/* Notice, not a checkbox: sending is the agreement. */}
+                <p class="text-xs text-muted-foreground">
+                    By sending, you agree to our <a href="/terms" class="underline hover:text-foreground" target="_blank" rel="noopener">Terms of Service</a>
+                    and <a href="/privacy" class="underline hover:text-foreground" target="_blank" rel="noopener">Privacy Policy</a>.
+                </p>
             </form>
         </div>
     </main>

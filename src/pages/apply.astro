@@ -3,13 +3,21 @@ import Layout from "@/layouts/Layout.astro";
 import Footer from "@/components/Footer.astro";
 import Turnstile from "@/components/Turnstile.astro";
 import DateField from "@/components/DateField.astro";
+import AutofillBadge from "@/components/AutofillBadge.astro";
+import AddressField from "@/components/AddressField.astro";
 import { Button } from "@/ui/button";
 import { Checkbox } from "@/ui/checkbox";
 import { Input } from "@/ui/input";
+import { Upload } from "@lucide/astro";
+import { APPLY_TURNSTILE_ACTION, MAX_UPLOAD_FILES, MAX_UPLOAD_FILE_BYTES, UPLOAD_ACCEPT, UPLOAD_TYPE_LABEL, formatMb } from "@/lib/upload-config";
 
 // Client-side constraints below (minlength/pattern/max) mirror src/lib/apply-schema.ts so a
 // visitor hears about a problem before submitting, not from a 400 afterwards. Keep them in step.
 const fieldClass = "flex flex-col gap-1.5 text-sm font-medium";
+// A label row that can carry the pre-filled badge (see AutofillBadge.astro).
+const labelRowClass = "flex flex-wrap items-center gap-x-2 gap-y-1";
+// Inputs the statement reader may fill get a tint while they still hold what it read.
+const autofillClass = "data-[autofilled]:border-primary/60 data-[autofilled]:bg-primary/5";
 // Requires a dotted domain, like the server's z.email(); the browser's own type="email" check
 // would happily pass "me@localhost".
 const EMAIL_PATTERN = "[^@\\s]+@[^@\\s]+\\.[^@\\s]{2,}";
@@ -19,15 +27,49 @@ const EMAIL_PATTERN = "[^@\\s]+@[^@\\s]+\\.[^@\\s]{2,}";
         <div class="mx-auto flex max-w-2xl flex-col gap-8">
             <div class="flex flex-col gap-3">
                 <h1 class="text-3xl font-bold text-accent sm:text-5xl">Apply for funding</h1>
+                {/* Notice at collection: shown before anything is typed, because progress is saved as it
+                    is entered (not only on submit). Keep in step with /privacy. */}
+                <p class="text-sm text-muted-foreground">
+                    We save your answers as you type, before you submit, so our team can follow up. See our
+                    <a href="/privacy" class="underline hover:text-foreground" target="_blank" rel="noopener">Privacy Policy</a>.
+                </p>
             </div>
 
             <form data-apply-form novalidate class="flex flex-col gap-8">
                 <div class="flex flex-col gap-5">
+                    <div class="flex flex-col gap-1">
+                        <h2 class="text-lg font-semibold">Upload documents <span class="font-normal text-muted-foreground">(optional)</span></h2>
+                        <p class="text-sm text-muted-foreground">
+                            Add your last 3–6 months of business bank statements, as PDFs or photos. We read them to
+                            pre-fill parts of this form, and they're sent along with your application. Keep this page
+                            open until you submit.
+                        </p>
+                    </div>
+
+                    <div
+                        data-upload-dropzone
+                        role="button"
+                        tabindex="0"
+                        aria-label="Upload bank statements"
+                        class="flex cursor-pointer flex-col items-center justify-center gap-2 rounded-lg border-2 border-dashed border-border p-8 text-center transition-colors hover:border-primary focus-visible:border-ring focus-visible:outline-none data-[dragging]:border-primary data-[dragging]:bg-primary/5"
+                    >
+                        <Upload class="size-6 text-muted-foreground" aria-hidden="true" />
+                        <p class="text-sm font-medium">Drop statements here or click to choose files</p>
+                        <p class="text-xs text-muted-foreground">{UPLOAD_TYPE_LABEL} · up to {MAX_UPLOAD_FILES} files · {formatMb(MAX_UPLOAD_FILE_BYTES)} each</p>
+                        <input data-upload-input type="file" multiple accept={UPLOAD_ACCEPT} class="sr-only" tabindex="-1" aria-hidden="true" />
+                    </div>
+
+                    <ul data-upload-list class="flex flex-col gap-2 empty:hidden" aria-live="polite"></ul>
+                    <p data-upload-error hidden role="alert" class="text-sm text-destructive"></p>
+                    <p data-autofill-note hidden role="status" class="text-sm font-medium text-accent"></p>
+                </div>
+
+                <div class="flex flex-col gap-5">
                     <h2 class="text-lg font-semibold">Business & contact info</h2>
 
                     <label class={fieldClass}>
-                        Legal business name
-                        <Input name="legalBusinessName" type="text" required maxlength="300" autocomplete="organization" />
+                        <span class={labelRowClass}>Legal business name <AutofillBadge /></span>
+                        <Input name="legalBusinessName" type="text" required maxlength="300" autocomplete="organization" class={autofillClass} />
                     </label>
 
                     <label class={fieldClass}>
@@ -37,12 +79,12 @@ const EMAIL_PATTERN = "[^@\\s]+@[^@\\s]+\\.[^@\\s]{2,}";
 
                     <div class="grid grid-cols-1 gap-5 sm:grid-cols-2">
                         <label class={fieldClass}>
-                            First name
-                            <Input name="firstName" type="text" required maxlength="200" autocomplete="given-name" />
+                            <span class={labelRowClass}>First name <AutofillBadge /></span>
+                            <Input name="firstName" type="text" required maxlength="200" autocomplete="given-name" class={autofillClass} />
                         </label>
                         <label class={fieldClass}>
-                            Last name
-                            <Input name="lastName" type="text" required maxlength="200" autocomplete="family-name" />
+                            <span class={labelRowClass}>Last name <AutofillBadge /></span>
+                            <Input name="lastName" type="text" required maxlength="200" autocomplete="family-name" class={autofillClass} />
                         </label>
                     </div>
 
@@ -58,23 +100,24 @@ const EMAIL_PATTERN = "[^@\\s]+@[^@\\s]+\\.[^@\\s]{2,}";
                     </div>
 
                     <label class={fieldClass}>
-                        Monthly business revenue
-                        <Input name="monthlyRevenue" type="number" inputmode="numeric" required min="0" max="1000000000" step="1" placeholder="$" />
+                        <span class={labelRowClass}>Monthly business revenue <AutofillBadge /></span>
+                        <Input name="monthlyRevenue" type="number" inputmode="numeric" required min="0" max="1000000000" step="1" placeholder="$" class={autofillClass} />
                     </label>
                 </div>
 
                 <div class="flex flex-col gap-5">
                     <h2 class="text-lg font-semibold">Addresses</h2>
 
-                    <label class={fieldClass}>
-                        Home address
-                        <Input name="homeAddress" type="text" required maxlength="300" autocomplete="street-address" />
-                    </label>
+                    <!-- Not wrapped in a <label>, unlike the other fields: see AddressField.astro. -->
+                    <div class={fieldClass} data-field>
+                        <label for="homeAddress">Home address</label>
+                        <AddressField name="homeAddress" required placeholder="Street address, city, state, ZIP" />
+                    </div>
 
-                    <label class={fieldClass}>
-                        Business address
-                        <Input name="businessAddress" type="text" required maxlength="300" />
-                    </label>
+                    <div class={fieldClass} data-field>
+                        <span class={labelRowClass}><label for="businessAddress">Business address</label> <AutofillBadge /></span>
+                        <AddressField name="businessAddress" required placeholder="Include your suite or unit, if any" class={autofillClass} />
+                    </div>
 
                     <Checkbox id="ap-same-address" name="sameAsHome">Same as home address</Checkbox>
                 </div>
@@ -104,7 +147,16 @@ const EMAIL_PATTERN = "[^@\\s]+@[^@\\s]+\\.[^@\\s]{2,}";
                     </div>
                 </div>
 
-                <Turnstile action="apply" />
+                {/* Required here and by /api/apply (`consent` in src/lib/apply-schema.ts). */}
+                <Checkbox id="ap-consent" name="consent" required labelClass="items-start [&>span:first-child]:mt-0.5">
+                    <span class="text-sm">
+                        I agree to the <a href="/terms" class="underline" target="_blank" rel="noopener">Terms of Service</a>
+                        and <a href="/privacy" class="underline" target="_blank" rel="noopener">Privacy Policy</a>, and I'm
+                        authorized to apply on behalf of this business.
+                    </span>
+                </Checkbox>
+
+                <Turnstile action={APPLY_TURNSTILE_ACTION} />
 
                 <p data-apply-error hidden role="alert" class="text-sm text-destructive"></p>
                 <p data-apply-success hidden role="status" class="text-sm font-medium text-accent">Thanks, your application was submitted. We'll be in contact with next steps.</p>
@@ -117,8 +169,12 @@ const EMAIL_PATTERN = "[^@\\s]+@[^@\\s]+\\.[^@\\s]{2,}";
 </Layout>
 
 <script>
-    import { gateOnFirstInteraction } from '@/lib/turnstile';
-    import { setupValidation, showMessage, submitJson, validateForm } from '@/lib/form';
+    import { gateOnFirstInteraction, lockButton, releaseButton, unlockButton, waitForTurnstileToken } from '@/lib/turnstile';
+    import { clearInvalid, setupValidation, showMessage, submitJson, validateForm } from '@/lib/form';
+    import { setupStatementUpload, type Suggestions } from '@/lib/apply-upload';
+    import { setupDraftCapture } from '@/lib/apply-draft';
+    import { DRAFT_FIELDS } from '@/lib/draft-config';
+    import { AUTOFILL_FIELDS, UPLOAD_TYPE_LABEL, type AutofillField } from '@/lib/upload-config';
 
     const form = document.querySelector<HTMLFormElement>('[data-apply-form]');
     if (form) {
@@ -130,7 +186,7 @@ const EMAIL_PATTERN = "[^@\\s]+@[^@\\s]+\\.[^@\\s]{2,}";
 
         // Turnstile is only fetched once the user touches the form; from then on submit stays disabled
         // until it verifies (invisible first, visible fallback after 5s).
-        if (widget) gateOnFirstInteraction({ form, widget, button: submitBtn, onError: showError });
+        const startGate = widget ? gateOnFirstInteraction({ form, widget, button: submitBtn, onError: showError }) : () => {};
 
         // "Same as home address" mirrors the home address field into the business address field
         // live, and locks it read-only so the two can't drift apart while checked.
@@ -140,27 +196,148 @@ const EMAIL_PATTERN = "[^@\\s]+@[^@\\s]+\\.[^@\\s]{2,}";
         const syncBusinessAddress = () => { businessInput.value = homeInput.value; };
         sameCheckbox.addEventListener('change', () => {
             businessInput.readOnly = sameCheckbox.checked;
-            if (sameCheckbox.checked) syncBusinessAddress();
+            if (sameCheckbox.checked) {
+                syncBusinessAddress();
+                // Whatever the statement said, the field now holds the home address.
+                setAutofilled(businessInput, false);
+                updateNote();
+            }
         });
         homeInput.addEventListener('input', () => { if (sameCheckbox.checked) syncBusinessAddress(); });
+
+        // ── Pre-fill from statements ────────────────────────────────────────────────────────────
+        // A field is only ever filled while it is empty or still holds what the reader put there:
+        // anything the visitor typed stays. The tint + badge (data-autofilled) go the moment they
+        // edit it, so what reaches the server as `autofilled` is exactly the untouched values.
+        const autofillInputs = AUTOFILL_FIELDS.map((name) => form.querySelector<HTMLInputElement>(`input[name="${name}"]`)!);
+        const noteEl = form.querySelector<HTMLElement>('[data-autofill-note]')!;
+        // `[data-field]`: the address fields, whose label can't wrap the input.
+        const badgeFor = (input: HTMLInputElement) => input.closest('label, [data-field]')?.querySelector<HTMLElement>('[data-autofill-badge]') ?? null;
+        function setAutofilled(input: HTMLInputElement, on: boolean) {
+            if (on) input.dataset.autofilled = 'true';
+            else delete input.dataset.autofilled;
+            const badge = badgeFor(input);
+            if (badge) badge.hidden = !on;
+        }
+        const isAutofilled = (input: HTMLInputElement) => input.dataset.autofilled === 'true';
+        for (const input of autofillInputs) input.addEventListener('input', () => { setAutofilled(input, false); updateNote(); });
+
+        function updateNote() {
+            const count = autofillInputs.filter(isAutofilled).length;
+            if (count) showMessage(noteEl, `We pre-filled ${count} field${count === 1 ? '' : 's'} from your statements (marked below). Please check ${count === 1 ? 'it' : 'them'} before submitting.`);
+            else noteEl.hidden = true;
+        }
+
+        function applySuggestions(s: Suggestions) {
+            for (const input of autofillInputs) {
+                const value = s.fields[input.name as AutofillField];
+                if (value == null || value === '') {
+                    // The statements that suggested it were removed: an untouched pre-filled value goes with them.
+                    if (isAutofilled(input)) { input.value = ''; setAutofilled(input, false); }
+                    continue;
+                }
+                // A locked field (business address while "same as home" is on) keeps what locks it.
+                if (input.readOnly || input.disabled) continue;
+                if (input.value.trim() !== '' && !isAutofilled(input)) continue;
+                input.value = typeof value === 'number' ? String(Math.round(value)) : value;
+                setAutofilled(input, true);
+                clearInvalid(input);
+            }
+            updateNote();
+            capture.scheduleSave();
+        }
+
+        function clearAutofill() {
+            for (const input of autofillInputs) {
+                if (!isAutofilled(input)) continue;
+                input.value = '';
+                setAutofilled(input, false);
+            }
+            updateNote();
+            capture.scheduleSave();
+        }
+
+        const uploader = setupStatementUpload({
+            dropzone: form.querySelector<HTMLElement>('[data-upload-dropzone]')!,
+            input: form.querySelector<HTMLInputElement>('[data-upload-input]')!,
+            list: form.querySelector<HTMLElement>('[data-upload-list]')!,
+            errorEl: form.querySelector<HTMLElement>('[data-upload-error]')!,
+            startGate,
+            waitForToken: () => (widget ? waitForTurnstileToken(widget) : Promise.resolve(undefined)),
+            onUploadStart: () => { submitBtn.disabled = true; },
+            // The upload spent the token; a fresh gate re-enables submit once there's a new one.
+            onUploadEnd: () => {
+                releaseButton(submitBtn, widget, showError);
+                capture.scheduleSave();
+                refreshLock();
+            },
+            onSuggestions: applySuggestions,
+            onCleared: clearAutofill,
+        });
 
         // Every invalid field gets a red ring (plus a hidden per-field message for screen readers)
         // and the alert below the form sums it up, instead of the browser's one-at-a-time tooltip.
         setupValidation(form);
 
+        // Drop-off capture: once a Turnstile check passes, what's typed is saved as it goes, so an
+        // application abandoned half way still reaches the team. Silent and best effort.
+        const capture = setupDraftCapture({
+            form, widget, submitBtn,
+            onGateError: showError,
+            isUploaderBusy: () => uploader.isBusy(),
+            attachments: () => uploader.attachments(),
+            autofilled: () => autofillInputs.filter(isAutofilled).map((i) => i.name),
+        });
+
+        // Once an application has gone through, submit stays locked until the form differs from
+        // what was sent (a field, or the attached statements), so the same application can't be
+        // sent twice. Changing it back to exactly what was sent locks it again.
+        const fingerprint = () => {
+            const data = new FormData(form);
+            const files = uploader.attachments().files.map((f) => [f.name, f.size, f.lastModified]);
+            return JSON.stringify([DRAFT_FIELDS.map((n) => String(data.get(n) ?? '').trim()), files]);
+        };
+        let sentFingerprint: string | undefined;
+        function refreshLock() {
+            if (sentFingerprint === undefined) return;
+            if (fingerprint() === sentFingerprint) lockButton(submitBtn, 'Application sent');
+            else unlockButton(submitBtn, widget, showError);
+        }
+        // Capture phase, so the date picker's non-bubbling change counts; deferred, so fields the
+        // page fills in response (the "same as home" mirror) and the statement list after a
+        // Remove click (no input event) have settled before the comparison.
+        const refreshSoon = () => { setTimeout(refreshLock); };
+        form.addEventListener('input', refreshSoon, true);
+        form.addEventListener('change', refreshSoon, true);
+        form.addEventListener('click', refreshSoon, true);
+
         form.addEventListener('submit', async (e) => {
             e.preventDefault();
+            if (submitBtn.dataset.locked !== undefined) return;
             errorEl.hidden = true;
             successEl.hidden = true;
 
+            if (uploader.isBusy()) { showError('Please wait for your statements to finish uploading.'); return; }
             if (!validateForm(form, errorEl)) return;
 
             const data = new FormData(form);
             const field = (n: string) => String(data.get(n) ?? '').trim();
 
+            // The statements go with the submission itself (nothing is kept server-side between the
+            // upload check and now), so this one is multipart: the JSON below plus the files.
+            const { files, jobIds, documentIds } = uploader.attachments();
+            const sending = fingerprint();
             await submitJson({
                 form, widget, button: submitBtn, errorEl, successEl,
                 url: '/api/apply',
+                files: () => files,
+                errorMessages: {
+                    documents_too_large: 'Your statements are too large to send together. Please remove one and resubmit.',
+                    too_many_documents: 'Too many statements are attached. Please remove one and resubmit.',
+                    too_large: 'Your application is too large to send. Please remove a statement and resubmit.',
+                    documents_invalid: `One of your statements couldn't be read as a ${UPLOAD_TYPE_LABEL}. Please remove it and resubmit.`,
+                    duplicate_application: "We've already received this exact application, so it wasn't sent again. If something needs correcting, change it and submit again.",
+                },
                 body: () => ({
                     legalBusinessName: field('legalBusinessName'),
                     dba: field('dba'),
@@ -175,9 +352,21 @@ const EMAIL_PATTERN = "[^@\\s]+@[^@\\s]+\\.[^@\\s]{2,}";
                     businessIndustry: field('businessIndustry'),
                     ficoScore: Number(field('ficoScore')),
                     fundingAmount: Number(field('fundingAmount')),
+                    consent: data.get('consent') !== null,
+                    jobIds,
+                    autofilled: autofillInputs.filter(isAutofilled).map((i) => i.name),
+                    draftId: capture.getDraftId(),
+                    documentIds,
                 }),
+                // What was sent stands: statements still being read no longer pre-fill anything.
+                onSuccess: () => {
+                    uploader.markSubmitted();
+                    capture.stop();
+                    sentFingerprint = sending;
+                    refreshLock();
+                },
                 // Leave the submitted values in place instead of clearing the form: the visitor can
-                // see exactly what they sent, and re-submitting isn't blocked if they want to.
+                // see exactly what they sent, and send a corrected version once they change something.
             });
         });
     }

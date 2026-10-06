@@ -88,6 +88,11 @@ const EMAIL_PATTERN = "[^@\\s]+@[^@\\s]+\\.[^@\\s]{2,}";
                 <p data-partner-success hidden role="status" class="text-sm font-medium text-accent">Thanks, your message was sent. We'll be in touch.</p>
 
                 <Button type="submit" size="lg" class="self-start" data-partner-submit data-label="Send message" disabled>Checking security…</Button>
+                {/* Notice, not a checkbox: sending is the agreement. */}
+                <p class="text-xs text-muted-foreground">
+                    By sending, you agree to our <a href="/terms" class="underline hover:text-foreground" target="_blank" rel="noopener">Terms of Service</a>
+                    and <a href="/privacy" class="underline hover:text-foreground" target="_blank" rel="noopener">Privacy Policy</a>.
+                </p>
             </form>
         </div>
     </main>

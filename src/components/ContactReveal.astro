@@ -1,0 +1,163 @@
+---
+// One contact detail behind the anti-scrape reveal (docs/contact-reveal.md). The page never holds
+// the value: "Show" passes Turnstile and asks /api/contact/reveal for vector outlines, drawn here on a
+// canvas in the surrounding text's size and colour. Copy / Call each pass Turnstile again and fetch
+// the text only on that click. Multi-instance: every [data-contact-reveal] on the page is wired by
+// the one bundled script below. Turnstile loads on the first click, not with the page.
+import Turnstile from '@/components/Turnstile.astro';
+import { CONTACT_META, type ContactKey } from '@/lib/contact/keys';
+import Eye from '@lucide/astro/icons/eye';
+import Copy from '@lucide/astro/icons/copy';
+import Mail from '@lucide/astro/icons/mail';
+import Phone from '@lucide/astro/icons/phone';
+
+interface Props {
+  contact: ContactKey;
+  class?: string;
+}
+
+const { contact, class: className } = Astro.props;
+const meta = CONTACT_META[contact];
+const noun = meta.kind === 'email' ? 'email address' : 'phone number';
+const btn = 'inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-sm text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors disabled:opacity-50';
+---
+
+<span data-contact-reveal data-contact={contact}
+  class:list={['inline-flex flex-wrap items-center gap-x-2 gap-y-1 align-middle', className]}>
+  <button type="button" data-cr-show class="inline-flex items-center gap-1 font-medium text-accent underline underline-offset-4 hover:no-underline disabled:opacity-50" aria-label={`Show our ${noun}`}>
+    <Eye size={16} aria-hidden="true" /> Show {meta.kind === 'email' ? 'email' : 'number'}
+  </button>
+  <canvas data-cr-canvas hidden role="img" aria-label={`Our ${noun}, shown as an image. Use the buttons beside it to copy it or ${meta.kind === 'email' ? 'write to us' : 'call'}.`}></canvas>
+  <span data-cr-actions hidden class="inline-flex items-center gap-1">
+    <button type="button" data-cr-copy class={btn} aria-label={`Copy ${noun}`}><Copy size={14} aria-hidden="true" /> Copy</button>
+    {meta.kind === 'email'
+      ? <button type="button" data-cr-open class={btn} aria-label="Write an email"><Mail size={14} aria-hidden="true" /> Email</button>
+      : <button type="button" data-cr-open class={btn} aria-label="Call this number"><Phone size={14} aria-hidden="true" /> Call</button>}
+  </span>
+  <span data-cr-status role="status" class="text-sm text-muted-foreground" hidden></span>
+  <Turnstile action="contact-reveal" class="block w-full empty:hidden" />
+</span>
+
+<script>
+  import { awaitTurnstileToken, refreshTurnstile, TURNSTILE_UNAVAILABLE_MESSAGE } from '@/lib/turnstile';
+
+  interface Outline { d: string; width: number; height: number; baseline: number; unitsPerEm: number }
+
+  async function reveal(key: string, format: 'outline' | 'text', token: string) {
+    const res = await fetch('/api/contact/reveal', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ key, format, token }),
+    });
+    // A WAF challenge (no pre-clearance cookie) answers with an HTML page, not JSON.
+    const data = await res.json().catch(() => null) as { outline?: Outline; text?: string; href?: string; error?: string } | null;
+    if (!res.ok || !data) throw new Error(data?.error ?? `http_${res.status}`);
+    return data;
+  }
+
+  function draw(canvas: HTMLCanvasElement, outline: Outline) {
+    const style = getComputedStyle(canvas.parentElement ?? canvas);
+    const fontSize = parseFloat(style.fontSize) || 16;
+    const scale = fontSize / outline.unitsPerEm;
+    const dpr = window.devicePixelRatio || 1;
+    const w = Math.ceil(outline.width * scale);
+    const h = Math.ceil(outline.height * scale);
+    canvas.width = Math.ceil(w * dpr);
+    canvas.height = Math.ceil(h * dpr);
+    canvas.style.width = `${w}px`;
+    canvas.style.height = `${h}px`;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+    ctx.setTransform(dpr * scale, 0, 0, dpr * scale, 0, 0);
+    ctx.clearRect(0, 0, outline.width, outline.height);
+    ctx.fillStyle = style.color;
+    ctx.fill(new Path2D(outline.d));
+  }
+
+  function messageFor(err: unknown): string {
+    const code = String((err as Error)?.message);
+    if (code === 'too_many_requests') return 'Too many requests. Try again in a minute.';
+    if (code === 'not_configured') return "This isn't available right now. Please send us a message instead.";
+    if (code === 'Turnstile script failed to load') return TURNSTILE_UNAVAILABLE_MESSAGE;
+    return 'Could not verify. Please try again.';
+  }
+
+  function init(root: HTMLElement) {
+    const key = root.dataset.contact!;
+    const showBtn = root.querySelector<HTMLButtonElement>('[data-cr-show]')!;
+    const canvas = root.querySelector<HTMLCanvasElement>('[data-cr-canvas]')!;
+    const actions = root.querySelector<HTMLElement>('[data-cr-actions]')!;
+    const copyBtn = root.querySelector<HTMLButtonElement>('[data-cr-copy]')!;
+    const openBtn = root.querySelector<HTMLButtonElement>('[data-cr-open]')!;
+    const status = root.querySelector<HTMLElement>('[data-cr-status]')!;
+    const widget = root.querySelector('turnstile-widget')!;
+    let outline: Outline | null = null;
+
+    const say = (msg: string) => { status.textContent = msg; status.hidden = !msg; };
+    const fail = (err: unknown) => say(messageFor(err));
+
+    // Each text request spends a token; start solving the next one right away.
+    const fetchText = async () => {
+      const token = await awaitTurnstileToken(widget);
+      try { return await reveal(key, 'text', token); } finally { refreshTurnstile(widget); }
+    };
+
+    showBtn.addEventListener('click', async () => {
+      showBtn.disabled = true;
+      say('Checking…');
+      try {
+        const token = await awaitTurnstileToken(widget);
+        const data = await reveal(key, 'outline', token);
+        refreshTurnstile(widget);
+        outline = data.outline!;
+        draw(canvas, outline);
+        showBtn.hidden = true;
+        canvas.hidden = false;
+        actions.hidden = false;
+        say('');
+      } catch (err) {
+        refreshTurnstile(widget);
+        showBtn.disabled = false;
+        fail(err);
+      }
+    });
+
+    copyBtn.addEventListener('click', async () => {
+      copyBtn.disabled = true;
+      try {
+        // ClipboardItem with a pending promise keeps Safari's user-gesture window open across the
+        // Turnstile wait and the fetch; plain writeText is the fallback elsewhere.
+        const pending = fetchText().then((d) => d.text!);
+        if (typeof ClipboardItem !== 'undefined' && navigator.clipboard?.write) {
+          await navigator.clipboard.write([new ClipboardItem({ 'text/plain': pending.then((t) => new Blob([t], { type: 'text/plain' })) })]);
+        } else {
+          await navigator.clipboard.writeText(await pending);
+        }
+        say('Copied.');
+        setTimeout(() => say(''), 2000);
+      } catch (err) {
+        fail(err);
+      } finally {
+        copyBtn.disabled = false;
+      }
+    });
+
+    openBtn.addEventListener('click', async () => {
+      openBtn.disabled = true;
+      try {
+        const { href } = await fetchText();
+        if (href) window.location.href = href;
+      } catch (err) {
+        fail(err);
+      } finally {
+        openBtn.disabled = false;
+      }
+    });
+
+    // Redraw in the new text colour when the theme flips.
+    new MutationObserver(() => { if (outline) draw(canvas, outline); })
+      .observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
+  }
+
+  document.querySelectorAll<HTMLElement>('[data-contact-reveal]').forEach(init);
+</script>

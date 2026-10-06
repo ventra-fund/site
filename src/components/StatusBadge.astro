@@ -1,0 +1,19 @@
+---
+import type { DraftStatus } from "@/lib/server/drafts";
+
+// Where an /apply session stands, as shown on the admin pages: a draft, submitted, or signed
+// (an approved application whose signing link was completed, src/lib/server/signing.ts).
+interface Props {
+  status: DraftStatus;
+  signed?: boolean;
+}
+
+const { status, signed = false } = Astro.props;
+const [label, tone] = signed
+  ? ["Signed", "bg-green-600/15 text-green-700 dark:text-green-400"]
+  : status === "converted"
+    ? ["Submitted", "bg-accent/15 text-accent"]
+    : ["Draft", "bg-muted text-muted-foreground"];
+---
+
+<span class={`rounded px-2 py-0.5 text-xs font-medium ${tone}`}>{label}</span>

@@ -1,9 +1,11 @@
 {
-	"name": "ventra-fund",
+	"name": "site",
 	"main": "@astrojs/cloudflare/entrypoints/server",
 	// Workers runtime behaviour is pinned to this date; bump it deliberately when adopting newer runtime changes.
 	"compatibility_date": "2026-09-20",
-	"compatibility_flags": ["nodejs_compat"],
+	"compatibility_flags": [
+		"nodejs_compat"
+	],
 	"assets": {
 		"directory": "./dist",
 		"binding": "ASSETS"
@@ -16,7 +18,113 @@
 		{
 			"name": "FORM_RATE_LIMIT",
 			"namespace_id": "1001",
-			"simple": { "limit": 2, "period": 60 }
+			"simple": {
+				"limit": 2,
+				"period": 60
+			}
+		},
+		// Statement uploads (/api/apply/upload) get their own counter so re-picking files doesn't
+		// eat the submit budget. The unit is a REQUEST, not a file: the page sends up to 4 files
+		// per request (MAX_FILES_PER_UPLOAD), so a full pick of 6 is two requests and 4/min leaves
+		// room for a second full pick inside a minute. Each request can put up to 4 documents
+		// through the (paid) document provider, so this is also the per-IP spend cap: 4 × 4 files a
+		// minute at most.
+		{
+			"name": "UPLOAD_RATE_LIMIT",
+			"namespace_id": "1002",
+			"simple": {
+				"limit": 4,
+				"period": 60
+			}
+		},
+		// Status polls (/api/apply/parse-status) are free to call but each one asks the document
+		// provider about up to 6 jobs. The page polls every 6 s (10 a minute) while statements are
+		// being read, so 30 leaves room for a few applicants on one office IP and still stops a
+		// script from burning the provider's rate limit for everyone.
+		{
+			"name": "STATUS_RATE_LIMIT",
+			"namespace_id": "1003",
+			"simple": {
+				"limit": 30,
+				"period": 60
+			}
+		},
+		// Drop-off capture (/api/apply/session and /api/apply/draft). The page saves at most every
+		// 8 s (DRAFT_SAVE_DEBOUNCE_MS in src/lib/draft-config.ts) while someone types (about 6 a minute at a steady pace), plus a final beacon and the
+		// one session mint; 12 leaves room for two applicants on one office IP and still stops a
+		// script from writing freely.
+		{
+			"name": "DRAFT_RATE_LIMIT",
+			"namespace_id": "1004",
+			"simple": {
+				"limit": 12,
+				"period": 60
+			}
+		},
+		// The signing link's steps (/api/sign/[token]: accept the disclosure, then sign). A signer
+		// needs two, plus a few retries after a mistyped EIN or SSN; the link token is already the
+		// real gate, this only stops a script guessing at it from one IP.
+		{
+			"name": "SIGN_RATE_LIMIT",
+			"namespace_id": "1005",
+			"simple": {
+				"limit": 10,
+				"period": 60
+			}
+		},
+		// The contact reveal (/api/contact/reveal): one call to show the number and one per Copy or
+		// Call, each behind its own Turnstile token. 12 is far above a person and still stops a script.
+		{
+			"name": "CONTACT_RATE_LIMIT",
+			"namespace_id": "1006",
+			"simple": {
+				"limit": 12,
+				"period": 60
+			}
+		},
+		// Address suggestions (/api/address/suggest). The page asks at most once per 250 ms pause in
+		// typing (ADDRESS_DEBOUNCE_MS in src/lib/address-config.ts), so two addresses typed out are
+		// about 30 to 40 calls; 60 leaves room for corrections and still caps what one IP can take
+		// from the provider's daily quota.
+		{
+			"name": "ADDRESS_RATE_LIMIT",
+			"namespace_id": "1007",
+			"simple": {
+				"limit": 60,
+				"period": 60
+			}
+		}
+	],
+	// Stored copies of uploaded statements (src/lib/server/documents.ts), kept with the drop-off
+	// sessions in DRAFTS_DB and deleted by the same purge. One-time setup, see README: create the
+	// bucket. No lifecycle rule: it would delete statements of applications that must be kept.
+	"r2_buckets": [
+		{
+			"binding": "DOCUMENTS",
+			"bucket_name": "ventra-fund-documents"
+		},
+		{
+			"bucket_name": "ventra-fund-documents",
+			"binding": "ventra_fund_documents"
+		}
+	],
+	// Apply schema changes with `pnpm migrate:local` / `pnpm migrate:remote` (package.json), which
+	// run every database's migrations. No `database_id`s: `wrangler deploy` provisions each
+	// database on first deploy and writes the id back. One environment only, no staging copies.
+	"d1_databases": [
+		// Admin sign-in (src/lib/server/auth.ts): users, sessions, one-time codes and rate-limit
+		// counters. Schema in migrations/.
+		{
+			"binding": "AUTH_DB",
+			"database_name": "ventra-fund-auth",
+			"migrations_dir": "migrations"
+		},
+		// Drop-off capture for /apply (src/lib/server/drafts.ts): unsubmitted sessions and the
+		// retention settings. Schema in migrations-drafts/.
+		{
+			"binding": "DRAFTS_DB",
+			"database_name": "ventra-fund-drafts",
+			"migrations_dir": "migrations-drafts"
 		}
 	],
 	"observability": {

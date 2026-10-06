@@ -1,0 +1,38 @@
+---
+// The "at a glance" table at the top of a legal page: one column, a bold heading row per group, then
+// rows of icon + title + a very short line on how it's used. Rendered by LegalPage when a page passes
+// `overview`, above the full text.
+import type { Overview } from '@/components/legal-overview';
+
+interface Props { overview: Overview }
+
+const { overview } = Astro.props;
+---
+
+<section aria-label="At a glance" class="flex flex-col gap-4">
+  <div class="divide-y divide-border">
+    {overview.groups.map((group) => (
+      <div class="divide-y divide-border [&:first-child>:first-child]:pt-0">
+        <div class="pt-6 pb-2.5">
+          <h2 class="text-sm font-bold">{group.title}</h2>
+          {group.note && <p class="mt-0.5 text-xs text-muted-foreground">{group.note}</p>}
+        </div>
+        {group.items && group.items.length > 0 && (
+          <ul class="divide-y divide-border">
+            {group.items.map((item) => (
+              <li class="flex items-start gap-3 py-3 text-sm">
+                <item.icon size={18} class="mt-0.5 shrink-0" aria-hidden="true" />
+                <p class="leading-snug">
+                  <span class="font-medium">{item.label}</span>
+                  <span class="text-muted-foreground"> – {item.detail}</span>
+                </p>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
+    ))}
+  </div>
+
+  {overview.note && <p class="text-xs text-muted-foreground">{overview.note}</p>}
+</section>

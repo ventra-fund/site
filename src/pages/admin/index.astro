@@ -1,0 +1,92 @@
+---
+import AdminLayout from "@/layouts/AdminLayout.astro";
+import { Button } from "@/ui/button";
+import { Input } from "@/ui/input";
+import { runInBackground } from "@/lib/server/bindings";
+import { SETTING_BOUNDS, getDraftDb, getFunnel, getSettings, purgeExpired, saveSettings, type DraftSettings } from "@/lib/server/drafts";
+import { percent } from "@/lib/server/admin-format";
+
+// Not linked from anywhere on the site, and kept out of search results. Sign-in is enforced by
+// src/middleware.ts, which also sets the no-store / noindex headers.
+export const prerender = false;
+
+const db = await getDraftDb();
+
+if (db && Astro.request.method === "POST") {
+  // The session cookie is SameSite=Lax, so a cross-site form post arrives signed out anyway; the
+  // origin check makes that explicit rather than relying on the browser.
+  if (Astro.request.headers.get("Origin") !== Astro.url.origin) return new Response("Forbidden", { status: 403 });
+  const form = await Astro.request.formData();
+  await saveSettings(db, {
+    baseTtlDays: Number(form.get("baseTtlDays")),
+    convertedTtlDays: Number(form.get("convertedTtlDays")),
+    maxDraftRows: Number(form.get("maxDraftRows")),
+  });
+  // Post/redirect/get, so reloading the page doesn't post again.
+  return Astro.redirect("/admin?saved=1", 303);
+}
+const notice = Astro.url.searchParams.has("saved") ? "Saved." : "";
+
+const DAYS = 30;
+const [funnel, settings] = db ? await Promise.all([getFunnel(db, DAYS), getSettings(db)]) : [null, null];
+if (db) void runInBackground(purgeExpired(db));
+
+const stats = funnel
+  ? [
+      { label: "Sessions", value: funnel.sessions, sub: "" },
+      { label: "Started", value: funnel.started, sub: percent(funnel.started, funnel.sessions) },
+      { label: "With contact", value: funnel.withContact, sub: percent(funnel.withContact, funnel.sessions) },
+      { label: "Submitted", value: funnel.converted, sub: percent(funnel.converted, funnel.started) },
+    ]
+  : [];
+
+const settingFields: { key: keyof DraftSettings; label: string }[] = [
+  { key: "baseTtlDays", label: "Keep drafts (days)" },
+  { key: "convertedTtlDays", label: "Keep undecided submissions (days, 12 months minimum)" },
+  { key: "maxDraftRows", label: "Max drafts" },
+];
+---
+
+<AdminLayout title="Admin" current="overview">
+  {!db ? (
+    <p class="text-sm text-muted-foreground">Database unavailable.</p>
+  ) : (
+    <>
+      <section class="flex flex-col gap-3">
+        <div class="flex items-baseline justify-between gap-4">
+          <h1 class="text-xl font-semibold">Overview</h1>
+          <span class="text-sm text-muted-foreground">Last {DAYS} days</span>
+        </div>
+        <dl class="grid grid-cols-2 gap-3 sm:grid-cols-4">
+          {stats.map((s) => (
+            <a href={s.label === "Submitted" ? "/admin/drop-offs?status=converted" : "/admin/drop-offs"} class="flex flex-col gap-1 rounded-md border border-border p-4 hover:bg-muted/40">
+              <dt class="text-sm text-muted-foreground">{s.label}</dt>
+              <dd class="flex items-baseline gap-2">
+                <span class="text-2xl font-semibold tabular-nums">{s.value}</span>
+                {s.sub && <span class="text-xs text-muted-foreground">{s.sub}</span>}
+              </dd>
+            </a>
+          ))}
+        </dl>
+      </section>
+
+      <section class="flex flex-col gap-3">
+        <h2 class="text-base font-semibold">Retention</h2>
+        <form method="post" class="flex flex-col gap-4">
+          <div class="grid grid-cols-1 gap-3 sm:grid-cols-3">
+            {settingFields.map((f) => (
+              <label class="flex flex-col gap-1.5 text-sm text-muted-foreground">
+                {f.label}
+                <Input name={f.key} type="number" required step="1" min={String(SETTING_BOUNDS[f.key][0])} max={String(SETTING_BOUNDS[f.key][1])} value={String(settings![f.key])} />
+              </label>
+            ))}
+          </div>
+          <div class="flex items-center gap-3">
+            <Button type="submit" size="sm">Save</Button>
+            {notice && <span role="status" class="text-sm text-muted-foreground">{notice}</span>}
+          </div>
+        </form>
+      </section>
+    </>
+  )}
+</AdminLayout>

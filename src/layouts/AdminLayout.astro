@@ -1,0 +1,23 @@
+---
+import Layout from "@/layouts/Layout.astro";
+import AdminHeader from "@/components/AdminHeader.astro";
+
+// The shared frame for every /admin page, so they all have the same width, spacing and header.
+// Without `current` (sign-in) there's no header and the column is narrow.
+interface Props {
+  title: string;
+  current?: "overview" | "applications";
+}
+
+const { title, current } = Astro.props;
+---
+
+<Layout title={title} noindex>
+  <slot name="head" slot="head" />
+  <main class="min-h-screen w-full px-4 py-10">
+    <div class={`mx-auto flex flex-col gap-8 ${current ? "max-w-5xl" : "max-w-sm"}`}>
+      {current && <AdminHeader current={current} />}
+      <slot />
+    </div>
+  </main>
+</Layout>

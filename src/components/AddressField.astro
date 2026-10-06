@@ -1,0 +1,67 @@
+---
+// One-line address input with suggestions as the visitor types (src/lib/address-field.ts, fed by
+// /api/address/suggest). It is still a plain <input name=…>, so the form reads and pre-fills it
+// like any other field, but it is only valid holding a full address: one picked from the
+// suggestions (a suite or unit may be added afterwards), or one typed out with every part (street,
+// city, state, ZIP; src/lib/address-shape.ts). Only when lookups have been failing for a while (no
+// provider key, quota, outage) is anything else accepted.
+//
+// Don't wrap it in a <label>: the suggestion list would become part of the input's accessible
+// name. Give the label a `for` pointing at `id` instead.
+//
+// The dropdown borrows the look of the kit's Select/Combobox popups. The kit's own Combobox isn't
+// used because it is a pick-one-from-a-fixed-list control: it submits the picked item rather than
+// the typed text and can't take items that change with every keystroke.
+import { cn } from "@/lib/utils";
+import { inputClass } from "@/ui/input/input-class";
+import { ADDRESS_QUERY_MAX } from "@/lib/address-config";
+
+interface Props {
+  name: string;
+  /** For the label's `for`. Defaults to `name`. */
+  id?: string;
+  required?: boolean;
+  placeholder?: string;
+  /** Extra classes for the input itself (e.g. the pre-filled tint). */
+  class?: string;
+}
+
+const { name, id = name, required = false, placeholder, class: className = "" } = Astro.props;
+const listId = `${id}-suggestions`;
+---
+
+<div data-address-field class="relative">
+  <!-- autocomplete="off": the browser's own address dropdown would sit on top of this one. -->
+  <input
+    id={id}
+    name={name}
+    type="text"
+    required={required}
+    maxlength={ADDRESS_QUERY_MAX}
+    placeholder={placeholder}
+    autocomplete="off"
+    role="combobox"
+    aria-autocomplete="list"
+    aria-expanded="false"
+    aria-controls={listId}
+    data-address-input
+    class={cn(inputClass, className)}
+  />
+  <ul
+    id={listId}
+    role="listbox"
+    aria-label="Address suggestions"
+    hidden
+    data-address-list
+    class="absolute top-full left-0 z-50 mt-1.5 max-h-72 w-full overflow-y-auto overscroll-contain rounded-lg bg-popover p-1 text-popover-foreground shadow-md ring-1 ring-foreground/10"
+  ></ul>
+  <p data-address-status role="status" class="sr-only"></p>
+  <!-- Why the field was refused. aria-hidden: form.ts already gives screen readers the same text. -->
+  <p data-address-error hidden aria-hidden="true" class="mt-1.5 text-sm font-normal text-destructive"></p>
+</div>
+
+<script>
+  import { setupAddressField } from "@/lib/address-field";
+
+  for (const field of document.querySelectorAll<HTMLElement>("[data-address-field]")) setupAddressField(field);
+</script>

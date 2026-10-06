@@ -1,0 +1,106 @@
+---
+import AdminLayout from "@/layouts/AdminLayout.astro";
+import StatusBadge from "@/components/StatusBadge.astro";
+import { getDraftDb, listDrafts } from "@/lib/server/drafts";
+import { formatName, formatPlace, formatTime } from "@/lib/server/admin-format";
+
+// Every verified /apply session, newest activity first. Filter by status, or by IP to see
+// several sessions (separate applicants on one office line, or one applicant trying again)
+// side by side. Sign-in is enforced by src/middleware.ts.
+export const prerender = false;
+
+const db = await getDraftDb();
+
+const params = Astro.url.searchParams;
+const statusParam = params.get("status");
+const status = statusParam === "draft" || statusParam === "converted" ? statusParam : undefined;
+const ip = params.get("ip")?.slice(0, 64) || undefined;
+const page = Math.max(0, Math.min(1000, Number.parseInt(params.get("page") ?? "0", 10) || 0));
+const { rows, more } = db ? await listDrafts(db, { status, ip, page }) : { rows: [], more: false };
+
+/** This listing's URL with some parameters changed (undefined drops one). */
+function linkWith(changes: Partial<Record<"status" | "ip" | "page", string | undefined>>) {
+  const next = new URLSearchParams();
+  const merged = { status, ip, page: page ? String(page) : undefined, ...changes };
+  for (const [k, v] of Object.entries(merged)) if (v) next.set(k, v);
+  const qs = next.toString();
+  return `/admin/drop-offs${qs ? `?${qs}` : ""}`;
+}
+
+const tabs = [
+  { label: "All", value: undefined },
+  { label: "Submitted", value: "converted" },
+  { label: "Drafts", value: "draft" },
+] as const;
+
+const name = (r: (typeof rows)[number]) => formatName(r.first_name, r.last_name);
+---
+
+<AdminLayout title="Applications" current="applications">
+  <div class="flex flex-wrap items-center justify-between gap-4">
+    <h1 class="text-xl font-semibold">Applications</h1>
+    <nav class="flex gap-1 text-sm">
+      {tabs.map((t) => (
+        <a
+          href={linkWith({ status: t.value, page: undefined })}
+          class={`rounded-md px-3 py-1 ${t.value === status ? "bg-muted font-medium text-foreground" : "text-muted-foreground hover:text-foreground"}`}
+        >{t.label}</a>
+      ))}
+    </nav>
+  </div>
+
+  {ip && (
+    <p class="text-sm text-muted-foreground">
+      IP <code class="font-mono">{ip}</code> · <a href={linkWith({ ip: undefined, page: undefined })} class="text-primary hover:underline">Clear</a>
+    </p>
+  )}
+
+  {!db ? (
+    <p class="text-sm text-muted-foreground">Database unavailable.</p>
+  ) : rows.length === 0 ? (
+    <p class="text-sm text-muted-foreground">Nothing here.</p>
+  ) : (
+    <div class="overflow-x-auto rounded-md border border-border">
+      <table class="w-full text-left text-sm">
+        <thead class="border-b border-border text-muted-foreground">
+          <tr>
+            <th class="px-3 py-2 font-medium">Applicant</th>
+            <th class="px-3 py-2 font-medium">Status</th>
+            <th class="px-3 py-2 font-medium">Fields</th>
+            <th class="px-3 py-2 font-medium">Updated</th>
+            <th class="px-3 py-2 font-medium">IP</th>
+            <th class="px-3 py-2 font-medium">Location</th>
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map((r) => (
+            <tr class="border-b border-border last:border-0 hover:bg-muted/40">
+              <td class="px-3 py-2">
+                <a href={`/admin/drop-offs/${r.id}`} class="font-medium text-primary hover:underline">{r.business || name(r) || "Unnamed"}</a>
+                {r.email && <div class="text-xs text-muted-foreground">{r.email}</div>}
+              </td>
+              <td class="px-3 py-2"><StatusBadge status={r.status} signed={!!r.signed} /></td>
+              <td class="whitespace-nowrap px-3 py-2 tabular-nums text-muted-foreground">
+                {r.fields_completed}/{r.fields_total}{r.documents > 0 && ` · ${r.documents} doc${r.documents === 1 ? "" : "s"}`}
+              </td>
+              <td class="whitespace-nowrap px-3 py-2 text-muted-foreground">{formatTime(r.last_active_at)}</td>
+              <td class="whitespace-nowrap px-3 py-2 font-mono text-xs">
+                {r.ip ? (
+                  <a href={linkWith({ ip: r.ip, page: undefined })} class="hover:underline">{r.ip}{r.ip_sessions > 1 && ` ×${r.ip_sessions}`}</a>
+                ) : "—"}
+              </td>
+              <td class="px-3 py-2 text-muted-foreground">{formatPlace(r.city, r.country)}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  )}
+
+  {(page > 0 || more) && (
+    <nav class="flex justify-between text-sm">
+      {page > 0 ? <a href={linkWith({ page: page - 1 ? String(page - 1) : undefined })} class="text-primary hover:underline">← Newer</a> : <span />}
+      {more && <a href={linkWith({ page: String(page + 1) })} class="text-primary hover:underline">Older →</a>}
+    </nav>
+  )}
+</AdminLayout>

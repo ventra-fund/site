@@ -1,0 +1,10 @@
+---
+// The "this came from your statement" marker next to a field label on the apply form. Hidden
+// until the page script pre-fills the field (data-autofilled on the input), and hidden again
+// the moment the visitor edits it, so a badge always means "still exactly what we read".
+import { Sparkles } from "@lucide/astro";
+---
+<span data-autofill-badge hidden class="inline-flex items-center gap-1 rounded-full bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary">
+  <Sparkles class="size-3" aria-hidden="true" />
+  Pre-filled from your statement
+</span>
