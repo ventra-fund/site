@@ -12,7 +12,15 @@ import { Image } from "astro:assets";
 import businesswoman from "@/assets/media/businesswoman.webp";
 import handshake from "@/assets/media/business-handshake.jpeg";
 import hvac from "@/assets/media/hvac.jpeg";
-import { BadgeDollarSign, ChevronLeft, ChevronRight, CircleDollarSign, ClipboardCheck, Quote, Sheet, ShieldCheck, ToolCase, Timer, TrendingUp, UsersRound, Wallet } from "@lucide/astro";
+import { BadgeDollarSign, ChevronLeft, ChevronRight, CircleCheck, CircleDollarSign, ClipboardCheck, Quote, Sheet, ShieldCheck, ToolCase, Timer, TrendingUp, UsersRound, Wallet } from "@lucide/astro";
+
+const reviews = [
+  { rating: 5, name: "Sandra K.", when: "2 days ago", title: "Applied Monday, funded Wednesday", body: "Had a big payroll week and an old tax bill land at the same time. Ventra covered both without the endless paperwork I expected. Now I just pay a fixed amount each week and it's easy to plan around." },
+  { rating: 5, name: "Marcus T.", when: "5 days ago", title: "Finally a lender that answers the phone", body: "Every other company kept us waiting for weeks or called back to resell us. The rep explained the flat fee upfront and helped schedule payments around our slower months." },
+  { rating: 4, name: "Priya S.", when: "6 days ago", title: "Good rates, honest terms", body: "Funding cleared quickly for our inventory order and the weekly repayments are easy to budget. Took a day longer to hit our account than promised, but the true cost was clear from day one." },
+  { rating: 5, name: "Dan & Lyn M.", when: "1 week ago", title: "Kept our bakery running through summer", body: "Our delivery van gave out right before our busiest season. Ventra approved us in 24 hours and we had a replacement on the road the next week. Can't recommend them enough." },
+  { rating: 4, name: "Renee C.", when: "2 weeks ago", title: "Rescued a late-paying client's contract", body: "A client paid late and we nearly missed payroll. The application took ten minutes and the decision came back the same day. Only downer is the fixed weekly payment day was a bit of a squeeze." },
+];
 ---
 
 <Layout>
@@ -115,98 +123,58 @@ import { BadgeDollarSign, ChevronLeft, ChevronRight, CircleDollarSign, Clipboard
     </div>
   </section>
 
-  <section class="bg-primary/10 py-20 md:py-28">
-    <div class="mx-auto w-[calc(100%-2rem)] max-w-[1300px] md:w-[calc(100%-8rem)]">
-      <h2 class="text-4xl font-bold text-accent md:text-6xl">Read the latest from our customers.</h2>
-      <div class="mt-12 grid grid-cols-1 gap-6 lg:grid-cols-[1fr_3fr]">
-        <div class="flex flex-col justify-center gap-4 rounded-br-[5rem] bg-accent p-10 text-accent-foreground">
-          <p class="text-xl font-semibold">Excellent</p>
-          <div class="flex items-center gap-3">
-            <div class="flex gap-2" role="img" aria-label="Rated 4.9 out of 5">
-              {Array.from({ length: 5 }, () => (
-                <span class="grid size-10 place-items-center bg-primary text-primary-foreground"><Star class="size-6" aria-hidden="true" /></span>
-              ))}
-            </div>
-            <p class="text-2xl font-bold">4.9</p>
+  <section class="relative py-24 md:py-40">
+    <!-- Glow rising from the footer's VF mark: the footer has no top padding, so the section's bottom edge is the V's
+         top bar. The gradient is centred on a rect twice the viewBox height, so only its upper half shows and the
+         brightest point lands on that bottom edge. -->
+    <svg class="pointer-events-none absolute inset-x-[10%] bottom-0 h-[34rem] w-4/5 md:h-[44rem]" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
+      <defs>
+        <radialGradient id="reviews-glow" cx="0.5" cy="0.5" r="0.5">
+          <stop offset="0" style="stop-color: var(--chart-1); stop-color: oklch(from var(--chart-1) calc(l * 0.7) c h)" stop-opacity="0.55" />
+          <stop offset="0.45" style="stop-color: var(--chart-1)" stop-opacity="0.25" />
+          <stop offset="1" style="stop-color: var(--chart-1)" stop-opacity="0" />
+        </radialGradient>
+      </defs>
+      <rect x="0" y="0" width="100" height="200" fill="url(#reviews-glow)" />
+    </svg>
+    <div class="relative mx-auto w-[calc(100%-2rem)] max-w-[1020px]">
+      <h2 class="text-center text-4xl font-semibold tracking-tight text-accent md:text-6xl">Why Our Customers <span class="text-primary">Love Us</span></h2>
+      <p class="mx-auto mt-8 max-w-xl text-center text-accent">Read real testimonies from real customers on their experience with Ventra Fund.</p>
+      <div class="mt-16 flex flex-col items-center gap-8 md:mt-24 lg:flex-row lg:gap-7">
+        <div class="flex w-[10.5rem] shrink-0 flex-col items-center text-center text-[#191919]">
+          <p class="text-[1.4rem] leading-tight">Excellent</p>
+          <div class="mt-1.5 flex gap-[3px]" role="img" aria-label="Rated 4.9 out of 5">
+            {Array.from({ length: 5 }, (_, i) => (
+              <span class:list={["grid size-[30px] place-items-center text-white", i < 4 ? "bg-[#00b67a]" : "bg-[linear-gradient(90deg,#00b67a_50%,#dcdce6_50%)]"]}><Star class="size-5" aria-hidden="true" /></span>
+            ))}
           </div>
-          <p class="text-sm">Based on <strong>128</strong> reviews</p>
-          <img class="mt-2 h-8 w-auto self-start" src="/media/trustpilot.svg" alt="Trustpilot" width="140" height="34" loading="lazy" />
+          <p class="mt-1.5 text-[13px]">Based on <span class="underline">128 reviews</span></p>
+          <img class="mt-2 h-6 w-auto" src="/media/trustpilot-dark.svg" alt="Trustpilot" width="140" height="34" loading="lazy" />
         </div>
-        <div class="min-w-0" data-reviews>
-          <div class="flex snap-x snap-mandatory gap-6 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden" data-reviews-track>
-        <article class="flex shrink-0 basis-[85%] snap-start flex-col rounded-tr-[3rem] bg-background p-5 pr-8 sm:basis-[calc((100%-1.5rem)/2)] xl:basis-[calc((100%-3rem)/3)]">
-          <div class="mb-2 flex gap-0.5" role="img" aria-label="Rated 5 out of 5">
-            {Array.from({ length: 5 }, () => (
-              <span class="grid size-5 place-items-center bg-primary text-primary-foreground"><Star class="size-3.5" aria-hidden="true" /></span>
+        <div class="flex w-full min-w-0 items-center gap-4 lg:gap-7" data-reviews>
+          <button type="button" class="grid size-6 shrink-0 cursor-pointer place-items-center rounded-full border-[1.5px] border-[#191919] bg-white text-[#191919] transition-colors disabled:cursor-default disabled:border-[#191919]/25 disabled:text-[#191919]/25" aria-label="Previous reviews" data-reviews-prev>
+            <ChevronLeft class="size-3.5" stroke-width={2.5} />
+          </button>
+          <div class="flex min-w-0 flex-1 snap-x snap-mandatory gap-11 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden" data-reviews-track>
+            {reviews.map((r) => (
+              <article class="flex shrink-0 basis-full snap-start flex-col text-[#191919] sm:basis-[calc((100%-2.75rem)/2)] xl:basis-[calc((100%-5.5rem)/3)]">
+                <div class="flex items-center gap-2">
+                  <div class="flex gap-[2px]" role="img" aria-label={`Rated ${r.rating} out of 5`}>
+                    {Array.from({ length: 5 }, (_, i) => (
+                      <span class:list={["grid size-[18px] place-items-center text-white", i < r.rating ? "bg-[#00b67a]" : "bg-[#dcdce6]"]}><Star class="size-3" aria-hidden="true" /></span>
+                    ))}
+                  </div>
+                  <span class="flex items-center gap-1 text-sm text-[#6c6c85]"><CircleCheck class="size-4 fill-[#6c6c85] text-white" aria-hidden="true" /><span class="underline">Verified</span></span>
+                </div>
+                <p class="mt-2.5 text-xs text-[#6c6c85]"><strong class="font-semibold">{r.name},</strong> {r.when}</p>
+                <h3 class="mt-2 truncate text-sm font-semibold">{r.title}</h3>
+                <p class="mt-1 line-clamp-2 text-[13px] leading-snug">{r.body}</p>
+              </article>
             ))}
           </div>
-          <h3 class="text-base font-bold text-accent">Applied Monday, funded Wednesday</h3>
-          <p class="mt-2 line-clamp-3 text-sm text-accent">Had a big payroll week and an old tax bill land at the same time. Ventra covered both without the endless paperwork I expected. Now I just pay a fixed amount each week and it's easy to plan around.</p>
-          <hr class="mt-3 w-20 border-border" />
-          <p class="mt-2 text-xs font-bold text-accent">Sandra K.</p>
-        </article>
-        <article class="flex shrink-0 basis-[85%] snap-start flex-col rounded-tr-[3rem] bg-background p-5 pr-8 sm:basis-[calc((100%-1.5rem)/2)] xl:basis-[calc((100%-3rem)/3)]">
-          <div class="mb-2 flex gap-0.5" role="img" aria-label="Rated 5 out of 5">
-            {Array.from({ length: 5 }, () => (
-              <span class="grid size-5 place-items-center bg-primary text-primary-foreground"><Star class="size-3.5" aria-hidden="true" /></span>
-            ))}
-          </div>
-          <h3 class="text-base font-bold text-accent">Finally a lender that answers the phone</h3>
-          <p class="mt-2 line-clamp-3 text-sm text-accent">Every other company kept us waiting for weeks or called back to resell us. The rep explained the flat fee upfront and helped schedule payments around our slower months.</p>
-          <hr class="mt-3 w-20 border-border" />
-          <p class="mt-2 text-xs font-bold text-accent">Marcus T.</p>
-        </article>
-        <article class="flex shrink-0 basis-[85%] snap-start flex-col rounded-tr-[3rem] bg-background p-5 pr-8 sm:basis-[calc((100%-1.5rem)/2)] xl:basis-[calc((100%-3rem)/3)]">
-          <div class="mb-2 flex gap-0.5" role="img" aria-label="Rated 4 out of 5">
-            {Array.from({ length: 4 }, () => (
-              <span class="grid size-5 place-items-center bg-primary text-primary-foreground"><Star class="size-3.5" aria-hidden="true" /></span>
-            ))}
-            {Array.from({ length: 1 }, () => (
-              <span class="grid size-5 place-items-center bg-muted text-muted-foreground"><Star class="size-3.5" aria-hidden="true" /></span>
-            ))}
-          </div>
-          <h3 class="text-base font-bold text-accent">Good rates, honest terms</h3>
-          <p class="mt-2 line-clamp-3 text-sm text-accent">Funding cleared quickly for our inventory order and the weekly repayments are easy to budget. Took a day longer to hit our account than promised, but the true cost was clear from day one.</p>
-          <hr class="mt-3 w-20 border-border" />
-          <p class="mt-2 text-xs font-bold text-accent">Priya S.</p>
-        </article>
-        <article class="flex shrink-0 basis-[85%] snap-start flex-col rounded-tr-[3rem] bg-background p-5 pr-8 sm:basis-[calc((100%-1.5rem)/2)] xl:basis-[calc((100%-3rem)/3)]">
-          <div class="mb-2 flex gap-0.5" role="img" aria-label="Rated 5 out of 5">
-            {Array.from({ length: 5 }, () => (
-              <span class="grid size-5 place-items-center bg-primary text-primary-foreground"><Star class="size-3.5" aria-hidden="true" /></span>
-            ))}
-          </div>
-          <h3 class="text-base font-bold text-accent">Kept our bakery running through summer</h3>
-          <p class="mt-2 line-clamp-3 text-sm text-accent">Our delivery van gave out right before our busiest season. Ventra approved us in 24 hours and we had a replacement on the road the next week. Can't recommend them enough.</p>
-          <hr class="mt-3 w-20 border-border" />
-          <p class="mt-2 text-xs font-bold text-accent">Dan &amp; Lyn M.</p>
-        </article>
-        <article class="flex shrink-0 basis-[85%] snap-start flex-col rounded-tr-[3rem] bg-background p-5 pr-8 sm:basis-[calc((100%-1.5rem)/2)] xl:basis-[calc((100%-3rem)/3)]">
-          <div class="mb-2 flex gap-0.5" role="img" aria-label="Rated 4 out of 5">
-            {Array.from({ length: 4 }, () => (
-              <span class="grid size-5 place-items-center bg-primary text-primary-foreground"><Star class="size-3.5" aria-hidden="true" /></span>
-            ))}
-            {Array.from({ length: 1 }, () => (
-              <span class="grid size-5 place-items-center bg-muted text-muted-foreground"><Star class="size-3.5" aria-hidden="true" /></span>
-            ))}
-          </div>
-          <h3 class="text-base font-bold text-accent">Rescued a late-paying client's contract</h3>
-          <p class="mt-2 line-clamp-3 text-sm text-accent">A client paid late and we nearly missed payroll. The application took ten minutes and the decision came back the same day. Only downer is the fixed weekly payment day was a bit of a squeeze.</p>
-          <hr class="mt-3 w-20 border-border" />
-          <p class="mt-2 text-xs font-bold text-accent">Renee C.</p>
-        </article>
-          </div>
-          <div class="mt-6 flex items-center gap-6">
-            <button type="button" class="text-accent disabled:opacity-30" aria-label="Previous reviews" data-reviews-prev>
-              <ChevronLeft class="size-5" />
-            </button>
-            <div class="h-2 flex-1 overflow-hidden rounded-full bg-background">
-              <div class="h-full rounded-full bg-primary" data-reviews-thumb></div>
-            </div>
-            <button type="button" class="text-accent disabled:opacity-30" aria-label="Next reviews" data-reviews-next>
-              <ChevronRight class="size-5" />
-            </button>
-          </div>
+          <button type="button" class="grid size-6 shrink-0 cursor-pointer place-items-center rounded-full border-[1.5px] border-[#191919] bg-white text-[#191919] transition-colors disabled:cursor-default disabled:border-[#191919]/25 disabled:text-[#191919]/25" aria-label="Next reviews" data-reviews-next>
+            <ChevronRight class="size-3.5" stroke-width={2.5} />
+          </button>
         </div>
       </div>
     </div>
@@ -218,18 +186,14 @@ import { BadgeDollarSign, ChevronLeft, ChevronRight, CircleDollarSign, Clipboard
 </Layout>
 
 <script>
-  // Review carousel: arrows scroll by one card, the bar shows the visible share of the track and its position
+  // Review carousel: arrows scroll by one card and disable at either end
   document.querySelectorAll<HTMLElement>("[data-reviews]").forEach((root) => {
     const track = root.querySelector<HTMLElement>("[data-reviews-track]")!;
-    const thumb = root.querySelector<HTMLElement>("[data-reviews-thumb]")!;
     const prev = root.querySelector<HTMLButtonElement>("[data-reviews-prev]")!;
     const next = root.querySelector<HTMLButtonElement>("[data-reviews-next]")!;
 
     const update = () => {
       const max = track.scrollWidth - track.clientWidth;
-      const visible = track.clientWidth / track.scrollWidth;
-      thumb.style.width = `${visible * 100}%`;
-      thumb.style.transform = `translateX(${max > 0 ? (track.scrollLeft / max) * (1 / visible - 1) * 100 : 0}%)`;
       prev.disabled = track.scrollLeft <= 1;
       next.disabled = track.scrollLeft >= max - 1;
     };
