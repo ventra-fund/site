@@ -1,0 +1,61 @@
+---
+import PageShell from "@/components/page/PageShell.astro";
+import PageHero from "@/components/page/PageHero.astro";
+import Section from "@/components/page/Section.astro";
+import ArticleCard from "@/components/page/ArticleCard.astro";
+import CtaBand from "@/components/page/CtaBand.astro";
+import { articles, articleCategories } from "@/data/articles";
+
+const sorted = [...articles].sort((a, b) => b.date.localeCompare(a.date));
+---
+
+<PageShell title="Resources">
+  <PageHero eyebrow="Resources" title="Guides and insights for business owners">
+    <p>Practical advice on financing, cash flow and running a small business, plus news from Ventra Fund.</p>
+  </PageHero>
+
+  <Section>
+    <!-- Topic filter: plain buttons that hide non-matching cards. Every article is in the page, so it
+         works as a full list without JS. -->
+    <div data-article-filter class="flex flex-wrap gap-2" role="group" aria-label="Filter by topic">
+      <button type="button" data-topic="" aria-pressed="true" class="border border-border px-4 py-2 text-sm font-medium aria-pressed:border-accent aria-pressed:bg-accent aria-pressed:text-accent-foreground">All</button>
+      {articleCategories.map((c) => (
+        <button type="button" data-topic={c} aria-pressed="false" class="border border-border px-4 py-2 text-sm font-medium aria-pressed:border-accent aria-pressed:bg-accent aria-pressed:text-accent-foreground">{c}</button>
+      ))}
+    </div>
+    <div data-article-list class="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
+      {sorted.map((article) => <ArticleCard article={article} />)}
+    </div>
+  </Section>
+
+  <Section title="Popular topics" tone="muted">
+    <ul class="grid list-none grid-cols-1 gap-4 md:grid-cols-3">
+      {[
+        { href: "/capital", title: "Compare financing options", text: "Every product side by side." },
+        { href: "/why-us/faq", title: "Frequently asked questions", text: "Quick answers about applying and funding." },
+        { href: "/why-us/transparent-pricing", title: "Understanding your costs", text: "How pricing works and what affects it." },
+      ].map((card) => (
+        <li>
+          <a href={card.href} class="flex h-full flex-col gap-2 border border-border bg-card p-6 transition-colors hover:border-primary">
+            <span class="text-xl font-bold text-foreground">{card.title}</span>
+            <span class="text-base text-muted-foreground">{card.text}</span>
+          </a>
+        </li>
+      ))}
+    </ul>
+  </Section>
+
+  <CtaBand />
+</PageShell>
+
+<script>
+  const filter = document.querySelector<HTMLElement>("[data-article-filter]");
+  const cards = document.querySelectorAll<HTMLElement>("[data-article-list] [data-category]");
+  filter?.addEventListener("click", (event) => {
+    const button = (event.target as HTMLElement).closest<HTMLButtonElement>("button[data-topic]");
+    if (!button) return;
+    const topic = button.dataset.topic;
+    filter.querySelectorAll("button").forEach((b) => b.setAttribute("aria-pressed", String(b === button)));
+    cards.forEach((card) => { card.hidden = !!topic && card.dataset.category !== topic; });
+  });
+</script>

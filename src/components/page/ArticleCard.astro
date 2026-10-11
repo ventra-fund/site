@@ -1,0 +1,21 @@
+---
+import type { Article } from "@/data/articles";
+import ImagePlaceholder from "./ImagePlaceholder.astro";
+
+interface Props {
+  article: Article;
+}
+
+const { article } = Astro.props;
+const date = new Date(article.date).toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric", timeZone: "UTC" });
+---
+
+<article data-category={article.category} class="flex flex-col gap-4 border border-border bg-card">
+  <ImagePlaceholder label={article.image} class="aspect-video" />
+  <div class="flex flex-1 flex-col gap-3 p-6 pt-2">
+    <p class="text-xs font-semibold uppercase tracking-widest text-primary">{article.category} · <time datetime={article.date}>{date}</time></p>
+    <h3 class="text-lg font-bold text-foreground">{article.title}</h3>
+    <p class="text-base text-muted-foreground">{article.excerpt}</p>
+    <a href={`/resources/${article.slug}`} class="mt-auto text-sm font-semibold text-primary underline-offset-4 hover:underline">Read more<span class="sr-only"> about {article.title}</span> →</a>
+  </div>
+</article>

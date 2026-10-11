@@ -1,0 +1,28 @@
+---
+// Questions as native disclosures, so the answers are in the page (and searchable) with no JS.
+import ChevronDown from "@lucide/astro/icons/chevron-down";
+import type { Faq } from "@/data/faqs";
+import ProsCons from "./ProsCons.astro";
+
+interface Props {
+  items: Faq[];
+}
+
+const { items } = Astro.props;
+---
+
+<div class="border-t border-border">
+  {items.map((faq) => (
+    <details class="group border-b border-border">
+      <summary class="flex cursor-pointer list-none items-center justify-between gap-6 py-5 text-lg font-semibold text-foreground [&::-webkit-details-marker]:hidden">
+        {faq.q}
+        <ChevronDown class="size-5 shrink-0 transition-transform group-open:rotate-180" aria-hidden="true" />
+      </summary>
+      <div class="flex max-w-3xl flex-col gap-4 pb-6 text-base text-muted-foreground">
+        {faq.a.map((p) => <p>{p}</p>)}
+        {faq.list && <ul class="list-disc pl-5">{faq.list.map((li) => <li>{li}</li>)}</ul>}
+        {faq.pros && faq.cons && <ProsCons pros={faq.pros} cons={faq.cons} />}
+      </div>
+    </details>
+  ))}
+</div>

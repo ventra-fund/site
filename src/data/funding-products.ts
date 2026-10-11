@@ -104,6 +104,10 @@ export const fundingProducts: FundingProduct[] = [
   },
 ];
 
+/** URL segment for a product's page under /capital, e.g. "Cash Credit (CC)" → "cash-credit". */
+export const productSlug = (p: Pick<FundingProduct, "title">) =>
+  p.title.toLowerCase().replace(/\([^)]*\)/g, "").trim().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+
 // The loosest requirement across all products, for the "Minimum requirements" summary on the
 // capital page. Derived here so the summary can't drift from the per-product figures above.
 const firstNumber = (s: string) => Number(s.match(/[\d.]+/)?.[0] ?? Infinity);

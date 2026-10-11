@@ -1,0 +1,19 @@
+---
+// Frame for the content pages: layout, a main column that clears the fixed site nav, and the footer.
+// Sections inside set their own width (Section.astro) so a tinted band can run full-bleed.
+import Layout from "@/layouts/Layout.astro";
+import Footer from "@/components/Footer.astro";
+
+interface Props {
+  title: string;
+}
+
+const { title } = Astro.props;
+---
+
+<Layout title={title}>
+  <main class="flex flex-col gap-20 pt-30 pb-20 md:gap-28">
+    <slot />
+  </main>
+  <Footer />
+</Layout>

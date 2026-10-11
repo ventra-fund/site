@@ -1,0 +1,18 @@
+---
+// Big figures with a caption under each, optionally linking somewhere.
+interface Props {
+  items: { value: string; label: string; href?: string; linkLabel?: string }[];
+}
+
+const { items } = Astro.props;
+---
+
+<dl class="grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-[repeat(auto-fit,minmax(0,1fr))]">
+  {items.map(({ value, label, href, linkLabel }) => (
+    <div class="flex flex-col gap-2 border-l-4 border-primary pl-5">
+      <dt class="order-2 text-base text-muted-foreground">{label}</dt>
+      <dd class="order-1 text-4xl font-bold text-accent sm:text-5xl">{value}</dd>
+      {href && <dd class="order-3"><a href={href} class="text-sm font-semibold text-primary underline-offset-4 hover:underline">{linkLabel ?? "Learn more"} →</a></dd>}
+    </div>
+  ))}
+</dl>

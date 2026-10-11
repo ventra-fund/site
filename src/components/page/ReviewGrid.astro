@@ -1,0 +1,37 @@
+---
+// Review cards in a grid, full text (the home carousel clamps to two lines). `limit` trims the list.
+import Star from "@/components/Star.astro";
+import { reviews, reviewSummary } from "@/data/reviews";
+
+interface Props {
+  limit?: number;
+  summary?: boolean;
+}
+
+const { limit, summary = true } = Astro.props;
+const shown = limit ? reviews.slice(0, limit) : reviews;
+const stars = (rating: number, size: string) => (
+  Array.from({ length: 5 }, (_, i) => i < Math.round(rating) ? "bg-[#00b67a]" : "bg-[#dcdce6]").map((bg) => ({ bg, size }))
+);
+---
+
+{summary && (
+  <div class="flex flex-wrap items-center gap-4">
+    <div class="flex gap-[3px]" role="img" aria-label={`Rated ${reviewSummary.rating} out of 5`}>
+      {stars(reviewSummary.rating, "size-7").map(({ bg, size }) => <span class:list={["grid place-items-center text-white", bg, size]}><Star class="size-4" aria-hidden="true" /></span>)}
+    </div>
+    <p class="text-lg text-foreground"><strong class="font-semibold">{reviewSummary.label}</strong> · {reviewSummary.rating} out of 5, based on {reviewSummary.count} reviews</p>
+  </div>
+)}
+<ul class="grid list-none grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
+  {shown.map((r) => (
+    <li class="flex flex-col gap-3 border border-border bg-card p-6">
+      <div class="flex gap-[2px]" role="img" aria-label={`Rated ${r.rating} out of 5`}>
+        {stars(r.rating, "size-5").map(({ bg, size }) => <span class:list={["grid place-items-center text-white", bg, size]}><Star class="size-3" aria-hidden="true" /></span>)}
+      </div>
+      <h3 class="text-lg font-bold text-foreground">{r.title}</h3>
+      <p class="text-base text-muted-foreground">{r.body}</p>
+      <p class="mt-auto text-sm text-muted-foreground"><strong class="font-semibold text-foreground">{r.name}</strong> · {r.when}</p>
+    </li>
+  ))}
+</ul>

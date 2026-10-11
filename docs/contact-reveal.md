@@ -1,6 +1,6 @@
 # Contact reveal: anti-scrape phone number
 
-The phone number on `/contact` never appears in any page, script, stylesheet, the static build or the repo. A visitor clicks **Show number**, passes the bot checks, and the number is drawn on a `<canvas>` from vector outlines. **Copy** and **Call** pass the checks again and fetch the text only on that click. Ported from fundedexperts (`docs/contact-reveal.md` there); the one difference is that the value is a secret, not a source file.
+The phone number on `/contact` never appears in any page, script, stylesheet, the static build or the repo. A visitor clicks **Show number**, passes the bot checks, and the number is drawn on a `<canvas>` from vector outlines. The same response carries the text, which the page holds in memory only (never in the DOM), so **Copy** and **Call** work straight away without another check. Ported from fundedexperts (`docs/contact-reveal.md` there); the one difference is that the value is a secret, not a source file.
 
 ## The layers
 
@@ -10,7 +10,7 @@ The phone number on `/contact` never appears in any page, script, stylesheet, th
 | Same-origin check, per-IP rate limit (`CONTACT_RATE_LIMIT`, 12/min) | `src/pages/api/contact/reveal.ts`, `wrangler.jsonc` | Worker (`pnpm preview`, deployed); `pnpm dev` has no limiter |
 | Turnstile, verified server-side: every call needs its own fresh token, minted for the `contact-reveal` action on the hostname serving the request | same, `src/lib/server/turnstile.ts` | Everywhere |
 | Bot Management: refuse a score below 30 or a verified bot | same | Only when `request.cf.botManagement` is present (Enterprise / add-on); skipped otherwise, so it turns on by itself |
-| Outlines, not text: the Show response is one SVG path with per-point noise and shuffled glyph order, so it differs every time and can't be matched to the font by string comparison | `src/lib/contact/outline.ts` | Everywhere |
+| Outlines on screen: the number is drawn from one SVG path with per-point noise and shuffled glyph order, so it differs every time and can't be matched to the font by string comparison. The response also carries the text for Copy / Call; that costs nothing, since anyone through the checks could ask for it anyway, and the DOM never holds it | `src/lib/contact/outline.ts` | Everywhere |
 
 OCR on a screenshot defeats any visual scheme. The checks are the real protection; the canvas keeps a scraper that gets through them from reading the value straight out of the DOM or the network.
 
@@ -20,7 +20,7 @@ OCR on a screenshot defeats any visual scheme. The checks are the real protectio
 - `src/lib/contact/values.ts`: **server-only** resolver from the secret to display text `(555) 555-0123` and link `tel:+15555550123`. Only the reveal endpoint may import it.
 - `src/lib/contact/keys.ts`: client-safe list of details (just `phone`), kinds and labels.
 - `src/lib/contact/glyphs.ts`: **generated** outlines (Inter, weight 400) for digits, phone punctuation and the characters an email would need. Rerun `node scripts/contact-glyphs.mjs` after changing the font; `composeOutline` throws naming the script if a character is missing.
-- `src/components/ContactReveal.astro`: the Show / Copy / Call UI, one instance per detail. Turnstile loads on the first click, not with the page.
+- `src/components/ContactReveal.astro`: the Show / Copy / Call UI, one instance per detail. Turnstile loads on the first click, not with the page, in a native popover anchored to the detail that opens for "Checking…" and any challenge. One check per Show; Copy / Call use the text from that response.
 - `src/lib/turnstile.ts`: `awaitTurnstileToken` / `refreshTurnstile`, used by the component. After each spend the widget is reset, so the next token is usually ready before the next click.
 - `scripts/check-contact-values.mjs` (`pnpm check:contact`): fails if the configured number, in any of its shapes, appears in a committable file or in `dist/`, or if anything but the endpoint imports `values.ts`. Run it after `pnpm build`.
 

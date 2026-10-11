@@ -1,0 +1,75 @@
+---
+// TODO: confirm the policy claims on this page (soft pull, decision times, prepayment discounts,
+// APR disclosure, renewals) match how Ventra Fund actually operates before launch.
+import PageShell from "@/components/page/PageShell.astro";
+import PageHero from "@/components/page/PageHero.astro";
+import Section from "@/components/page/Section.astro";
+import NumberedGrid from "@/components/page/NumberedGrid.astro";
+import ImagePlaceholder from "@/components/page/ImagePlaceholder.astro";
+import ReviewGrid from "@/components/page/ReviewGrid.astro";
+import CtaBand from "@/components/page/CtaBand.astro";
+import Disclaimer from "@/components/page/Disclaimer.astro";
+import { Button } from "@/ui/button";
+import { companyFacts } from "@/data/company";
+import { minimumRequirements } from "@/data/funding-products";
+---
+
+<PageShell title="Why Ventra Fund">
+  <PageHero eyebrow="Why us" title="Why small business owners choose Ventra Fund" cta={{ href: "/who-we-fund", label: "See if you qualify" }} secondary={{ href: "/apply", label: "Apply now" }}>
+    <p>Established businesses deserve financing that recognizes what they've already built.</p>
+    <p>Running a business means making payroll before paying yourself, waiting on customers while bills keep coming, and fixing equipment the day it breaks. We've helped {companyFacts.businessesFunded} businesses through exactly that, with financing that's straightforward, transparent and based on the full picture, not just a credit score.</p>
+  </PageHero>
+
+  <Section>
+    <div class="grid items-center gap-10 lg:grid-cols-2">
+      <div class="flex flex-col gap-5">
+        <h2 class="text-3xl font-bold text-accent sm:text-4xl">We look at your business, not just your credit</h2>
+        <p class="text-lg text-muted-foreground">Banks lead with your credit history. We lead with how your business performs. Our underwriting starts with your revenue and cash flow, so a strong business with imperfect credit gets a fair look instead of an automatic no.</p>
+        <p class="text-lg text-muted-foreground">We consider owners with credit scores from {minimumRequirements.creditScore}, and checking your options uses a soft pull that won't affect your score.</p>
+        <Button as="a" href="/capital" variant="outline" size="lg" class="self-start">Financing solutions</Button>
+      </div>
+      <ImagePlaceholder label="Funding advisor shaking hands with a business owner" class="aspect-square" />
+    </div>
+  </Section>
+
+  <Section title="Funding built around your cash flow" intro="Every business is different, so we offer more than one way to access capital, sized during review to what your business can carry. Pay early on eligible products and it costs you less." tone="muted">
+    <NumberedGrid
+      columns={4}
+      items={[
+        { title: "What we look at first", text: "Your revenue and cash flow." },
+        { title: "Who guides you", text: "A dedicated funding advisor, from application to funding." },
+        { title: "Credit score", text: `${minimumRequirements.creditScore}+ considered.` },
+        { title: "Time in business", text: `${minimumRequirements.timeInBusiness}.` },
+        { title: "Monthly revenue", text: `${minimumRequirements.monthlyRevenue}.` },
+        { title: "Credit check", text: "Soft pull while you apply." },
+        { title: "Time to decision", text: "Most decisions within 24 hours." },
+        { title: "Early payoff", text: "Prepayment discounts on eligible products." },
+      ]}
+    />
+  </Section>
+
+  <Section title="What owners say about Ventra Fund">
+    <ReviewGrid limit={3} />
+    <a href="/about/reviews" class="self-start text-base font-semibold text-primary underline-offset-4 hover:underline">Read all reviews →</a>
+  </Section>
+
+  <Section title="Learn more" tone="muted">
+    <ul class="grid list-none grid-cols-1 gap-4 md:grid-cols-3">
+      {[
+        { href: "/why-us/how-it-works", title: "How it works", text: "From application to funding in four steps." },
+        { href: "/why-us/transparent-pricing", title: "Transparent pricing", text: "How we price offers and what you'll pay." },
+        { href: "/why-us/faq", title: "FAQ", text: "Answers to the questions owners ask most." },
+      ].map((card) => (
+        <li>
+          <a href={card.href} class="flex h-full flex-col gap-2 border border-border bg-card p-6 transition-colors hover:border-primary">
+            <span class="text-xl font-bold text-foreground">{card.title}</span>
+            <span class="text-base text-muted-foreground">{card.text}</span>
+          </a>
+        </li>
+      ))}
+    </ul>
+  </Section>
+
+  <CtaBand />
+  <Disclaimer />
+</PageShell>

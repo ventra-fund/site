@@ -1,0 +1,57 @@
+---
+import PageShell from "@/components/page/PageShell.astro";
+import PageHero from "@/components/page/PageHero.astro";
+import Section from "@/components/page/Section.astro";
+import NumberedGrid from "@/components/page/NumberedGrid.astro";
+import CheckList from "@/components/page/CheckList.astro";
+import ImagePlaceholder from "@/components/page/ImagePlaceholder.astro";
+import { Button } from "@/ui/button";
+import { careerBenefits, values } from "@/data/company";
+
+// TODO: list real openings here (or embed the applicant tracking system's job board).
+const openings: { title: string; team: string; location: string; href: string }[] = [];
+---
+
+<PageShell title="Careers">
+  <PageHero eyebrow="Careers" title="Help small businesses grow" cta={{ href: "#openings", label: "View open positions" }} image="Team collaborating around a table in a bright office">
+    <p>We're building a team of smart, owner-focused people who want their work to matter to real businesses and real communities.</p>
+  </PageHero>
+
+  <Section title="Why work at Ventra Fund" tone="muted">
+    <CheckList items={careerBenefits} columns={2} />
+  </Section>
+
+  <Section title="What we value">
+    <NumberedGrid items={values} columns={4} />
+  </Section>
+
+  <Section>
+    <div class="grid items-center gap-10 lg:grid-cols-2">
+      <ImagePlaceholder label="Team volunteering at a local small business event" class="aspect-square" />
+      <div class="flex flex-col gap-5">
+        <h2 class="text-3xl font-bold text-accent sm:text-4xl">Grow with us</h2>
+        <p class="text-lg text-muted-foreground">Mentorship, regular skills check-ins and clear paths to your next role. Whether you're in sales, underwriting, operations or engineering, we'll invest in where you want to go.</p>
+      </div>
+    </div>
+  </Section>
+
+  <Section id="openings" title="Open positions" tone="muted">
+    {openings.length > 0 ? (
+      <ul class="flex list-none flex-col border-t border-border">
+        {openings.map((job) => (
+          <li class="border-b border-border">
+            <a href={job.href} class="flex flex-wrap items-center justify-between gap-2 py-5 hover:text-accent">
+              <span class="text-lg font-semibold">{job.title}</span>
+              <span class="text-sm text-muted-foreground">{job.team} · {job.location}</span>
+            </a>
+          </li>
+        ))}
+      </ul>
+    ) : (
+      <div class="flex flex-col gap-4">
+        <p class="text-lg text-muted-foreground">We don't have any openings right now, but we're always glad to hear from great people.</p>
+        <Button as="a" href="/contact" variant="outline" size="lg" class="self-start">Get in touch</Button>
+      </div>
+    )}
+  </Section>
+</PageShell>

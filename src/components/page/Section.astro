@@ -1,0 +1,27 @@
+---
+// One content band: optional eyebrow, heading and intro over whatever the slot holds. `tone="muted"`
+// tints the band full-width, the way the site's requirement panels do.
+interface Props {
+  title?: string;
+  eyebrow?: string;
+  intro?: string;
+  tone?: "plain" | "muted";
+  align?: "start" | "center";
+  id?: string;
+}
+
+const { title, eyebrow, intro, tone = "plain", align = "start", id } = Astro.props;
+---
+
+<section id={id} class:list={[tone === "muted" && "bg-secondary py-16 md:py-20"]}>
+  <div class="mx-auto flex w-[calc(100%-2rem)] max-w-6xl flex-col gap-10 md:w-[calc(100%-8rem)]">
+    {(title || eyebrow || intro) && (
+      <div class:list={["flex flex-col gap-3", align === "center" && "items-center text-center"]}>
+        {eyebrow && <p class="text-sm font-semibold uppercase tracking-widest text-primary">{eyebrow}</p>}
+        {title && <h2 class="max-w-3xl text-3xl font-bold text-accent sm:text-4xl">{title}</h2>}
+        {intro && <p class="max-w-2xl text-lg text-muted-foreground">{intro}</p>}
+      </div>
+    )}
+    <slot />
+  </div>
+</section>

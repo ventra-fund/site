@@ -1,0 +1,159 @@
+---
+// Public site header: a thin utility bar over the main row (wordmark, five menus, Apply). Below xl
+// it collapses to the wordmark and a toggle that opens the same links as a panel.
+import ContactReveal from "@/components/ContactReveal.astro";
+import { Button } from "@/ui/button";
+import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from "@/ui/dropdown-menu";
+import { navMenus, utilityLinks, utilityLinksEnd } from "@/data/nav";
+import ChevronDown from "@lucide/astro/icons/chevron-down";
+
+// Trailing-slash-insensitive so "/apply/" still marks the Apply link as current.
+const currentPath = Astro.url.pathname.replace(/\/+$/, "") || "/";
+const isCurrent = (href: string) => href === currentPath;
+const utilityLink = "transition-colors hover:text-foreground aria-[current=page]:text-foreground";
+---
+
+<header id="site-nav" class="fixed inset-x-0 top-0 z-99 border-b border-transparent bg-background transition-colors [&.is-scrolled]:border-border">
+  <div class="hidden border-b border-border xl:block">
+    <div class="mx-auto flex h-10 w-[calc(100%-8rem)] max-w-[1300px] items-center justify-between text-sm text-muted-foreground">
+      <ul class="flex list-none items-center gap-8">
+        {utilityLinks.map(({ href, label }) => (
+          <li><a data-astro-prefetch href={href} aria-current={isCurrent(href) ? "page" : undefined} class={utilityLink}>{label}</a></li>
+        ))}
+      </ul>
+      <ul class="flex list-none items-center gap-8">
+        {utilityLinksEnd.map(({ href, label }) => (
+          <li><a data-astro-prefetch href={href} aria-current={isCurrent(href) ? "page" : undefined} class={utilityLink}>{label}</a></li>
+        ))}
+        <li><ContactReveal contact="phone" /></li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="mx-auto flex h-18 w-[calc(100%-2rem)] max-w-[1300px] items-center justify-between gap-6 md:w-[calc(100%-8rem)]">
+    <a data-astro-prefetch href="/" aria-label="Ventra Fund home" class="shrink-0">
+      <img src="/ventrafund-wordmark.svg" alt="" width="4060" height="522" class="h-6 w-auto dark:invert xl:h-7" />
+    </a>
+
+    <nav aria-label="Main" class="hidden xl:block">
+      <ul class="flex list-none items-center gap-1">
+        {navMenus.map((menu) => (
+          <li>
+            <DropdownMenu lockScroll={false} data-nav-menu>
+              <DropdownMenuTrigger
+                variant="ghost"
+                data-current={menu.links.some((l) => isCurrent(l.href)) ? "" : undefined}
+                class="gap-1.5 text-base font-semibold data-current:text-accent [&[aria-expanded=true]_svg]:rotate-180"
+              >
+                {menu.label}
+                <ChevronDown class="size-4 transition-transform" aria-hidden="true" />
+              </DropdownMenuTrigger>
+              <DropdownMenuContent sideOffset={8} class="w-auto min-w-56 p-2">
+                {menu.links.map(({ href, label }) => (
+                  <DropdownMenuItem href={href} aria-current={isCurrent(href) ? "page" : undefined} class="cursor-pointer px-3 py-2 text-base aria-[current=page]:text-accent">
+                    {label}
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </li>
+        ))}
+      </ul>
+    </nav>
+
+    <Button as="a" href="/apply" size="lg" class="hidden rounded-full px-6 text-base font-semibold xl:inline-flex">Apply For Funding</Button>
+
+    <button
+      id="mobile-nav-toggle"
+      type="button"
+      aria-expanded="false"
+      aria-controls="mobile-nav-menu"
+      aria-label="Toggle navigation menu"
+      class="group flex h-9 w-9 flex-col items-center justify-center gap-1.5 xl:hidden"
+    >
+      <span class="block h-0.5 w-5 rounded-full bg-foreground transition-transform duration-200 group-aria-expanded:translate-y-2 group-aria-expanded:rotate-45"></span>
+      <span class="block h-0.5 w-5 rounded-full bg-foreground transition-opacity duration-200 group-aria-expanded:opacity-0"></span>
+      <span class="block h-0.5 w-5 rounded-full bg-foreground transition-transform duration-200 group-aria-expanded:-translate-y-2 group-aria-expanded:-rotate-45"></span>
+    </button>
+  </div>
+
+  <nav
+    id="mobile-nav-menu"
+    aria-label="Main"
+    hidden
+    class="absolute inset-x-0 top-full max-h-[calc(100dvh-4.5rem)] overflow-y-auto border-y border-border bg-background px-4 pb-6 shadow-lg md:px-16 xl:hidden"
+  >
+    <!-- Native disclosures: the panel needs no menu JS of its own. -->
+    {navMenus.map((menu) => (
+      <details class="group border-b border-border" open={menu.links.some((l) => isCurrent(l.href))}>
+        <summary class="flex cursor-pointer list-none items-center justify-between py-4 text-lg font-semibold [&::-webkit-details-marker]:hidden">
+          {menu.label}
+          <ChevronDown class="size-5 transition-transform group-open:rotate-180" aria-hidden="true" />
+        </summary>
+        <ul class="flex list-none flex-col gap-0.5 pb-4">
+          {menu.links.map(({ href, label }) => (
+            <li><a data-astro-prefetch href={href} aria-current={isCurrent(href) ? "page" : undefined} class="block rounded-sm px-3 py-2 text-base hover:bg-muted aria-[current=page]:text-accent">{label}</a></li>
+          ))}
+        </ul>
+      </details>
+    ))}
+    <ul class="grid list-none grid-cols-2 gap-x-4 gap-y-3 py-6 text-muted-foreground">
+      {[...utilityLinks, ...utilityLinksEnd].map(({ href, label }) => (
+        <li><a data-astro-prefetch href={href} aria-current={isCurrent(href) ? "page" : undefined} class={utilityLink}>{label}</a></li>
+      ))}
+      <li class="col-span-2">Call us: <ContactReveal contact="phone" /></li>
+    </ul>
+    <Button as="a" href="/apply" size="lg" class="w-full rounded-full text-base font-semibold">Apply For Funding</Button>
+  </nav>
+</header>
+
+<script>
+  const nav = document.getElementById("site-nav");
+  const updateScrolled = () => {
+    nav?.classList.toggle("is-scrolled", window.scrollY > 0);
+  };
+  updateScrolled();
+  window.addEventListener("scroll", updateScrolled, { passive: true });
+
+  // The menu runtime swallows Enter on an item to fire its own select event; follow the link from there.
+  // Pointer clicks aren't prevented, so they navigate natively.
+  document.querySelectorAll("[data-nav-menu]").forEach((menu) => {
+    menu.addEventListener("dropdown-menu:select", (event) => {
+      const { item, source } = (event as CustomEvent<{ item: Element; source: string }>).detail;
+      if (source === "keyboard" && item instanceof HTMLAnchorElement) window.location.href = item.href;
+    });
+  });
+
+  const mobileToggle = document.getElementById("mobile-nav-toggle");
+  const mobileMenu = document.getElementById("mobile-nav-menu");
+  const isMenuOpen = () => !!mobileMenu && !mobileMenu.hasAttribute("hidden");
+  const closeMobileMenu = () => {
+    mobileToggle?.setAttribute("aria-expanded", "false");
+    mobileMenu?.setAttribute("hidden", "");
+  };
+  mobileToggle?.addEventListener("click", () => {
+    const isOpen = mobileToggle.getAttribute("aria-expanded") === "true";
+    mobileToggle.setAttribute("aria-expanded", String(!isOpen));
+    mobileMenu?.toggleAttribute("hidden", isOpen);
+  });
+  mobileMenu?.addEventListener("click", (event) => {
+    if ((event.target as HTMLElement).closest("a")) closeMobileMenu();
+  });
+  document.addEventListener("click", (event) => {
+    if (
+      isMenuOpen() &&
+      !mobileMenu!.contains(event.target as Node) &&
+      !mobileToggle?.contains(event.target as Node)
+    ) {
+      closeMobileMenu();
+    }
+  });
+  document.addEventListener("keydown", (event) => {
+    if (event.key !== "Escape" || !isMenuOpen()) return;
+    // Focus was inside the menu (or on the toggle); hand it back to the toggle so a keyboard
+    // user isn't dropped at the top of the document.
+    const focusWasInMenu = mobileMenu!.contains(document.activeElement);
+    closeMobileMenu();
+    if (focusWasInMenu) mobileToggle?.focus();
+  });
+</script>

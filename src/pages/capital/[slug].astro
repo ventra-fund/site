@@ -1,0 +1,118 @@
+---
+// One page per funding product, in the order a product page reads on comparable lender sites: what
+// it is, three headline facts, advantages, a comparison, requirements, FAQs, real-world use.
+import PageShell from "@/components/page/PageShell.astro";
+import PageHero from "@/components/page/PageHero.astro";
+import Section from "@/components/page/Section.astro";
+import FeatureTiles from "@/components/page/FeatureTiles.astro";
+import CheckList from "@/components/page/CheckList.astro";
+import CompareTable from "@/components/page/CompareTable.astro";
+import FaqList from "@/components/page/FaqList.astro";
+import ImagePlaceholder from "@/components/page/ImagePlaceholder.astro";
+import CtaBand from "@/components/page/CtaBand.astro";
+import Disclaimer from "@/components/page/Disclaimer.astro";
+import { Button } from "@/ui/button";
+import { productPages, type ProductPage } from "@/data/product-pages";
+import { faqGroup } from "@/data/faqs";
+import { CalendarSync, ChartNoAxesCombined, Timer } from "@lucide/astro";
+
+export function getStaticPaths() {
+  return productPages.map((page) => ({ params: { slug: page.slug }, props: { page } }));
+}
+
+interface Props {
+  page: ProductPage;
+}
+
+const { page } = Astro.props;
+const { product } = page;
+const faqs = faqGroup(page.slug)?.items ?? [];
+const others = productPages.filter((p) => p.slug !== page.slug);
+---
+
+<PageShell title={product.title}>
+  <PageHero eyebrow={product.category} title={page.heading} cta={{ href: "/apply", label: "Apply for Funding" }} secondary={{ href: "/capital", label: "Compare options" }} image={page.image}>
+    {page.intro.map((p) => <p>{p}</p>)}
+  </PageHero>
+
+  <Section title={`What is ${product.title.toLowerCase().replace(/ \(.*\)/, "")} and how does it work?`}>
+    <div class="flex max-w-3xl flex-col gap-4 text-lg text-muted-foreground">
+      {page.howItWorks.map((p) => <p>{p}</p>)}
+    </div>
+    <FeatureTiles
+      items={[
+        { icon: CalendarSync, title: "Flexible", text: product.repayment },
+        { icon: ChartNoAxesCombined, title: "Scalable", text: `${product.amountLabel}: ${product.amount}` },
+        { icon: Timer, title: "Fast", text: `Time to fund: ${product.timeToFund}` },
+      ]}
+    />
+  </Section>
+
+  <Section title="What are the advantages?" tone="muted">
+    <CheckList items={page.advantages} columns={2} />
+  </Section>
+
+  <Section title={page.comparison.title} intro={page.comparison.intro}>
+    <CompareTable them={page.comparison.them} rows={page.comparison.rows} />
+  </Section>
+
+  <Section>
+    <div class="grid items-center gap-10 lg:grid-cols-2">
+      <div class="flex flex-col gap-6">
+        <h2 class="text-3xl font-bold text-accent sm:text-4xl">Minimum requirements</h2>
+        <p class="text-lg text-muted-foreground">{product.title} is a fit for {product.bestFor.toLowerCase()}. To qualify, your business should have:</p>
+        <CheckList
+          items={[
+            `At least ${product.requirements.timeInBusiness.replace("+", "")} in business`,
+            `${product.requirements.monthlyRevenue} in average monthly revenue`,
+            `A personal credit score of ${product.requirements.creditScore} or higher`,
+            "An active business checking account",
+          ]}
+        />
+        <p class="text-sm text-muted-foreground italic">Additional underwriting criteria apply.</p>
+        <Button as="a" href="/who-we-fund" variant="outline" size="lg" class="self-start">View eligibility</Button>
+      </div>
+      <ImagePlaceholder label="Funding advisor on a call with a business owner, reviewing an offer together" class="aspect-square" />
+    </div>
+  </Section>
+
+  <Section title="FAQs" tone="muted">
+    <div class="grid gap-10 lg:grid-cols-[1fr_2fr]">
+      <div class="flex flex-col gap-6">
+        <div class="flex flex-col gap-3">
+          <h3 class="text-xl font-bold text-foreground">What can it be used for?</h3>
+          <CheckList items={page.uses} />
+        </div>
+        <div class="flex flex-col gap-3">
+          <h3 class="text-xl font-bold text-foreground">A good fit if</h3>
+          <CheckList items={page.goodFitIf} />
+        </div>
+      </div>
+      <FaqList items={faqs} />
+    </div>
+  </Section>
+
+  <Section title={`How small businesses use ${product.title.toLowerCase().replace(/ \(.*\)/, "")}`}>
+    <div class="flex max-w-3xl flex-col gap-4 text-lg text-muted-foreground">
+      {page.stories.map((p) => <p>{p}</p>)}
+    </div>
+    <a href="/resources" class="self-start text-base font-semibold text-primary underline-offset-4 hover:underline">More reading →</a>
+  </Section>
+
+  <Section title="Other ways to fund your business">
+    <ul class="grid list-none grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      {others.map((o) => (
+        <li>
+          <a href={`/capital/${o.slug}`} class="flex h-full flex-col gap-2 border border-border bg-card p-6 transition-colors hover:border-primary">
+            <span class="text-sm text-muted-foreground">{o.product.category}</span>
+            <span class="text-lg font-bold text-foreground">{o.product.title}</span>
+            <span class="text-sm text-muted-foreground">{o.product.amount}</span>
+          </a>
+        </li>
+      ))}
+    </ul>
+  </Section>
+
+  <CtaBand />
+  <Disclaimer />
+</PageShell>

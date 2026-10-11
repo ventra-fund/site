@@ -1,0 +1,117 @@
+---
+// Site search over a small index built here at build time (pages, products, industries, articles,
+// FAQs) and filtered in the browser. Fine at this size; swap for Pagefind if the site grows.
+// ?q= in the URL pre-fills the query, so results can be linked.
+import PageShell from "@/components/page/PageShell.astro";
+import PageHero from "@/components/page/PageHero.astro";
+import Section from "@/components/page/Section.astro";
+import { Input } from "@/ui/input";
+import { navMenus, utilityLinks } from "@/data/nav";
+import { productPages } from "@/data/product-pages";
+import { industries } from "@/data/industries";
+import { articles } from "@/data/articles";
+import { faqGroups } from "@/data/faqs";
+import { partnerPrograms } from "@/data/partner-programs";
+
+interface Entry { title: string; href: string; section: string; text: string }
+
+const entries: Entry[] = [
+  { title: "Home", href: "/", section: "Pages", text: "Working capital built for small businesses." },
+  { title: "Apply for funding", href: "/apply", section: "Pages", text: "Start your application. Soft credit pull, decisions in about a day." },
+  { title: "Compare financing options", href: "/capital", section: "Pages", text: "Every product side by side: amounts, terms, costs and requirements." },
+  ...productPages.map((p) => ({ title: p.product.title, href: `/capital/${p.slug}`, section: "Financing", text: `${p.product.description} ${p.intro.join(" ")}` })),
+  ...industries.map((i) => ({ title: `${i.name} financing`, href: `/who-we-fund/${i.slug}`, section: "Who we fund", text: `${i.intro} ${i.uses.join(", ")}` })),
+  ...partnerPrograms.map((p) => ({ title: p.name, href: `/partners/${p.slug}`, section: "Partners", text: p.intro })),
+  ...articles.map((a) => ({ title: a.title, href: `/resources/${a.slug}`, section: a.category, text: a.excerpt })),
+  ...faqGroups.flatMap((g) => g.items.map((f) => ({ title: f.q, href: `/why-us/faq#${g.id}`, section: "FAQ", text: [...f.a, ...(f.list ?? [])].join(" ") }))),
+];
+// Nav links not already covered above (About, Why Us, Careers, …).
+const seen = new Set(entries.map((e) => e.href));
+for (const { href, label } of [...utilityLinks, ...navMenus.flatMap((m) => m.links)]) {
+  if (!seen.has(href) && href !== "/search") {
+    seen.add(href);
+    entries.push({ title: label, href, section: "Pages", text: "" });
+  }
+}
+---
+
+<PageShell title="Search">
+  <PageHero title="Search">
+    <form role="search" action="/search" class="flex flex-col gap-2" data-search-form>
+      <label for="search-q" class="sr-only">Search Ventra Fund</label>
+      <Input id="search-q" name="q" type="search" placeholder="Try “line of credit” or “restaurants”" autocomplete="off" class="h-12 text-base" />
+    </form>
+  </PageHero>
+
+  <Section>
+    <p data-search-status role="status" class="text-base text-muted-foreground">Type to search pages, products, articles and FAQs.</p>
+    <ul data-search-results class="flex list-none flex-col border-t border-border empty:hidden"></ul>
+  </Section>
+</PageShell>
+
+<script type="application/json" id="search-index" set:html={JSON.stringify(entries)} />
+
+<script>
+  interface Entry { title: string; href: string; section: string; text: string }
+
+  const entries: Entry[] = JSON.parse(document.getElementById("search-index")?.textContent ?? "[]");
+  const form = document.querySelector<HTMLFormElement>("[data-search-form]")!;
+  const input = form.querySelector<HTMLInputElement>("input[name=q]")!;
+  const status = document.querySelector<HTMLElement>("[data-search-status]")!;
+  const list = document.querySelector<HTMLUListElement>("[data-search-results]")!;
+
+  // Every word must appear somewhere; a title hit ranks above a text-only hit.
+  function search(query: string): Entry[] {
+    const words = query.toLowerCase().split(/\s+/).filter(Boolean);
+    if (!words.length) return [];
+    return entries
+      .map((e) => {
+        const title = e.title.toLowerCase();
+        const all = `${title} ${e.section.toLowerCase()} ${e.text.toLowerCase()}`;
+        if (!words.every((w) => all.includes(w))) return null;
+        return { e, score: words.filter((w) => title.includes(w)).length };
+      })
+      .filter((r): r is { e: Entry; score: number } => r !== null)
+      .sort((a, b) => b.score - a.score)
+      .map((r) => r.e);
+  }
+
+  function render() {
+    const query = input.value.trim();
+    const results = search(query);
+    list.replaceChildren(...results.map((e) => {
+      const li = document.createElement("li");
+      li.className = "border-b border-border";
+      const a = document.createElement("a");
+      a.href = e.href;
+      a.className = "flex flex-col gap-1 py-5 hover:text-accent";
+      const section = document.createElement("span");
+      section.className = "text-xs font-semibold uppercase tracking-widest text-primary";
+      section.textContent = e.section;
+      const title = document.createElement("span");
+      title.className = "text-lg font-semibold";
+      title.textContent = e.title;
+      a.append(section, title);
+      if (e.text) {
+        const text = document.createElement("span");
+        text.className = "line-clamp-2 text-base text-muted-foreground";
+        text.textContent = e.text;
+        a.append(text);
+      }
+      li.append(a);
+      return li;
+    }));
+    status.textContent = !query
+      ? "Type to search pages, products, articles and FAQs."
+      : results.length ? `${results.length} result${results.length === 1 ? "" : "s"} for “${query}”` : `No results for “${query}”.`;
+    const url = new URL(location.href);
+    if (query) url.searchParams.set("q", query); else url.searchParams.delete("q");
+    history.replaceState(null, "", url);
+  }
+
+  input.value = new URLSearchParams(location.search).get("q") ?? "";
+  input.addEventListener("input", render);
+  form.addEventListener("submit", (event) => { event.preventDefault(); render(); });
+  render();
+  input.focus();
+</script>

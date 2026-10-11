@@ -1,0 +1,91 @@
+---
+import PageShell from "@/components/page/PageShell.astro";
+import PageHero from "@/components/page/PageHero.astro";
+import Section from "@/components/page/Section.astro";
+import StatBand from "@/components/page/StatBand.astro";
+import NumberedGrid from "@/components/page/NumberedGrid.astro";
+import ImagePlaceholder from "@/components/page/ImagePlaceholder.astro";
+import ArticleCard from "@/components/page/ArticleCard.astro";
+import CtaBand from "@/components/page/CtaBand.astro";
+import Disclaimer from "@/components/page/Disclaimer.astro";
+import { Button } from "@/ui/button";
+import { atAGlance, companyFacts, values } from "@/data/company";
+import { articles } from "@/data/articles";
+import { fundingProducts } from "@/data/funding-products";
+
+const news = articles.filter((a) => a.category === "Company News").slice(0, 2);
+---
+
+<PageShell title="About us">
+  <PageHero eyebrow="About us" title={`${companyFacts.totalFunded} in working capital, and counting`} cta={{ href: "/apply", label: "Apply for Funding" }} image="Ventra Fund team together at the office">
+    <p>Ventra Fund provides working capital to established small businesses across the United States. We combine data-driven underwriting with people who pick up the phone, so owners get a fast answer and an offer that makes sense for their business.</p>
+    <p>We work with owners directly and through a nationwide network of brokers and referral partners.</p>
+  </PageHero>
+
+  <Section tone="muted">
+    <StatBand
+      items={[
+        { value: companyFacts.businessesFunded, label: "Small businesses funded", href: "/apply", linkLabel: "Apply for funding" },
+        { value: companyFacts.industriesServed, label: "Industries served", href: "/who-we-fund", linkLabel: "Who we fund" },
+        { value: companyFacts.totalFunded, label: "Capital provided", href: "/capital", linkLabel: "Financing solutions" },
+      ]}
+    />
+  </Section>
+
+  <Section title="Ventra Fund at a glance">
+    <dl class="grid grid-cols-1 border-t border-border sm:grid-cols-2 lg:grid-cols-3">
+      {atAGlance.map(({ label, value }) => (
+        <div class="flex flex-col gap-1 border-b border-border py-5 sm:pr-6">
+          <dt class="text-xs font-semibold uppercase tracking-widest text-muted-foreground">{label}</dt>
+          <dd class="text-lg font-semibold text-foreground">{value}</dd>
+        </div>
+      ))}
+    </dl>
+  </Section>
+
+  <Section>
+    <div class="grid items-center gap-10 lg:grid-cols-2">
+      <div class="flex flex-col gap-5">
+        <h2 class="text-3xl font-bold text-accent sm:text-4xl">Why we built Ventra Fund</h2>
+        <p class="text-lg text-muted-foreground">We've run businesses ourselves. We've made payroll before paying ourselves and waited on capital that came too late. Banks weren't built for owners who need an answer this week, and too many alternatives hide the real cost.</p>
+        <p class="text-lg text-muted-foreground">So we built a lender that's fast and straightforward: clear terms, real people and offers sized to what your business can actually carry.</p>
+        <Button as="a" href="/why-us" variant="outline" size="lg" class="self-start">Why choose Ventra Fund</Button>
+      </div>
+      <ImagePlaceholder label="Founders or leadership team in conversation" class="aspect-square" />
+    </div>
+  </Section>
+
+  <Section tone="muted">
+    <div class="grid items-center gap-10 lg:grid-cols-2">
+      <ImagePlaceholder label="Business owner receiving funding confirmation on a laptop" class="aspect-square lg:order-first" />
+      <div class="flex flex-col gap-5">
+        <h2 class="text-3xl font-bold text-accent sm:text-4xl">What we do</h2>
+        <p class="text-lg text-muted-foreground">We fund established small businesses with {fundingProducts.map((p) => p.title.toLowerCase().replace(/ \(.*\)/, "")).join(", ").replace(/, ([^,]*)$/, " and $1")}. We work across hundreds of industries, from restaurants and retail to construction, healthcare and trucking.</p>
+        <p class="text-lg text-muted-foreground">We don't fund startups, personal loans or grants. We focus on working capital for businesses that are already operating.</p>
+        <Button as="a" href="/who-we-fund" variant="outline" size="lg" class="self-start">Who we fund</Button>
+      </div>
+    </div>
+  </Section>
+
+  <Section title="What we stand for">
+    <NumberedGrid items={values} columns={4} />
+  </Section>
+
+  <Section title="Leadership" intro="The people responsible for how we lend, and how we treat the owners we work with." tone="muted">
+    <Button as="a" href="/about/leadership" size="lg" class="self-start">Meet our leadership</Button>
+  </Section>
+
+  <Section title="In the news">
+    <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
+      {news.map((article) => <ArticleCard article={article} />)}
+    </div>
+    <a href="/about/press" class="self-start text-base font-semibold text-primary underline-offset-4 hover:underline">Read more news →</a>
+  </Section>
+
+  <Section title="Come work with us" intro="We're building a team that's smart, owner-focused and ready to help American small businesses grow." tone="muted">
+    <Button as="a" href="/careers" size="lg" class="self-start">Explore open positions</Button>
+  </Section>
+
+  <CtaBand />
+  <Disclaimer />
+</PageShell>

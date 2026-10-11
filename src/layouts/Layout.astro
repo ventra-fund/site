@@ -1,6 +1,7 @@
 ---
 import "@/styles/globals.css";
 import { Font } from "astro:assets";
+import SiteNav from "@/components/SiteNav.astro";
 
 interface Props {
   /** Page-specific part of the <title>; the site name is appended. Omit on the home page. */
@@ -13,18 +14,9 @@ const { title, noindex = false } = Astro.props;
 const SITE_NAME = "Ventra Fund";
 const pageTitle = title ? `${title} | ${SITE_NAME}` : SITE_NAME;
 
-const navLinks: [href: string, label: string][] = [
-  ["/", "Home"],
-  ["/capital", "Capital"],
-  ["/apply", "Apply"],
-  ["/partner", "Partner"],
-  ["/contact", "Contact"],
-];
-// Trailing-slash-insensitive so "/apply/" still marks the Apply link as current.
+// Trailing-slash-insensitive, like the nav's own current-page check.
 const currentPath = Astro.url.pathname.replace(/\/+$/, "") || "/";
-const isCurrent = (href: string) => href === currentPath;
-// The admin pages and the signing page stand apart from the public site: no nav (its script below
-// finds nothing and does nothing).
+// The admin pages and the signing page stand apart from the public site: no nav.
 const showNav = !/^\/(admin|sign)(\/|$)/.test(currentPath);
 ---
 
@@ -44,93 +36,7 @@ const showNav = !/^\/(admin|sign)(\/|$)/.test(currentPath);
     <slot name="head" />
   </head>
   <body>
-    {showNav && (
-    <div id="site-nav" class="fixed w-full z-99">
-      <!-- Plain links on purpose: the nav has no dropdowns, so it needs no menu JS. -->
-      <nav aria-label="Main" class="hidden sm:flex w-fit mx-auto my-4 bg-background z-99 rounded-md border-2 border-transparent transition-colors [.is-scrolled_&]:border-muted">
-        <ul class="flex list-none items-center">
-          {navLinks.map(([href, label]) => (
-            <li>
-              <a data-astro-prefetch href={href} aria-current={isCurrent(href) ? "page" : undefined} class="inline-flex h-9 items-center rounded-sm px-4 text-lg transition-all outline-none hover:bg-muted hover:text-accent focus:bg-muted focus:text-accent focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-1 aria-[current=page]:text-accent">
-                {label}
-              </a>
-            </li>
-          ))}
-        </ul>
-      </nav>
-
-      <div class="sm:hidden fixed top-4 inset-x-4 z-99 flex items-center justify-between rounded-md border-2 border-muted bg-background px-2">
-        <a data-astro-prefetch href="/" aria-current={isCurrent("/") ? "page" : undefined} class="px-3 py-2 text-lg font-medium">
-          Home
-        </a>
-
-        <button
-          id="mobile-nav-toggle"
-          type="button"
-          aria-expanded="false"
-          aria-controls="mobile-nav-menu"
-          aria-label="Toggle navigation menu"
-          class="group flex h-9 w-9 flex-col items-center justify-center gap-1.5"
-        >
-          <span class="block h-0.5 w-5 rounded-full bg-foreground transition-transform duration-200 group-aria-expanded:translate-y-2 group-aria-expanded:rotate-45"></span>
-          <span class="block h-0.5 w-5 rounded-full bg-foreground transition-opacity duration-200 group-aria-expanded:opacity-0"></span>
-          <span class="block h-0.5 w-5 rounded-full bg-foreground transition-transform duration-200 group-aria-expanded:-translate-y-2 group-aria-expanded:-rotate-45"></span>
-        </button>
-
-        <nav
-          id="mobile-nav-menu"
-          aria-label="Main"
-          hidden
-          class="absolute top-full right-0 mt-2 flex w-60 flex-col gap-0.5 rounded-md border-2 border-muted bg-background p-2 shadow-lg"
-        >
-          {navLinks.slice(1).map(([href, label]) => (
-            <a data-astro-prefetch href={href} aria-current={isCurrent(href) ? "page" : undefined} class="rounded-sm px-3 py-2 text-base hover:bg-muted aria-[current=page]:text-accent">{label}</a>
-          ))}
-        </nav>
-      </div>
-    </div>
-    )}
+    {showNav && <SiteNav />}
     <slot />
-    <script>
-      const nav = document.getElementById("site-nav");
-      const updateScrolled = () => {
-        nav?.classList.toggle("is-scrolled", window.scrollY > 0);
-      };
-      updateScrolled();
-      window.addEventListener("scroll", updateScrolled, { passive: true });
-
-      const mobileToggle = document.getElementById("mobile-nav-toggle");
-      const mobileMenu = document.getElementById("mobile-nav-menu");
-      const isMenuOpen = () => !!mobileMenu && !mobileMenu.hasAttribute("hidden");
-      const closeMobileMenu = () => {
-        mobileToggle?.setAttribute("aria-expanded", "false");
-        mobileMenu?.setAttribute("hidden", "");
-      };
-      mobileToggle?.addEventListener("click", () => {
-        const isOpen = mobileToggle.getAttribute("aria-expanded") === "true";
-        mobileToggle.setAttribute("aria-expanded", String(!isOpen));
-        mobileMenu?.toggleAttribute("hidden", isOpen);
-      });
-      mobileMenu?.addEventListener("click", (event) => {
-        if ((event.target as HTMLElement).closest("a")) closeMobileMenu();
-      });
-      document.addEventListener("click", (event) => {
-        if (
-          isMenuOpen() &&
-          !mobileMenu!.contains(event.target as Node) &&
-          !mobileToggle?.contains(event.target as Node)
-        ) {
-          closeMobileMenu();
-        }
-      });
-      document.addEventListener("keydown", (event) => {
-        if (event.key !== "Escape" || !isMenuOpen()) return;
-        // Focus was inside the menu (or on the toggle); hand it back to the toggle so a keyboard
-        // user isn't dropped at the top of the document.
-        const focusWasInMenu = mobileMenu!.contains(document.activeElement);
-        closeMobileMenu();
-        if (focusWasInMenu) mobileToggle?.focus();
-      });
-    </script>
   </body>
 </html>

@@ -1,0 +1,22 @@
+---
+import PageShell from "@/components/page/PageShell.astro";
+import PageHero from "@/components/page/PageHero.astro";
+import Section from "@/components/page/Section.astro";
+import ArticleCard from "@/components/page/ArticleCard.astro";
+import { articles } from "@/data/articles";
+
+const news = articles.filter((a) => a.category === "Company News");
+---
+
+<PageShell title="Press">
+  <PageHero eyebrow="About us" title="News and press">
+    <p>Announcements, recognition and community news from Ventra Fund.</p>
+    <p>Media inquiries: <a href="/contact" class="font-semibold text-primary underline-offset-4 hover:underline">contact us</a>.</p>
+  </PageHero>
+
+  <Section>
+    <div class="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
+      {news.map((article) => <ArticleCard article={article} />)}
+    </div>
+  </Section>
+</PageShell>
