@@ -7,6 +7,7 @@
 // popover anchored to the detail, which opens for "Checking…" and any challenge that needs a person.
 import Turnstile from '@/components/Turnstile.astro';
 import { CONTACT_META, type ContactKey } from '@/lib/contact/keys';
+import Check from '@lucide/astro/icons/check';
 import Copy from '@lucide/astro/icons/copy';
 import Mail from '@lucide/astro/icons/mail';
 import Phone from '@lucide/astro/icons/phone';
@@ -30,7 +31,11 @@ const btn = 'inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-sm tex
   </button>
   <canvas data-cr-canvas hidden class="inline" role="img" aria-label={`Our ${noun}, shown as an image. Use the buttons beside it to copy it or ${meta.kind === 'email' ? 'write to us' : 'call'}.`}></canvas>
   <span data-cr-actions hidden class="ml-2 inline-flex items-center gap-1 align-middle">
-    <button type="button" data-cr-copy class={btn} aria-label={`Copy ${noun}`}><Copy size={14} aria-hidden="true" /> Copy</button>
+    <!-- Copy swaps to "Copied" in place for a moment; both faces live in the button so the width barely moves. -->
+    <button type="button" data-cr-copy class={btn} aria-label={`Copy ${noun}`}>
+      <span data-cr-copy-idle class="inline-flex items-center gap-1"><Copy size={14} aria-hidden="true" /> Copy</span>
+      <span data-cr-copy-done class="inline-flex items-center gap-1" hidden><Check size={14} aria-hidden="true" /> Copied</span>
+    </button>
     {meta.kind === 'email'
       ? <button type="button" data-cr-open class={btn} aria-label="Write an email"><Mail size={14} aria-hidden="true" /> Email</button>
       : <button type="button" data-cr-open class={btn} aria-label="Call this number"><Phone size={14} aria-hidden="true" /> Call</button>}
@@ -115,6 +120,9 @@ const btn = 'inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-sm tex
     const canvas = root.querySelector<HTMLCanvasElement>('[data-cr-canvas]')!;
     const actions = root.querySelector<HTMLElement>('[data-cr-actions]')!;
     const copyBtn = root.querySelector<HTMLButtonElement>('[data-cr-copy]')!;
+    const copyIdle = copyBtn.querySelector<HTMLElement>('[data-cr-copy-idle]')!;
+    const copyDone = copyBtn.querySelector<HTMLElement>('[data-cr-copy-done]')!;
+    const copyLabel = copyBtn.getAttribute('aria-label')!;
     const openBtn = root.querySelector<HTMLButtonElement>('[data-cr-open]')!;
     const note = root.querySelector<HTMLElement>('[data-cr-note]')!;
     const popover = root.querySelector<HTMLElement>('[data-cr-popover]')!;
@@ -151,6 +159,19 @@ const btn = 'inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-sm tex
       note.hidden = false;
       setTimeout(() => { note.hidden = true; }, 2000);
     };
+    // Success shows on the button itself: "Copied" with a check, then back to "Copy".
+    let copiedTimer: ReturnType<typeof setTimeout> | undefined;
+    const showCopied = () => {
+      copyIdle.hidden = true;
+      copyDone.hidden = false;
+      copyBtn.setAttribute('aria-label', 'Copied');
+      clearTimeout(copiedTimer);
+      copiedTimer = setTimeout(() => {
+        copyIdle.hidden = false;
+        copyDone.hidden = true;
+        copyBtn.setAttribute('aria-label', copyLabel);
+      }, 2000);
+    };
 
 
     showBtn.addEventListener('click', async () => {
@@ -183,7 +204,7 @@ const btn = 'inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-sm tex
       if (!revealed) return;
       try {
         await navigator.clipboard.writeText(revealed.text);
-        flash('Copied.');
+        showCopied();
       } catch {
         flash("Couldn't copy. Please try again.");
       }
