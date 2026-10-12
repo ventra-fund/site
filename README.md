@@ -65,6 +65,15 @@ Stored with the signature: what was confirmed (the admin page marks anything cha
 
 Signing sends the applicant a receipt and the team inbox a notice. The disclosure and attestation wording in `src/lib/signing-config.ts` is a starting point; have it reviewed, and bump `SIGNING_TERMS_VERSION` whenever it changes.
 
+### Worker Previews (non-production branches)
+Every push to a branch other than `main` builds a Preview (`pnpm run build`, then `npx wrangler preview`) at `https://<branch>-site.ventrafund.workers.dev`. Previews inherit no production bindings: the `previews` block in `wrangler.jsonc` points them at staging copies (`ventra-fund-auth-preview`, `ventra-fund-drafts-preview`, the `ventra-fund-documents-preview` bucket) and separate rate-limit counters, so test applications, uploads and admin sign-ins never touch production data.
+
+- **Schema changes:** `pnpm migrate:preview` applies migrations to the staging databases (via `wrangler.preview-db.jsonc`, since `wrangler d1 migrations` doesn't read `previews`).
+- **Secrets:** set once for all new Previews with `npx wrangler preview base-config secret put NAME`, or for one branch with `npx wrangler preview secret put NAME --name <branch>`. Base changes only reach Previews created afterwards.
+- **Admins:** same `ADMIN_EMAILS` allowlist; each admin gets a fresh account in the staging auth database on first sign-in.
+- **Turnstile:** the Preview hostname must be on the widget's allowed hostnames.
+- **Builds:** watch paths skip commits that change no files, so an empty commit won't trigger one; retry from the dashboard instead.
+
 ### Dev vs. build
 `astro.config.mjs` only attaches the `@astrojs/cloudflare` adapter for `astro build`/`astro preview`, not `astro dev`. Local dev runs on plain Node/Vite instead of the adapter's workerd emulation, which sidesteps an upstream dev-server bug where a dependency only reachable from an on-demand route (e.g. `free-email-domains` via `/partner`) gets discovered lazily and crashes the runner ([withastro/astro#17921](https://github.com/withastro/astro/issues/17921)). The rate limiters degrade to "unlimited" when absent, so `pnpm dev` behaves the same apart from that. To exercise anything binding-specific, use `pnpm build && pnpm preview` (or `wrangler dev`), not `pnpm dev`.
 
