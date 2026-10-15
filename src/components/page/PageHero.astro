@@ -12,15 +12,16 @@ interface Props {
   secondary?: { href: string; label: string };
   /** Omit for a text-only hero. */
   image?: PhotoData | PhotoData[];
+  class?: string;
 }
 
-const { eyebrow, title, cta, secondary, image } = Astro.props;
+const { eyebrow, title, cta, secondary, image, class: className } = Astro.props;
 // The photo column is 2/5 of the max-w-6xl header from lg up, full width below.
 const sizes = "(min-width: 1024px) 27rem, (min-width: 768px) calc(100vw - 8rem), calc(100vw - 2rem)";
 const collageSizes = "(min-width: 1024px) 14rem, (min-width: 768px) calc(50vw - 4rem), calc(50vw - 1rem)";
 ---
 
-<header class:list={["mx-auto grid w-[calc(100%-2rem)] max-w-6xl items-center gap-10 md:w-[calc(100%-8rem)]", image && "lg:grid-cols-[3fr_2fr]"]}>
+<header class:list={["mx-auto grid w-[calc(100%-2rem)] max-w-6xl items-center gap-10 md:w-[calc(100%-8rem)]", image && "lg:grid-cols-[3fr_2fr]", className]}>
   <div class="flex flex-col gap-5">
     {eyebrow && <p class="text-sm font-semibold uppercase tracking-widest text-primary">{eyebrow}</p>}
     <h1 class="text-3xl font-bold text-accent sm:text-5xl">{title}</h1>

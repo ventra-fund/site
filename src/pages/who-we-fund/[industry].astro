@@ -7,7 +7,6 @@ import CheckList from "@/components/page/CheckList.astro";
 import Photo from "@/components/page/Photo.astro";
 import { photos } from "@/data/photos";
 import CtaBand from "@/components/page/CtaBand.astro";
-import Disclaimer from "@/components/page/Disclaimer.astro";
 import { industries, type Industry } from "@/data/industries";
 import { productPages } from "@/data/product-pages";
 import { minimumRequirements } from "@/data/funding-products";
@@ -77,5 +76,4 @@ const recommended = industry.products.map((slug) => {
   </Section>
 
   <CtaBand />
-  <Disclaimer />
 </PageShell>

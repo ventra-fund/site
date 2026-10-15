@@ -13,7 +13,6 @@ import clinicFrontDesk from "@/assets/photos/clinic-front-desk.jpg";
 import communityEvent from "@/assets/photos/community-event.jpg";
 import constructionSite from "@/assets/photos/construction-site.jpg";
 import contractorsPlans from "@/assets/photos/contractors-plans.jpg";
-import crewBreak from "@/assets/photos/crew-break.jpg";
 import deskLaptopNotes from "@/assets/photos/desk-laptop-notes.jpg";
 import deskStatementsCoffee from "@/assets/photos/desk-statements-coffee.jpg";
 import florist from "@/assets/photos/florist.jpg";
@@ -27,7 +26,6 @@ import headshot5 from "@/assets/photos/headshot-5.jpg";
 import headshot6 from "@/assets/photos/headshot-6.jpg";
 import leadersConversation from "@/assets/photos/leaders-conversation.jpg";
 import mechanicWorkshop from "@/assets/photos/mechanic-workshop.jpg";
-import openOfficeTeam from "@/assets/photos/open-office-team.jpg";
 import ownerDeskPaperwork from "@/assets/photos/owner-desk-paperwork.jpg";
 import ownerLaptopCelebrating from "@/assets/photos/owner-laptop-celebrating.jpg";
 import ownerPhoneDesk from "@/assets/photos/owner-phone-desk.jpg";
@@ -57,7 +55,6 @@ export const photos = {
   communityEvent: { src: communityEvent, alt: "Team members talking with visitors at an outdoor community event" },
   constructionSite: { src: constructionSite, alt: "Construction crew at work on an active job site" },
   contractorsPlans: { src: contractorsPlans, alt: "Contractors reviewing plans pinned to a wall on a job site" },
-  crewBreak: { src: crewBreak, alt: "Smiling work crew in high-visibility gear on a break" },
   deskLaptopNotes: { src: deskLaptopNotes, alt: "Business owner filling out paperwork beside a laptop" },
   deskStatementsCoffee: { src: deskStatementsCoffee, alt: "Organized desk with a laptop, notebooks, a spreadsheet and a coffee" },
   florist: { src: florist, alt: "Florist arranging fresh flowers in her shop" },
@@ -72,7 +69,6 @@ export const photos = {
   headshot6: { src: headshot6, alt: "", position: "top" },
   leadersConversation: { src: leadersConversation, alt: "Two leaders in conversation at a table" },
   mechanicWorkshop: { src: mechanicWorkshop, alt: "Mechanic working on a vehicle in his workshop" },
-  openOfficeTeam: { src: openOfficeTeam, alt: "Team gathered around a whiteboard in a bright, open office" },
   ownerDeskPaperwork: { src: ownerDeskPaperwork, alt: "Business owner smiling at his desk while working through paperwork" },
   ownerLaptopCelebrating: { src: ownerLaptopCelebrating, alt: "Business owners celebrating news on a laptop at their counter" },
   ownerPhoneDesk: { src: ownerPhoneDesk, alt: "Business owner on a call at his desk with financial reports" },

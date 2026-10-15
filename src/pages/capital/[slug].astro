@@ -11,7 +11,6 @@ import FaqList from "@/components/page/FaqList.astro";
 import Photo from "@/components/page/Photo.astro";
 import { photos } from "@/data/photos";
 import CtaBand from "@/components/page/CtaBand.astro";
-import Disclaimer from "@/components/page/Disclaimer.astro";
 import { Button } from "@/ui/button";
 import { productPages, type ProductPage } from "@/data/product-pages";
 import { faqGroup } from "@/data/faqs";
@@ -115,5 +114,4 @@ const others = productPages.filter((p) => p.slug !== page.slug);
   </Section>
 
   <CtaBand />
-  <Disclaimer />
 </PageShell>

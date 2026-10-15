@@ -1,9 +1,9 @@
-// Placeholder articles for the Resources and Press pages. The article pages themselves
+// Placeholder articles for the Resources pages. The article pages themselves
 // (/resources/<slug>) don't exist yet; swap this for a content collection when they do.
 // TODO: replace with real articles before launch.
 import { photos, type Photo } from "@/data/photos";
 
-export type ArticleCategory = "Financing Tips" | "Guides" | "Company News";
+export type ArticleCategory = "Financing Tips" | "Guides";
 
 export interface Article {
   slug: string;
@@ -14,7 +14,7 @@ export interface Article {
   image: Photo;
 }
 
-export const articleCategories: ArticleCategory[] = ["Financing Tips", "Guides", "Company News"];
+export const articleCategories: ArticleCategory[] = ["Financing Tips", "Guides"];
 
 export const articles: Article[] = [
   {
@@ -48,21 +48,5 @@ export const articles: Article[] = [
     category: "Guides",
     date: "2026-08-21",
     image: photos.formsAndLaptop,
-  },
-  {
-    slug: "ventra-fund-launch",
-    title: "[Company news headline]",
-    excerpt: "[Short summary of the announcement.]",
-    category: "Company News",
-    date: "2026-08-01",
-    image: photos.openOfficeTeam,
-  },
-  {
-    slug: "community-spotlight",
-    title: "[Community or award announcement]",
-    excerpt: "[Short summary of the announcement.]",
-    category: "Company News",
-    date: "2026-07-15",
-    image: photos.crewBreak,
   },
 ];

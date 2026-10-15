@@ -4,22 +4,9 @@
 import { photos, type Photo } from "@/data/photos";
 
 export const companyFacts = {
-  founded: "[Year]",
-  headquarters: "[City, State]",
   businessesFunded: "X,XXX+",
   totalFunded: "$XXM+",
-  industriesServed: "XXX+",
-  fundingRange: "$5,000 to $5M",
 };
-
-export const atAGlance: { label: string; value: string }[] = [
-  { label: "Founded", value: companyFacts.founded },
-  { label: "Headquarters", value: companyFacts.headquarters },
-  { label: "Total funded", value: companyFacts.totalFunded },
-  { label: "Funding range", value: companyFacts.fundingRange },
-  { label: "Businesses funded", value: companyFacts.businessesFunded },
-  { label: "Recognition", value: "[Awards or ratings, e.g. BBB rating]" },
-];
 
 export const values: { title: string; text: string }[] = [
   { title: "Say it plainly", text: "Every offer shows the full cost up front, in plain language, with no surprises at signing." },

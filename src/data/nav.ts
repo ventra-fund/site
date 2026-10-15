@@ -29,7 +29,6 @@ export const navMenus: NavMenu[] = [
       { href: "/about", label: "Our Story" },
       { href: "/about/leadership", label: "Leadership" },
       { href: "/about/reviews", label: "Customer Reviews" },
-      { href: "/about/press", label: "Press" },
     ],
   },
   {
