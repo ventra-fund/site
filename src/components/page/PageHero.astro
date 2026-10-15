@@ -1,19 +1,23 @@
 ---
-// Top of a content page: eyebrow, H1, intro (slot), up to two calls to action, and an optional image
-// beside it on wide screens.
+// Top of a content page: eyebrow, H1, intro (slot), up to two calls to action, and an optional photo
+// beside it on wide screens. Pass four photos for a 2x2 collage instead.
 import { Button } from "@/ui/button";
-import ImagePlaceholder from "./ImagePlaceholder.astro";
+import Photo from "./Photo.astro";
+import type { Photo as PhotoData } from "@/data/photos";
 
 interface Props {
   eyebrow?: string;
   title: string;
   cta?: { href: string; label: string };
   secondary?: { href: string; label: string };
-  /** Describes the image to source; omit for a text-only hero. */
-  image?: string;
+  /** Omit for a text-only hero. */
+  image?: PhotoData | PhotoData[];
 }
 
 const { eyebrow, title, cta, secondary, image } = Astro.props;
+// The photo column is 2/5 of the max-w-6xl header from lg up, full width below.
+const sizes = "(min-width: 1024px) 27rem, (min-width: 768px) calc(100vw - 8rem), calc(100vw - 2rem)";
+const collageSizes = "(min-width: 1024px) 14rem, (min-width: 768px) calc(50vw - 4rem), calc(50vw - 1rem)";
 ---
 
 <header class:list={["mx-auto grid w-[calc(100%-2rem)] max-w-6xl items-center gap-10 md:w-[calc(100%-8rem)]", image && "lg:grid-cols-[3fr_2fr]"]}>
@@ -30,5 +34,9 @@ const { eyebrow, title, cta, secondary, image } = Astro.props;
       </div>
     )}
   </div>
-  {image && <ImagePlaceholder label={image} />}
+  {Array.isArray(image) ? (
+    <div class="grid grid-cols-2 gap-2">
+      {image.map((photo) => <Photo photo={photo} sizes={collageSizes} eager />)}
+    </div>
+  ) : image && <Photo photo={image} sizes={sizes} eager />}
 </header>

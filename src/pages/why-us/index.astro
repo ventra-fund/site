@@ -5,7 +5,8 @@ import PageShell from "@/components/page/PageShell.astro";
 import PageHero from "@/components/page/PageHero.astro";
 import Section from "@/components/page/Section.astro";
 import NumberedGrid from "@/components/page/NumberedGrid.astro";
-import ImagePlaceholder from "@/components/page/ImagePlaceholder.astro";
+import Photo from "@/components/page/Photo.astro";
+import { photos } from "@/data/photos";
 import ReviewGrid from "@/components/page/ReviewGrid.astro";
 import CtaBand from "@/components/page/CtaBand.astro";
 import Disclaimer from "@/components/page/Disclaimer.astro";
@@ -28,7 +29,7 @@ import { minimumRequirements } from "@/data/funding-products";
         <p class="text-lg text-muted-foreground">We consider owners with credit scores from {minimumRequirements.creditScore}, and checking your options uses a soft pull that won't affect your score.</p>
         <Button as="a" href="/capital" variant="outline" size="lg" class="self-start">Financing solutions</Button>
       </div>
-      <ImagePlaceholder label="Funding advisor shaking hands with a business owner" class="aspect-square" />
+      <Photo photo={photos.advisorMeeting} class="aspect-square" />
     </div>
   </Section>
 

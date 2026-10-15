@@ -1,0 +1,33 @@
+---
+// A content-page photo (src/data/photos.ts), cropped to fill its box. The default box is 4:3; pass an
+// aspect class to change it. `sizes` should describe the slot's rendered width so the browser picks
+// the smallest file that fits; the default suits the half-width photo beside text in a two-column
+// Section. `eager` is for above-the-fold images.
+import { Image } from "astro:assets";
+import { cn } from "@/lib/utils";
+import type { Photo } from "@/data/photos";
+
+interface Props {
+  photo: Photo;
+  /** Overrides the photo's own alt text (e.g. a headshot named after the person). */
+  alt?: string;
+  sizes?: string;
+  eager?: boolean;
+  class?: string;
+}
+
+const { photo, alt = photo.alt, sizes = "(min-width: 1024px) 34rem, (min-width: 768px) calc(100vw - 8rem), calc(100vw - 2rem)", eager = false, class: className } = Astro.props;
+---
+
+<Image
+  src={photo.src}
+  alt={alt}
+  widths={[400, 800, 1200]}
+  sizes={sizes}
+  format="webp"
+  quality={75}
+  loading={eager ? "eager" : "lazy"}
+  fetchpriority={eager ? "high" : undefined}
+  decoding="async"
+  class={cn("aspect-4/3 h-auto w-full bg-muted object-cover", photo.position === "top" && "object-top", className)}
+/>

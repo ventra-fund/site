@@ -2,6 +2,7 @@
 // requirements) come from funding-products.ts so the pages can't drift from the comparison table;
 // this file only holds the prose. FAQs live in faqs.ts under the same slug.
 import { fundingProducts, productSlug, type FundingProduct } from "@/data/funding-products";
+import { photos, type Photo } from "@/data/photos";
 
 export interface ProductPage {
   slug: string;
@@ -9,8 +10,7 @@ export interface ProductPage {
   /** H1; defaults to the product title. */
   heading: string;
   intro: string[];
-  /** What the hero image should show. */
-  image: string;
+  image: Photo;
   howItWorks: string[];
   advantages: { title: string; text: string }[];
   comparison: { title: string; intro: string; them: string; rows: { label: string; them: string; us: string }[] };
@@ -28,7 +28,7 @@ const content: Record<string, Content> = {
       "A merchant cash advance gives you a lump sum today in exchange for a share of your future sales. Remittances come out as a fixed percentage of your deposits, so they ease off in slow weeks and pick up when business is busy.",
       "It's built for owners who need capital fast and whose revenue doesn't follow a straight line.",
     ],
-    image: "Owner of a busy café or boutique ringing up a customer at the counter",
+    image: photos.grocerStorefront,
     howItWorks: [
       "We look at your recent deposits to size an advance you can comfortably carry. Once you accept, the funds land in your business account, and an agreed percentage of each day's or week's deposits goes toward the total until it's delivered.",
       "There's no fixed term and no set monthly payment. If sales dip, the remittance dips with them. Our underwriting weighs your revenue alongside your credit, which is why owners with imperfect credit still qualify.",
@@ -63,7 +63,7 @@ const content: Record<string, Content> = {
       "A term loan puts the full amount in your account up front, repaid in equal installments over a set number of months. Your cost is fixed when you sign, so every payment is known in advance.",
       "It's the straightforward choice for a planned investment with a clear payoff.",
     ],
-    image: "Owner reviewing plans in a newly expanded workshop or storefront",
+    image: photos.mechanicWorkshop,
     howItWorks: [
       "Tell us how much you need and what it's for. We review your revenue, cash flow and credit, then offer an amount, term and fixed payment. Once you accept, the full amount is deposited and payments begin on a regular schedule.",
       "Because the payment never changes, a term loan is easy to build into a budget. Many of our term loans also carry prepayment discounts, so paying early costs less.",
@@ -98,7 +98,7 @@ const content: Record<string, Content> = {
       "A line of credit is a pool of capital you can draw on whenever you need it. Take any amount up to your limit, repay it, and draw again, paying interest only on what you've used.",
       "It's a standing safety net for cash flow gaps and costs you can't schedule.",
     ],
-    image: "Owner checking their business account on a phone in a stockroom",
+    image: photos.warehouseOwner,
     howItWorks: [
       "We set a credit limit based on your revenue and history. Draw what you need, when you need it, and the funds arrive in your account. As you repay, that amount becomes available again.",
       "You only pay interest on the outstanding balance, so an unused line costs little or nothing to keep open.",
@@ -133,7 +133,7 @@ const content: Record<string, Content> = {
       "If you're carrying two or more advances or loans, consolidation replaces them with a single facility. We pay off the existing balances and you make one payment, usually at a lower combined cost.",
       "It's a way to take back control of your daily cash flow.",
     ],
-    image: "Owner at a desk organizing paperwork with a calm, relieved expression",
+    image: photos.ownerDeskPaperwork,
     howItWorks: [
       "Share your current positions with us: who you owe, the balances and the payment schedules. We structure one new facility that pays them off, then you make a single payment on a schedule that fits your revenue.",
       "We'll show you the total cost side by side with what you pay today, so you can see whether consolidating actually saves money.",
@@ -166,7 +166,7 @@ const content: Record<string, Content> = {
       "Cash credit is a running credit account secured against your business assets, like inventory or receivables. Draw up to your sanctioned limit, repay, and draw again, paying interest only on what's outstanding.",
       "It's designed for established businesses that turn inventory and receivables into cash every day.",
     ],
-    image: "Warehouse manager checking stock levels on shelving with a tablet",
+    image: photos.stockroomTablet,
     howItWorks: [
       "We set a limit based on the value of your inventory, receivables or other business assets. Draw as needed for day-to-day operations, and repay as cash comes in.",
       "Interest is charged only on the amount drawn, and the facility runs for a set term with the option to renew.",

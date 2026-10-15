@@ -1,5 +1,5 @@
-// Site navigation. Every link has a page; most are scaffolds with placeholder copy and images
-// (see src/data/company.ts and ImagePlaceholder) to be filled in before launch.
+// Site navigation. Every link has a page; most are scaffolds with placeholder copy (see
+// src/data/company.ts) to be filled in before launch.
 import { fundingProducts, productSlug } from "@/data/funding-products";
 
 export interface NavLink {

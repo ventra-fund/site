@@ -1,11 +1,12 @@
 // Partner programs, each with a page at /partners/<slug>. The inquiry form itself lives at /partner.
+import { photos, type Photo } from "@/data/photos";
 
 export interface PartnerProgram {
   slug: string;
   name: string;
   heading: string;
   intro: string;
-  image: string;
+  image: Photo;
   whoFor: string[];
   benefits: { title: string; text: string }[];
   steps: { title: string; text: string }[];
@@ -17,7 +18,7 @@ export const partnerPrograms: PartnerProgram[] = [
     name: "Broker & ISO Partners",
     heading: "A funding partner your clients can count on",
     intro: "Independent sales organizations and brokers send us deals because we decide quickly, communicate clearly and pay commissions on time.",
-    image: "Broker on a video call with a client, laptop showing a deal pipeline",
+    image: photos.brokerCall,
     whoFor: ["Independent sales organizations (ISOs)", "Commercial finance brokers", "Loan advisors and consultants"],
     benefits: [
       { title: "Fast decisions", text: "Most submissions get a decision within a day, so you can keep your clients moving." },
@@ -37,7 +38,7 @@ export const partnerPrograms: PartnerProgram[] = [
     name: "Referral Partners",
     heading: "Refer a business owner, help them grow",
     intro: "Accountants, bookkeepers, consultants and vendors refer clients to us when they need capital. We take it from there and keep you in the loop.",
-    image: "Accountant meeting with a small business client across a desk",
+    image: photos.advisorClientDesk,
     whoFor: ["Accountants and bookkeepers", "Business consultants", "Equipment and software vendors", "Industry associations"],
     benefits: [
       { title: "Help your clients", text: "Give owners a trusted option when they need working capital." },

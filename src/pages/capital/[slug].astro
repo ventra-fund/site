@@ -8,7 +8,8 @@ import FeatureTiles from "@/components/page/FeatureTiles.astro";
 import CheckList from "@/components/page/CheckList.astro";
 import CompareTable from "@/components/page/CompareTable.astro";
 import FaqList from "@/components/page/FaqList.astro";
-import ImagePlaceholder from "@/components/page/ImagePlaceholder.astro";
+import Photo from "@/components/page/Photo.astro";
+import { photos } from "@/data/photos";
 import CtaBand from "@/components/page/CtaBand.astro";
 import Disclaimer from "@/components/page/Disclaimer.astro";
 import { Button } from "@/ui/button";
@@ -72,7 +73,7 @@ const others = productPages.filter((p) => p.slug !== page.slug);
         <p class="text-sm text-muted-foreground italic">Additional underwriting criteria apply.</p>
         <Button as="a" href="/who-we-fund" variant="outline" size="lg" class="self-start">View eligibility</Button>
       </div>
-      <ImagePlaceholder label="Funding advisor on a call with a business owner, reviewing an offer together" class="aspect-square" />
+      <Photo photo={photos.advisorPhone} class="aspect-square" />
     </div>
   </Section>
 

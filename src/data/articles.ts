@@ -1,6 +1,7 @@
 // Placeholder articles for the Resources and Press pages. The article pages themselves
 // (/resources/<slug>) don't exist yet; swap this for a content collection when they do.
 // TODO: replace with real articles before launch.
+import { photos, type Photo } from "@/data/photos";
 
 export type ArticleCategory = "Financing Tips" | "Guides" | "Company News";
 
@@ -10,7 +11,7 @@ export interface Article {
   excerpt: string;
   category: ArticleCategory;
   date: string;
-  image: string;
+  image: Photo;
 }
 
 export const articleCategories: ArticleCategory[] = ["Financing Tips", "Guides", "Company News"];
@@ -22,7 +23,7 @@ export const articles: Article[] = [
     excerpt: "How the two most common working capital products differ in cost, speed and repayment, and how to choose.",
     category: "Financing Tips",
     date: "2026-09-30",
-    image: "Two paths diverging, or a side-by-side comparison graphic",
+    image: photos.signingAtDesk,
   },
   {
     slug: "preparing-bank-statements",
@@ -30,7 +31,7 @@ export const articles: Article[] = [
     excerpt: "The deposits, balances and patterns underwriters notice first, and how to present your business at its best.",
     category: "Guides",
     date: "2026-09-18",
-    image: "Close-up of a business bank statement with highlighted figures",
+    image: photos.receiptsCalculator,
   },
   {
     slug: "seasonal-cash-flow",
@@ -38,7 +39,7 @@ export const articles: Article[] = [
     excerpt: "A practical approach to stocking up, staffing and staying solvent through the slow months.",
     category: "Financing Tips",
     date: "2026-09-04",
-    image: "Calendar with busy and slow seasons marked",
+    image: photos.florist,
   },
   {
     slug: "understanding-factor-rates",
@@ -46,7 +47,7 @@ export const articles: Article[] = [
     excerpt: "What each number on an offer means, and how to compare offers that are priced differently.",
     category: "Guides",
     date: "2026-08-21",
-    image: "Calculator on top of a printed funding offer",
+    image: photos.formsAndLaptop,
   },
   {
     slug: "ventra-fund-launch",
@@ -54,7 +55,7 @@ export const articles: Article[] = [
     excerpt: "[Short summary of the announcement.]",
     category: "Company News",
     date: "2026-08-01",
-    image: "Team photo at the office",
+    image: photos.openOfficeTeam,
   },
   {
     slug: "community-spotlight",
@@ -62,6 +63,6 @@ export const articles: Article[] = [
     excerpt: "[Short summary of the announcement.]",
     category: "Company News",
     date: "2026-07-15",
-    image: "Local event or award ceremony photo",
+    image: photos.crewBreak,
   },
 ];

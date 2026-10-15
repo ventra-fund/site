@@ -1,6 +1,6 @@
 ---
 import type { Article } from "@/data/articles";
-import ImagePlaceholder from "./ImagePlaceholder.astro";
+import Photo from "./Photo.astro";
 
 interface Props {
   article: Article;
@@ -11,7 +11,7 @@ const date = new Date(article.date).toLocaleDateString("en-US", { year: "numeric
 ---
 
 <article data-category={article.category} class="flex flex-col gap-4 border border-border bg-card">
-  <ImagePlaceholder label={article.image} class="aspect-video" />
+  <Photo photo={article.image} sizes="(min-width: 768px) 24rem, calc(100vw - 2rem)" class="aspect-video" />
   <div class="flex flex-1 flex-col gap-3 p-6 pt-2">
     <p class="text-xs font-semibold uppercase tracking-widest text-primary">{article.category} · <time datetime={article.date}>{date}</time></p>
     <h3 class="text-lg font-bold text-foreground">{article.title}</h3>

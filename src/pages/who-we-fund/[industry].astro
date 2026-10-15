@@ -4,7 +4,8 @@ import PageHero from "@/components/page/PageHero.astro";
 import Section from "@/components/page/Section.astro";
 import NumberedGrid from "@/components/page/NumberedGrid.astro";
 import CheckList from "@/components/page/CheckList.astro";
-import ImagePlaceholder from "@/components/page/ImagePlaceholder.astro";
+import Photo from "@/components/page/Photo.astro";
+import { photos } from "@/data/photos";
 import CtaBand from "@/components/page/CtaBand.astro";
 import Disclaimer from "@/components/page/Disclaimer.astro";
 import { industries, type Industry } from "@/data/industries";
@@ -38,7 +39,7 @@ const recommended = industry.products.map((slug) => {
 
   <Section tone="muted">
     <div class="grid items-center gap-10 lg:grid-cols-2">
-      <ImagePlaceholder label={`${industry.name} owner reviewing finances with a laptop`} class="aspect-square" />
+      <Photo photo={photos.ownerPhoneDesk} class="aspect-square" />
       <div class="flex flex-col gap-6">
         <h2 class="text-3xl font-bold text-accent sm:text-4xl">How {industry.name.toLowerCase()} businesses use our funding</h2>
         <CheckList items={industry.uses} />

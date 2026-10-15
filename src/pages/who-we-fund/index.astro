@@ -6,12 +6,13 @@ import FeatureTiles from "@/components/page/FeatureTiles.astro";
 import CtaBand from "@/components/page/CtaBand.astro";
 import Disclaimer from "@/components/page/Disclaimer.astro";
 import { industries, moreIndustries, notFunded } from "@/data/industries";
+import { photos } from "@/data/photos";
 import { minimumRequirements } from "@/data/funding-products";
 import { Store, CalendarCheck, CircleDollarSign, Gauge, Landmark, Rocket, X } from "@lucide/astro";
 ---
 
 <PageShell title="Who we fund">
-  <PageHero eyebrow="Who we fund" title="Funding for established small businesses" cta={{ href: "/apply", label: "Check eligibility" }} image="Collage of small business owners: a mechanic, a florist, a contractor and a café owner">
+  <PageHero eyebrow="Who we fund" title="Funding for established small businesses" cta={{ href: "/apply", label: "Check eligibility" }} image={[photos.mechanicWorkshop, photos.florist, photos.constructionSite, photos.barista]}>
     <p>We work with businesses across hundreds of industries nationwide. If you've been operating for a while and have steady revenue, there's a good chance we can help.</p>
   </PageHero>
 

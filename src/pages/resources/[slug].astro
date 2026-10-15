@@ -3,7 +3,7 @@
 // until articles move to a content collection.
 import PageShell from "@/components/page/PageShell.astro";
 import Section from "@/components/page/Section.astro";
-import ImagePlaceholder from "@/components/page/ImagePlaceholder.astro";
+import Photo from "@/components/page/Photo.astro";
 import ArticleCard from "@/components/page/ArticleCard.astro";
 import CtaBand from "@/components/page/CtaBand.astro";
 import { articles, type Article } from "@/data/articles";
@@ -29,7 +29,7 @@ const related = articles.filter((a) => a.slug !== article.slug && a.category ===
       <h1 class="text-3xl font-bold text-accent sm:text-5xl">{article.title}</h1>
       <p class="text-lg text-muted-foreground">{article.excerpt}</p>
     </header>
-    <ImagePlaceholder label={article.image} class="aspect-video" />
+    <Photo photo={article.image} sizes="(min-width: 768px) 48rem, calc(100vw - 2rem)" eager class="aspect-video" />
     <div class="flex flex-col gap-4 text-lg text-foreground">
       <p class="bg-secondary p-6 text-muted-foreground">Article body to come.</p>
     </div>

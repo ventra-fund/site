@@ -4,7 +4,8 @@ import PageHero from "@/components/page/PageHero.astro";
 import Section from "@/components/page/Section.astro";
 import StatBand from "@/components/page/StatBand.astro";
 import NumberedGrid from "@/components/page/NumberedGrid.astro";
-import ImagePlaceholder from "@/components/page/ImagePlaceholder.astro";
+import Photo from "@/components/page/Photo.astro";
+import { photos } from "@/data/photos";
 import ArticleCard from "@/components/page/ArticleCard.astro";
 import CtaBand from "@/components/page/CtaBand.astro";
 import Disclaimer from "@/components/page/Disclaimer.astro";
@@ -17,7 +18,7 @@ const news = articles.filter((a) => a.category === "Company News").slice(0, 2);
 ---
 
 <PageShell title="About us">
-  <PageHero eyebrow="About us" title={`${companyFacts.totalFunded} in working capital, and counting`} cta={{ href: "/apply", label: "Apply for Funding" }} image="Ventra Fund team together at the office">
+  <PageHero eyebrow="About us" title={`${companyFacts.totalFunded} in working capital, and counting`} cta={{ href: "/apply", label: "Apply for Funding" }} image={photos.teamMeeting}>
     <p>Ventra Fund provides working capital to established small businesses across the United States. We combine data-driven underwriting with people who pick up the phone, so owners get a fast answer and an offer that makes sense for their business.</p>
     <p>We work with owners directly and through a nationwide network of brokers and referral partners.</p>
   </PageHero>
@@ -51,13 +52,13 @@ const news = articles.filter((a) => a.category === "Company News").slice(0, 2);
         <p class="text-lg text-muted-foreground">So we built a lender that's fast and straightforward: clear terms, real people and offers sized to what your business can actually carry.</p>
         <Button as="a" href="/why-us" variant="outline" size="lg" class="self-start">Why choose Ventra Fund</Button>
       </div>
-      <ImagePlaceholder label="Founders or leadership team in conversation" class="aspect-square" />
+      <Photo photo={photos.leadersConversation} class="aspect-square" />
     </div>
   </Section>
 
   <Section tone="muted">
     <div class="grid items-center gap-10 lg:grid-cols-2">
-      <ImagePlaceholder label="Business owner receiving funding confirmation on a laptop" class="aspect-square lg:order-first" />
+      <Photo photo={photos.ownerLaptopCelebrating} class="aspect-square lg:order-first" />
       <div class="flex flex-col gap-5">
         <h2 class="text-3xl font-bold text-accent sm:text-4xl">What we do</h2>
         <p class="text-lg text-muted-foreground">We fund established small businesses with {fundingProducts.map((p) => p.title.toLowerCase().replace(/ \(.*\)/, "")).join(", ").replace(/, ([^,]*)$/, " and $1")}. We work across hundreds of industries, from restaurants and retail to construction, healthcare and trucking.</p>

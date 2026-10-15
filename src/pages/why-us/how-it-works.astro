@@ -6,13 +6,14 @@ import PageHero from "@/components/page/PageHero.astro";
 import Section from "@/components/page/Section.astro";
 import NumberedGrid from "@/components/page/NumberedGrid.astro";
 import CheckList from "@/components/page/CheckList.astro";
-import ImagePlaceholder from "@/components/page/ImagePlaceholder.astro";
+import Photo from "@/components/page/Photo.astro";
+import { photos } from "@/data/photos";
 import CtaBand from "@/components/page/CtaBand.astro";
 import Disclaimer from "@/components/page/Disclaimer.astro";
 ---
 
 <PageShell title="How it works">
-  <PageHero eyebrow="Why us" title="From application to funding in four steps" cta={{ href: "/apply", label: "Start your application" }} image="Business owner filling out an application on a laptop at their shop counter">
+  <PageHero eyebrow="Why us" title="From application to funding in four steps" cta={{ href: "/apply", label: "Start your application" }} image={photos.deskLaptopNotes}>
     <p>No business plans, no weeks of back-and-forth. Here's what to expect when you apply with Ventra Fund.</p>
   </PageHero>
 
@@ -41,7 +42,7 @@ import Disclaimer from "@/components/page/Disclaimer.astro";
           ]}
         />
       </div>
-      <ImagePlaceholder label="Organized desk with a laptop, bank statements and a coffee" class="aspect-square" />
+      <Photo photo={photos.deskStatementsCoffee} class="aspect-square" />
     </div>
   </Section>
 

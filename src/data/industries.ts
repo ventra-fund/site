@@ -1,12 +1,13 @@
 // Industry pages under /who-we-fund/<slug>. `products` are product slugs (product-pages.ts) shown as
 // the recommended options, in order.
+import { photos, type Photo } from "@/data/photos";
 
 export interface Industry {
   slug: string;
   name: string;
   heading: string;
   intro: string;
-  image: string;
+  image: Photo;
   challenges: { title: string; text: string }[];
   uses: string[];
   products: string[];
@@ -19,7 +20,7 @@ export const industries: Industry[] = [
     name: "Restaurants",
     heading: "Restaurant financing that keeps the kitchen running",
     intro: "Thin margins, seasonal swings and equipment that always breaks at the worst time. We fund restaurants, cafés, bars and food trucks based on the sales they're already doing.",
-    image: "Chef plating dishes in a busy restaurant kitchen during service",
+    image: photos.chefPlating,
     challenges: [
       { title: "Seasonal traffic", text: "Patio season and holidays bring the rush; January and February don't." },
       { title: "Equipment failures", text: "A walk-in cooler or range going down can't wait for a bank's timeline." },
@@ -34,7 +35,7 @@ export const industries: Industry[] = [
     name: "Retail",
     heading: "Retail financing for inventory, storefronts and growth",
     intro: "From boutiques to hardware stores, retail runs on having the right stock at the right time. We fund retailers with capital sized to their sales.",
-    image: "Boutique owner arranging new stock on display shelves",
+    image: photos.retailShelves,
     challenges: [
       { title: "Inventory timing", text: "You pay for holiday stock months before it sells." },
       { title: "Supplier terms", text: "Bulk discounts reward paying upfront, if you have the cash." },
@@ -49,7 +50,7 @@ export const industries: Industry[] = [
     name: "Construction",
     heading: "Construction financing that bridges the gap between jobs",
     intro: "Contractors front materials and labor long before the final invoice is paid. We help general contractors and trades keep crews working while they wait.",
-    image: "Construction crew reviewing blueprints on an active job site",
+    image: photos.contractorsPlans,
     challenges: [
       { title: "Slow receivables", text: "Net-30 to net-90 terms leave you carrying the cost of every job." },
       { title: "Upfront materials", text: "Lumber, steel and supplies are due before work starts." },
@@ -64,7 +65,7 @@ export const industries: Industry[] = [
     name: "Healthcare",
     heading: "Financing for medical, dental and wellness practices",
     intro: "Insurance reimbursements take time, and equipment doesn't get cheaper. We fund independent practices, clinics and wellness businesses on their real cash flow.",
-    image: "Dental or medical practitioner in a modern, well-equipped treatment room",
+    image: photos.clinicFrontDesk,
     challenges: [
       { title: "Reimbursement delays", text: "Insurance claims can take weeks to pay out." },
       { title: "Costly equipment", text: "Imaging, chairs and diagnostic tools are major investments." },
@@ -79,7 +80,7 @@ export const industries: Industry[] = [
     name: "Trucking & Transportation",
     heading: "Trucking and transportation financing",
     intro: "Fuel, maintenance, insurance and slow-paying brokers. We fund owner-operators and fleets so their trucks stay on the road.",
-    image: "Semi truck on an open highway at sunrise",
+    image: photos.warehouseRacking,
     challenges: [
       { title: "Fuel and maintenance", text: "Costs hit every week, whether or not loads pay on time." },
       { title: "Broker payment terms", text: "Waiting 30 to 60 days for payment strains cash flow." },
