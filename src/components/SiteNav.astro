@@ -13,7 +13,7 @@ const isCurrent = (href: string) => href === currentPath;
 const utilityLink = "transition-colors hover:text-foreground aria-[current=page]:text-foreground";
 ---
 
-<header id="site-nav" class="fixed inset-x-0 top-0 z-99 border-b border-transparent bg-background transition-colors [&.is-scrolled]:border-border">
+<header id="site-nav" class="fixed inset-x-0 top-0 z-40 border-b border-transparent bg-background transition-colors [&.is-scrolled]:border-border">
   <div class="hidden border-b border-border xl:block">
     <div class="mx-auto flex h-10 w-[calc(100%-8rem)] max-w-[1300px] items-center justify-between text-sm text-muted-foreground">
       <ul class="flex list-none items-center gap-8">
@@ -50,7 +50,7 @@ const utilityLink = "transition-colors hover:text-foreground aria-[current=page]
               </DropdownMenuTrigger>
               <DropdownMenuContent sideOffset={8} class="w-auto min-w-56 p-2">
                 {menu.links.map(({ href, label }) => (
-                  <DropdownMenuItem href={href} aria-current={isCurrent(href) ? "page" : undefined} class="cursor-pointer px-3 py-2 text-base aria-[current=page]:text-accent">
+                  <DropdownMenuItem href={href} aria-current={isCurrent(href) ? "page" : undefined} class="cursor-pointer px-3 py-2 text-base aria-[current=page]:text-accent aria-[current=page]:focus:bg-secondary">
                     {label}
                   </DropdownMenuItem>
                 ))}
@@ -122,6 +122,18 @@ const utilityLink = "transition-colors hover:text-foreground aria-[current=page]
       const { item, source } = (event as CustomEvent<{ item: Element; source: string }>).detail;
       if (source === "keyboard" && item instanceof HTMLAnchorElement) window.location.href = item.href;
     });
+
+    // Without lockScroll the runtime places the panel against the page and stops tracking scroll, so it
+    // would drift away from the fixed nav. Each time it writes a page position, convert it to a viewport
+    // one; the trigger never moves in the viewport, so the panel then stays under it.
+    const positioner = menu.querySelector<HTMLElement>('[data-slot="dropdown-menu-positioner"]');
+    if (!positioner) return;
+    new MutationObserver(() => {
+      const match = positioner.style.position === "absolute" && positioner.style.transform.match(/translate3d\(([-\d.]+)px, ([-\d.]+)px/);
+      if (!match) return;
+      positioner.style.position = "fixed";
+      positioner.style.transform = `translate3d(${+match[1] - window.scrollX}px, ${+match[2] - window.scrollY}px, 0)`;
+    }).observe(positioner, { attributes: true, attributeFilter: ["style"] });
   });
 
   const mobileToggle = document.getElementById("mobile-nav-toggle");
