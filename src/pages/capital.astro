@@ -10,7 +10,7 @@ const tableRows = [
   { label: "Time to Fund", value: (p: FundingProduct) => p.timeToFund },
   { label: "Term Length", value: (p: FundingProduct) => p.termLength },
   { label: "Repayment", value: (p: FundingProduct) => p.repayment },
-  { label: "Rate / Cost", value: (p: FundingProduct) => p.rateCost },
+  { label: "Buy Rate / Cost", value: (p: FundingProduct) => p.rateCost },
   { label: "Min. Credit Score", value: (p: FundingProduct) => p.requirements.creditScore },
   { label: "Min. Monthly Revenue", value: (p: FundingProduct) => p.requirements.monthlyRevenue },
   { label: "Min. Time in Business", value: (p: FundingProduct) => p.requirements.timeInBusiness },
@@ -84,7 +84,7 @@ const tableRows = [
                   <span class="text-sm font-semibold text-foreground">{product.repayment}</span>
                 </div>
                 <div>
-                  <span class="block text-xs font-semibold uppercase tracking-widest text-muted-foreground mb-1">Rate / Cost</span>
+                  <span class="block text-xs font-semibold uppercase tracking-widest text-muted-foreground mb-1">Buy Rate / Cost</span>
                   <span class="text-sm font-semibold text-foreground">{product.rateCost}</span>
                 </div>
               </div>

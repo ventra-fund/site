@@ -22,9 +22,9 @@ export const partnerPrograms: PartnerProgram[] = [
     whoFor: ["Independent sales organizations (ISOs)", "Commercial finance brokers", "Loan advisors and consultants"],
     benefits: [
       { title: "Fast decisions", text: "Most submissions get a decision within a day, so you can keep your clients moving." },
-      { title: "Competitive commissions", text: "Transparent compensation, paid promptly on funded deals." },
+      { title: "Competitive broker points", text: "Transparent compensation in broker points, paid promptly on funded deals." },
       { title: "A dedicated contact", text: "One relationship manager who knows your book and answers the phone." },
-      { title: "Range of products", text: "Advances, term loans, lines, consolidations and cash credit under one roof." },
+      { title: "Range of products", text: "Advances, term financing, lines, consolidations and cash credit under one roof." },
     ],
     steps: [
       { title: "Apply to partner", text: "Tell us about your business and the clients you serve." },
@@ -42,7 +42,7 @@ export const partnerPrograms: PartnerProgram[] = [
     whoFor: ["Accountants and bookkeepers", "Business consultants", "Equipment and software vendors", "Industry associations"],
     benefits: [
       { title: "Help your clients", text: "Give owners a trusted option when they need working capital." },
-      { title: "Referral fees", text: "Earn a fee on referrals that fund. [Confirm program terms.]" },
+      { title: "Referral fees", text: "Earn up to 12% commission on every referral that funds, with the commission priced into the buy rate." },
       { title: "No selling required", text: "Make the introduction; our advisors handle the rest." },
       { title: "Status updates", text: "Know where every referral stands." },
     ],

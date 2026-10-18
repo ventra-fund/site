@@ -1,6 +1,4 @@
 ---
-// TODO: confirm the policy claims on this page (soft pull, decision times, prepayment discounts,
-// APR disclosure, renewals) match how Ventra Fund actually operates before launch.
 import PageShell from "@/components/page/PageShell.astro";
 import PageHero from "@/components/page/PageHero.astro";
 import Section from "@/components/page/Section.astro";
@@ -19,14 +17,14 @@ import { BadgePercent, FileText, PiggyBank } from "@lucide/astro";
   <Section>
     <FeatureTiles
       items={[
-        { icon: FileText, title: "One clear total", text: "Your offer states the total repayment amount in dollars, not just a rate." },
-        { icon: BadgePercent, title: "Comparable rates", text: "We show an estimated APR alongside factor rates so you can compare offers." },
+        { icon: FileText, title: "One clear total", text: "Your offer states the total repayment amount in dollars, not just a buy rate." },
+        { icon: BadgePercent, title: "Comparable rates", text: "We show an estimated APR alongside buy rates so you can compare offers." },
         { icon: PiggyBank, title: "Pay early, pay less", text: "Eligible products include prepayment discounts that lower your total cost." },
       ]}
     />
   </Section>
 
-  <Section title="Starting rates by product" intro="Your actual pricing depends on your business's revenue, history and credit, and is set during review." tone="muted">
+  <Section title="Starting buy rates by product" intro="Your actual pricing depends on your business's revenue, history and credit, and is set during review." tone="muted">
     <div class="overflow-x-auto border border-border bg-card">
       <table class="w-full border-collapse text-left text-base">
         <thead class="bg-secondary text-xs font-semibold uppercase tracking-widest text-muted-foreground">
@@ -53,7 +51,7 @@ import { BadgePercent, FileText, PiggyBank } from "@lucide/astro";
         { title: "Revenue and cash flow", text: "Higher, steadier deposits generally mean better pricing." },
         { title: "Time in business", text: "A longer track record lowers risk." },
         { title: "Credit history", text: "Considered alongside revenue, never on its own." },
-        { title: "Existing debt", text: "Open advances or loans affect what you can carry." },
+        { title: "Existing debt", text: "Open advances or financing positions affect what you can carry." },
         { title: "Industry", text: "Some industries carry more seasonal or market risk." },
         { title: "Product and term", text: "Shorter, more flexible products typically cost more." },
       ]}

@@ -5,7 +5,6 @@ import Section from "@/components/page/Section.astro";
 import NumberedGrid from "@/components/page/NumberedGrid.astro";
 import CheckList from "@/components/page/CheckList.astro";
 import Photo from "@/components/page/Photo.astro";
-import { photos } from "@/data/photos";
 import CtaBand from "@/components/page/CtaBand.astro";
 import { industries, type Industry } from "@/data/industries";
 import { productPages } from "@/data/product-pages";
@@ -32,15 +31,15 @@ const recommended = industry.products.map((slug) => {
     <p>{industry.intro}</p>
   </PageHero>
 
-  <Section title={`Challenges we help ${industry.name.toLowerCase()} businesses solve`}>
+  <Section title={`Challenges we help ${industry.audience} solve`}>
     <NumberedGrid items={industry.challenges} />
   </Section>
 
   <Section tone="muted">
     <div class="grid items-center gap-10 lg:grid-cols-2">
-      <Photo photo={photos.ownerPhoneDesk} class="aspect-square" />
+      <Photo photo={industry.usesImage} class="aspect-square" />
       <div class="flex flex-col gap-6">
-        <h2 class="text-3xl font-bold text-accent sm:text-4xl">How {industry.name.toLowerCase()} businesses use our funding</h2>
+        <h2 class="text-3xl font-bold text-accent sm:text-4xl">How {industry.audience} use our funding</h2>
         <CheckList items={industry.uses} />
         <p class="border-l-4 border-primary pl-5 text-lg text-muted-foreground">{industry.example}</p>
       </div>

@@ -56,7 +56,7 @@ export const faqGroups: FaqGroup[] = [
         q: "What are the pros and cons?",
         a: ["An advance trades a higher cost for speed and flexibility."],
         pros: ["Remittances move with your sales", "Fast decisions, often within 24 hours", "Credit history matters less than revenue"],
-        cons: ["Usually costs more than a term loan", "Remittances are frequent, typically daily or weekly", "Not designed for long-term financing"],
+        cons: ["Usually costs more than term financing", "Remittances are frequent, typically daily or weekly", "Not designed for long-term financing"],
       },
       {
         q: "When does an advance make sense?",
@@ -65,22 +65,22 @@ export const faqGroups: FaqGroup[] = [
     ],
   },
   {
-    id: "term-loans",
-    title: "Term Loans",
+    id: "term-financing",
+    title: "Term Financing",
     items: [
       {
-        q: "How does a term loan work?",
+        q: "How does term financing work?",
         a: ["You receive the full amount up front and repay it in equal installments over a set term. The cost is fixed when you sign, so every payment is the same and easy to plan around."],
       },
       {
         q: "What are the pros and cons?",
-        a: ["Term loans suit planned, one-time investments."],
+        a: ["Term financing suits planned, one-time investments."],
         pros: ["Predictable fixed payments", "Lower cost than most short-term options", "Longer terms available"],
         cons: ["Payments don't flex with revenue", "Stricter credit and time-in-business requirements", "May require collateral for larger amounts"],
       },
       {
-        q: "Can I pay a term loan off early?",
-        a: ["Yes. Many of our term loans carry prepayment discounts, so settling early lowers your total cost. Your offer spells out exactly how."],
+        q: "Can I pay term financing off early?",
+        a: ["Yes. Many of our term financing products carry prepayment discounts, so settling early lowers your total cost. Your offer spells out exactly how."],
       },
     ],
   },
@@ -89,14 +89,14 @@ export const faqGroups: FaqGroup[] = [
     title: "Lines of Credit",
     items: [
       {
-        q: "How is a line of credit different from a loan?",
-        a: ["A loan pays out once. A line of credit gives you a limit you can draw from, repay and draw again, and you only pay interest on what you've drawn."],
+        q: "How is a line of credit different from term financing?",
+        a: ["Term financing pays out once. A line of credit gives you a limit you can draw from, repay and draw again, and you only pay interest on what you've drawn."],
       },
       {
         q: "What are the pros and cons?",
         a: ["A line works best as a standing safety net."],
         pros: ["Draw only what you need, when you need it", "Interest only on the outstanding balance", "Reusable as you repay"],
-        cons: ["Smaller limits than a term loan", "Rates can change over time", "Easy to lean on for costs that should be planned"],
+        cons: ["Smaller limits than term financing", "Buy rates can change over time", "Easy to lean on for costs that should be planned"],
       },
     ],
   },
@@ -106,7 +106,7 @@ export const faqGroups: FaqGroup[] = [
     items: [
       {
         q: "What does consolidation do?",
-        a: ["It replaces several open advances or loans with one new facility. We pay off the existing balances and you make a single payment, often at a lower combined cost and with more breathing room in your cash flow."],
+        a: ["It replaces several open advances or financing positions with one new facility. We pay off the existing balances and you make a single payment, often at a lower combined cost and with more breathing room in your cash flow."],
       },
       {
         q: "What are the pros and cons?",

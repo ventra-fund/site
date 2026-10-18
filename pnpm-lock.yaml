@@ -11,6 +11,9 @@ importers:
       '@astrojs/cloudflare':
         specifier: ^14.3.2
         version: 14.3.2(@types/node@26.6.2)(astro@7.3.3(@emnapi/core@1.11.3)(@emnapi/runtime@1.11.3)(@types/node@26.6.2)(jiti@2.7.0)(yaml@2.9.1))(esbuild@0.28.2)(jiti@2.7.0)(wrangler@4.135.0(@types/node@26.6.2))(yaml@2.9.1)
+      '@data-slot/accordion':
+        specifier: ^1.1.2
+        version: 1.1.2
       '@data-slot/dialog':
         specifier: ^1.0.2
         version: 1.0.2
@@ -532,6 +535,9 @@ packages:
     resolution: {integrity: sha512-IchNf6dN4tHoMFIn/7OE8LWZ19Y6q/67Bmf6vnGREv8RSbBVb9LPJxEcnwrcwX6ixSvaiGoomAUvu4YSxXrVgw==}
     engines: {node: '>=12'}
 
+  '@data-slot/accordion@1.1.2':
+    resolution: {integrity: sha512-V+hLbS1RwCmKLiJ6mNFjuwknuSQqPvErKi1SBmBbyiuZJ5s2Izm5Gvc9Sfbj+7bc81x0N+YaHn5GFYcQSZvfMA==}
+
   '@data-slot/core@0.2.167':
     resolution: {integrity: sha512-0fIVlDyvguTejMbY9DybRELFye0VNtfhETOlf6KFraqnGCc23cKyiElWdwwtY9HkutuVlFTGTBOxP0bXXZ0H5w==}
 
@@ -540,6 +546,9 @@ packages:
 
   '@data-slot/core@1.1.1':
     resolution: {integrity: sha512-RMJ6oKIM92ryU23UmXeDCliyuxv2u1/nXIjjF2WN7YAI17fvw4vtdLT7fQFwXwg4KfBJd7VSfuPqsDy/C4+cFg==}
+
+  '@data-slot/core@1.1.2':
+    resolution: {integrity: sha512-xcxdiWJ/fPUqobE2PZdi96FIT/xASSsmtRtlyTWOro/mh5ZSJ8blB7t2anV12J7irNSKMov2+WpWFvAeikR5Vw==}
 
   '@data-slot/dialog@1.0.2':
     resolution: {integrity: sha512-Xke0TXqQHYlsW1SGcY/t/bX1Gr3doTq1+fHTngNJ16QThz7xr96VzAXZkTKGJo/bTe4NmO87qpILRSq4QiZfZA==}
@@ -4461,11 +4470,17 @@ snapshots:
     dependencies:
       '@jridgewell/trace-mapping': 0.3.9
 
+  '@data-slot/accordion@1.1.2':
+    dependencies:
+      '@data-slot/core': 1.1.2
+
   '@data-slot/core@0.2.167': {}
 
   '@data-slot/core@1.0.2': {}
 
   '@data-slot/core@1.1.1': {}
+
+  '@data-slot/core@1.1.2': {}
 
   '@data-slot/dialog@1.0.2':
     dependencies:

@@ -57,16 +57,16 @@ const content: Record<string, Content> = {
       "A restaurant between holiday rushes can cover payroll and inventory through a quiet stretch, with remittances that stay small until covers pick back up.",
     ],
   },
-  "term-loans": {
-    heading: "Term loans with fixed, predictable payments",
+  "term-financing": {
+    heading: "Term financing with fixed, predictable payments",
     intro: [
-      "A term loan puts the full amount in your account up front, repaid in equal installments over a set number of months. Your cost is fixed when you sign, so every payment is known in advance.",
+      "Term financing puts the full amount in your account up front, repaid in equal installments over a set number of months. Your cost is fixed when you sign, so every payment is known in advance.",
       "It's the straightforward choice for a planned investment with a clear payoff.",
     ],
-    image: photos.mechanicWorkshop,
+    image: photos.newCafeInterior,
     howItWorks: [
       "Tell us how much you need and what it's for. We review your revenue, cash flow and credit, then offer an amount, term and fixed payment. Once you accept, the full amount is deposited and payments begin on a regular schedule.",
-      "Because the payment never changes, a term loan is easy to build into a budget. Many of our term loans also carry prepayment discounts, so paying early costs less.",
+      "Because the payment never changes, term financing is easy to build into a budget. Many of our term financing products also carry prepayment discounts, so paying early costs less.",
     ],
     advantages: [
       { title: "Fixed payments", text: "The same amount every period, so planning is simple." },
@@ -75,7 +75,7 @@ const content: Record<string, Content> = {
       { title: "Prepayment discounts", text: "Pay off early and lower your total cost." },
     ],
     comparison: {
-      title: "How a term loan compares to an SBA loan",
+      title: "How term financing compares to an SBA loan",
       intro: "SBA loans are often the cheapest option on paper, but they come with trade-offs in time and paperwork.",
       them: "SBA loan",
       rows: [
@@ -88,8 +88,8 @@ const content: Record<string, Content> = {
     uses: ["Buying equipment or vehicles", "Opening a new location", "Renovations and build-outs", "Hiring ahead of growth", "Large inventory orders"],
     goodFitIf: ["You have a specific, one-time investment in mind", "Your revenue is steady and predictable", "You want a fixed cost you can plan around", "You've been in business a year or more"],
     stories: [
-      "A dental practice adding a second operatory can finance the chair, imaging and build-out with one loan and a payment it knows from day one.",
-      "A bakery buying a delivery van can match the loan term to the vehicle's useful life, keeping the monthly cost in line with the revenue it brings in.",
+      "A dental practice adding a second operatory can finance the chair, imaging and build-out with one facility and a payment it knows from day one.",
+      "A bakery buying a delivery van can match the term to the vehicle's useful life, keeping the monthly cost in line with the revenue it brings in.",
     ],
   },
   "lines-of-credit": {
@@ -114,7 +114,7 @@ const content: Record<string, Content> = {
       intro: "Both let you borrow as you go. The differences show up in cost and in what you can pay for.",
       them: "Business credit card",
       rows: [
-        { label: "Cost", them: "Often 20%+ APR, plus cash advance fees.", us: "From prime + 1.75% on the drawn balance." },
+        { label: "Cost", them: "High APRs plus cash advance fees.", us: "Buy rates from 1.2 on the drawn balance." },
         { label: "Cash access", them: "Cash and checks cost extra.", us: "Draws go straight to your bank account." },
         { label: "Limits", them: "Often low for newer businesses.", us: "Up to $250K based on revenue." },
         { label: "Personal credit", them: "Utilization can hit your personal score.", us: "Doesn't touch your card utilization." },
@@ -133,7 +133,7 @@ const content: Record<string, Content> = {
       "If you're carrying two or more advances or loans, consolidation replaces them with a single facility. We pay off the existing balances and you make one payment, usually at a lower combined cost.",
       "It's a way to take back control of your daily cash flow.",
     ],
-    image: photos.ownerDeskPaperwork,
+    image: photos.consolidation,
     howItWorks: [
       "Share your current positions with us: who you owe, the balances and the payment schedules. We structure one new facility that pays them off, then you make a single payment on a schedule that fits your revenue.",
       "We'll show you the total cost side by side with what you pay today, so you can see whether consolidating actually saves money.",

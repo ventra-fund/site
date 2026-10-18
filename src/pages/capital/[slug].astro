@@ -35,8 +35,8 @@ const others = productPages.filter((p) => p.slug !== page.slug);
     {page.intro.map((p) => <p>{p}</p>)}
   </PageHero>
 
-  <Section title={`What is ${product.title.toLowerCase().replace(/ \(.*\)/, "")} and how does it work?`}>
-    <div class="flex max-w-3xl flex-col gap-4 text-lg text-muted-foreground">
+  <Section wide title={`What is ${product.title.toLowerCase().replace(/ \(.*\)/, "")} and how does it work?`}>
+    <div class="flex flex-col gap-4 text-lg text-muted-foreground">
       {page.howItWorks.map((p) => <p>{p}</p>)}
     </div>
     <FeatureTiles
@@ -72,7 +72,7 @@ const others = productPages.filter((p) => p.slug !== page.slug);
         <p class="text-sm text-muted-foreground italic">Additional underwriting criteria apply.</p>
         <Button as="a" href="/who-we-fund" variant="outline" size="lg" class="self-start">View eligibility</Button>
       </div>
-      <Photo photo={photos.advisorPhone} class="aspect-square" />
+      <Photo photo={photos.requirementsChecklist} class="aspect-8/5" />
     </div>
   </Section>
 
@@ -92,8 +92,8 @@ const others = productPages.filter((p) => p.slug !== page.slug);
     </div>
   </Section>
 
-  <Section title={`How small businesses use ${product.title.toLowerCase().replace(/ \(.*\)/, "")}`}>
-    <div class="flex max-w-3xl flex-col gap-4 text-lg text-muted-foreground">
+  <Section wide title={`How small businesses use ${product.title.toLowerCase().replace(/ \(.*\)/, "")}`}>
+    <div class="flex flex-col gap-4 text-lg text-muted-foreground">
       {page.stories.map((p) => <p>{p}</p>)}
     </div>
     <a href="/resources" class="self-start text-base font-semibold text-primary underline-offset-4 hover:underline">More reading →</a>

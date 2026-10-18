@@ -16,6 +16,7 @@
   },
   "dependencies": {
     "@astrojs/cloudflare": "^14.3.2",
+    "@data-slot/accordion": "^1.1.2",
     "@data-slot/dialog": "^1.0.2",
     "@data-slot/dropdown-menu": "^1.1.1",
     "@data-slot/hover-card": "^1.0.2",

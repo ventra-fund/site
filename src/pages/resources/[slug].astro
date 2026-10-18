@@ -1,6 +1,5 @@
 ---
-// Article template. Bodies aren't written yet: each page shows its title, summary and a placeholder
-// until articles move to a content collection.
+// Article template: renders the block body from articles.ts, then the FAQ section.
 import PageShell from "@/components/page/PageShell.astro";
 import Section from "@/components/page/Section.astro";
 import Photo from "@/components/page/Photo.astro";
@@ -31,8 +30,29 @@ const related = articles.filter((a) => a.slug !== article.slug && a.category ===
     </header>
     <Photo photo={article.image} sizes="(min-width: 768px) 48rem, calc(100vw - 2rem)" eager class="aspect-video" />
     <div class="flex flex-col gap-4 text-lg text-foreground">
-      <p class="bg-secondary p-6 text-muted-foreground">Article body to come.</p>
+      {article.body.map((block) =>
+        block.type === "p" ? (
+          <p set:html={block.text} />
+        ) : block.type === "h2" ? (
+          <h2 class="mt-6 text-2xl font-bold text-accent first:mt-0">{block.text}</h2>
+        ) : (
+          <ul class="flex list-disc flex-col gap-3 pl-6 marker:text-primary">
+            {block.items.map((item) => <li set:html={item} />)}
+          </ul>
+        )
+      )}
     </div>
+    {article.faq.length > 0 && (
+      <section aria-label="Frequently asked questions" class="flex flex-col gap-5 border-t border-border pt-8">
+        <h2 class="text-2xl font-bold text-accent">Frequently asked questions</h2>
+        {article.faq.map((item) => (
+          <div class="flex flex-col gap-2">
+            <h3 class="text-lg font-semibold text-foreground">{item.q}</h3>
+            <p class="text-base text-muted-foreground">{item.a}</p>
+          </div>
+        ))}
+      </section>
+    )}
   </article>
 
   {related.length > 0 && (
