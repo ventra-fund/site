@@ -9,7 +9,7 @@ import { reviews } from "@/data/reviews";
 // Photos live in src/assets so Astro resizes/re-encodes them at build time (see astro.config.mjs
 // `imageService: "compile"`): the outputs in dist/_astro are plain static files, no runtime work.
 // `widths` caps the candidates at the source width; `sizes` mirrors each slot's CSS width.
-import ownerPackingOrders from "@/assets/media/owner-packing-orders.jpg";
+import growthSteps from "@/assets/media/growth-steps.jpg";
 import handshake from "@/assets/media/business-handshake.jpeg";
 import hvac from "@/assets/media/hvac.jpeg";
 import { BadgeDollarSign, ChevronLeft, ChevronRight, CircleCheck, CircleDollarSign, ClipboardCheck, Quote, Sheet, ShieldCheck, ToolCase, Timer, TrendingUp, UsersRound, Wallet } from "@lucide/astro";
@@ -27,7 +27,7 @@ import { BadgeDollarSign, ChevronLeft, ChevronRight, CircleCheck, CircleDollarSi
   </section>
 
   <section class="mx-auto grid w-[calc(100%-2rem)] max-w-[1300px] my-[4rem] grid-cols-1 md:min-h-176 md:grid-cols-[1fr_2fr] md:w-[calc(100%-8rem)]">
-    <Image class="h-80 w-full bg-muted object-cover md:h-0 md:min-h-full" src={ownerPackingOrders} alt="Small business owner packing customer orders in her workshop" widths={[400, 600, 900]} sizes="(min-width: 768px) calc((100vw - 8rem) / 3), calc(100vw - 2rem)" format="webp" quality={75} loading="lazy" decoding="async" />
+    <Image class="h-80 w-full bg-muted object-cover md:h-0 md:min-h-full" src={growthSteps} alt="Staircase rising diagonally up the face of a teal glass building" widths={[400, 600, 900]} sizes="(min-width: 768px) calc((100vw - 8rem) / 3), calc(100vw - 2rem)" format="webp" quality={75} loading="lazy" decoding="async" />
     <div class="flex flex-col gap-8 bg-secondary px-6 py-12 md:px-16 md:py-20">
       <h2 class="text-4xl font-bold text-accent md:text-5xl">Business financing to fuel your growth.</h2>
       <p class="max-w-xl text-lg text-secondary-foreground">Apply for working capital with Ventra Fund to cover inventory, payroll, marketing, and more, all from one simple application.</p>
