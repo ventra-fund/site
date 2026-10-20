@@ -12,15 +12,19 @@ import { reviews } from "@/data/reviews";
 import growthSteps from "@/assets/media/growth-steps.jpg";
 import handshake from "@/assets/media/business-handshake.jpeg";
 import hvac from "@/assets/media/hvac.jpeg";
+import heroImg from "@/assets/media/vf-heroimg.webp";
 import { BadgeDollarSign, ChevronLeft, ChevronRight, CircleCheck, CircleDollarSign, ClipboardCheck, Quote, Sheet, ShieldCheck, ToolCase, Timer, TrendingUp, UsersRound, Wallet } from "@lucide/astro";
 
 ---
 
 <Layout>
 <main>
-  <!-- Full-bleed black hero that starts under the fixed nav (h-18, plus the h-10 utility bar from xl up) and fills
-       the rest of the first screen -->
-  <section class="mt-18 flex min-h-[calc(100svh-4.5rem)] flex-col items-center justify-center bg-black px-6 py-24 text-center text-white xl:mt-28 xl:min-h-[calc(100svh-7rem)]">
+  <!-- Full-bleed photo hero that starts under the fixed nav (h-18, plus the h-10 utility bar from xl up) and fills
+       the rest of the first screen. The photo is decorative; bg-black shows until it loads, and the scrim keeps the
+       white copy readable over the glowing VF mark. -->
+  <section class="relative isolate mt-18 flex min-h-[calc(100svh-4.5rem)] flex-col items-center justify-center bg-black px-6 py-24 text-center text-white xl:mt-28 xl:min-h-[calc(100svh-7rem)]">
+    <Image class="absolute inset-0 -z-10 size-full object-cover" src={heroImg} alt="" widths={[640, 1280, 1920, 2560]} sizes="100vw" format="webp" quality={75} loading="eager" fetchpriority="high" decoding="async" />
+    <div class="absolute inset-0 -z-10 bg-black/40" aria-hidden="true"></div>
     <h1 class="text-4xl font-bold tracking-tight sm:text-6xl lg:text-7xl">Working <span class="text-chart-1">capital.</span><br>Built for <span class="text-chart-1">growth.</span></h1>
     <p class="mt-6 max-w-xl text-lg text-white/80">Fast, flexible funding for cash flow, inventory, payroll, and more. Apply in minutes and get a decision in as fast as 24 hours.</p>
     <Button as="a" href="/apply" size="lg" variant="outline" class="mt-10 h-12 border-2 border-white bg-transparent px-8 text-base font-semibold text-white hover:border-white hover:bg-white hover:text-black">Apply for funding</Button>
