@@ -1,0 +1,43 @@
+---
+import PartnerLayout from "@/layouts/PartnerLayout.astro";
+import Card from "@/components/partner/Card.astro";
+import { Button } from "@/ui/button";
+import { Download } from "@lucide/astro";
+import { partnerTerms } from "@/data/partner-terms";
+import { org, formatDate } from "@/data/portal-fixtures";
+
+// The commercial terms an ISO checks before pricing or when a payout looks off: schedule, payout
+// timing, clawback, partner of record, conduct, and the signed agreement on file.
+---
+
+<PartnerLayout title="Partner terms" current="terms" intro="Your commission schedule, how and when you're paid, and the agreement on file.">
+  <div class="grid gap-6 lg:grid-cols-[3fr_2fr]">
+    <div class="flex flex-col gap-6">
+      {partnerTerms.map((s) => (
+        <Card id={s.id} title={s.title}>
+          <div class="flex flex-col gap-3 text-sm">
+            {s.body.map((p) => <p class="text-muted-foreground">{p}</p>)}
+            {s.rows && (
+              <dl class="grid grid-cols-[1fr_auto] gap-x-6 gap-y-1.5 border-t border-border pt-3">
+                {s.rows.map((r) => <><dt class="text-muted-foreground">{r.label}</dt><dd class="text-right tabular-nums">{r.value}</dd></>)}
+              </dl>
+            )}
+          </div>
+        </Card>
+      ))}
+    </div>
+    <div class="flex flex-col gap-6">
+      <Card title="On file">
+        <dl class="flex flex-col gap-2 text-sm">
+          <div class="flex items-center justify-between gap-3"><dt>ISO agreement</dt><dd class="flex items-center gap-2 text-muted-foreground">Signed {formatDate(org.agreementSignedAt)} <Button size="icon-sm" variant="outline" aria-label="Download agreement"><Download class="size-4" aria-hidden="true" /></Button></dd></div>
+          <div class="flex items-center justify-between gap-3"><dt>W-9</dt><dd class="flex items-center gap-2 text-muted-foreground">Received {formatDate(org.w9ReceivedAt)} <Button size="icon-sm" variant="outline" aria-label="Download W-9"><Download class="size-4" aria-hidden="true" /></Button></dd></div>
+          <div class="flex items-center justify-between gap-3"><dt>Payout account</dt><dd class="text-muted-foreground">Checking ••••2210</dd></div>
+        </dl>
+        <p class="text-xs text-muted-foreground">To change the payout account, contact {org.relationshipManager.name}; it is never changed from the portal alone.</p>
+      </Card>
+      <Card title="On this page">
+        <ul class="flex flex-col gap-1 text-sm">{partnerTerms.map((s) => <li><a href={`#${s.id}`} class="text-primary hover:underline">{s.title}</a></li>)}</ul>
+      </Card>
+    </div>
+  </div>
+</PartnerLayout>

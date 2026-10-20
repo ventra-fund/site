@@ -1,0 +1,81 @@
+---
+import PartnerLayout from "@/layouts/PartnerLayout.astro";
+import Card from "@/components/partner/Card.astro";
+import { Button } from "@/ui/button";
+import { Input } from "@/ui/input";
+import { Checkbox } from "@/ui/checkbox";
+import { currentUser, org } from "@/data/portal-fixtures";
+
+// Personal settings. The sign-in method is the one agreed: a code by default, with password +
+// code or passkeys as opt-ins. Turning a password on never turns the code off.
+const methods = [
+  { key: "code", label: "Email code only", help: "A 6-digit code emailed each time you sign in. Nothing to remember or leak." },
+  { key: "password_code", label: "Password, then email code", help: "A password first, then the code. For teams whose policy requires a password." },
+  { key: "passkey", label: "Passkey", help: "Face ID, Touch ID, Windows Hello or a security key. No code needed on a registered device." },
+] as const;
+---
+
+<PartnerLayout title="Settings" current="settings">
+  <div class="grid gap-6 lg:grid-cols-2">
+    <Card title="Profile">
+      <form class="flex flex-col gap-4" data-stub="Profile saved.">
+        <label class="flex flex-col gap-1.5 text-sm font-medium">Name<Input name="name" value={currentUser.name} /></label>
+        <label class="flex flex-col gap-1.5 text-sm font-medium">Email<Input name="email" type="email" value={currentUser.email} readonly class="text-muted-foreground" /><span class="text-xs font-normal text-muted-foreground">Ask your relationship manager to change the address you sign in with.</span></label>
+        <label class="flex flex-col gap-1.5 text-sm font-medium">Mobile<Input name="mobile" type="tel" placeholder="For urgent deal questions" /></label>
+        <Button type="submit" size="sm" class="self-start">Save</Button>
+      </form>
+    </Card>
+
+    <Card title="Sign-in method">
+      <form class="flex flex-col gap-3" data-stub="Sign-in method updated.">
+        {methods.map((m) => (
+          <label class="flex cursor-pointer items-start gap-3 border border-border p-3 has-[:checked]:border-primary has-[:checked]:bg-primary/5">
+            <input type="radio" name="method" value={m.key} checked={currentUser.signInMethod === m.key} class="mt-1 size-4" />
+            <span class="flex flex-col gap-0.5"><span class="text-sm font-medium">{m.label}</span><span class="text-xs text-muted-foreground">{m.help}</span></span>
+          </label>
+        ))}
+        <div class="flex flex-wrap gap-2">
+          <Button type="submit" size="sm">Save</Button>
+          <Button type="button" size="sm" variant="outline">Add a passkey</Button>
+          <Button type="button" size="sm" variant="outline">Set a password</Button>
+        </div>
+      </form>
+      <div class="flex flex-col gap-2 border-t border-border pt-4 text-sm">
+        <p class="font-medium">Remembered devices</p>
+        <ul class="flex flex-col gap-1 text-muted-foreground">
+          <li class="flex justify-between gap-3"><span>MacBook Pro · Safari · Chicago</span><button type="button" class="text-xs hover:text-foreground">Forget</button></li>
+          <li class="flex justify-between gap-3"><span>iPhone · Chicago</span><button type="button" class="text-xs hover:text-foreground">Forget</button></li>
+        </ul>
+      </div>
+    </Card>
+
+    <Card title="Notifications" description="Emails about deals you submitted, or all deals if you're an admin.">
+      <form class="flex flex-col gap-3" data-stub="Notification preferences saved.">
+        <Checkbox id="n-status" name="status" defaultChecked>Status changes</Checkbox>
+        <Checkbox id="n-offers" name="offers" defaultChecked>Offers and stip requests</Checkbox>
+        <Checkbox id="n-funded" name="funded" defaultChecked>Funded and commission paid</Checkbox>
+        <Checkbox id="n-digest" name="digest">Daily digest instead of one email per event</Checkbox>
+        <Button type="submit" size="sm" class="self-start">Save</Button>
+      </form>
+    </Card>
+
+    <Card title="Organisation">
+      <dl class="grid grid-cols-[auto_1fr] gap-x-6 gap-y-1.5 text-sm">
+        <dt class="text-muted-foreground">Name</dt><dd>{org.name}</dd>
+        <dt class="text-muted-foreground">Legal name</dt><dd>{org.legalName}</dd>
+        <dt class="text-muted-foreground">EIN</dt><dd class="font-mono">{org.einMasked}</dd>
+        <dt class="text-muted-foreground">Intake address</dt><dd class="font-mono text-xs">{org.inboundAlias}</dd>
+      </dl>
+      <p class="text-xs text-muted-foreground">Legal details come from your agreement; contact {org.relationshipManager.name} to change them. <a href="#" class="underline">Transfer ownership</a> is available to the owner.</p>
+    </Card>
+  </div>
+</PartnerLayout>
+
+<script>
+  document.querySelectorAll<HTMLFormElement>("form[data-stub]").forEach((f) =>
+    f.addEventListener("submit", (e) => {
+      e.preventDefault();
+      alert(`Prototype: ${f.dataset.stub}`);
+    }),
+  );
+</script>

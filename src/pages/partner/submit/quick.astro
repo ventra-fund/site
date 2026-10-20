@@ -1,0 +1,81 @@
+---
+import PartnerLayout from "@/layouts/PartnerLayout.astro";
+import Card from "@/components/partner/Card.astro";
+import { Button } from "@/ui/button";
+import { Input } from "@/ui/input";
+import { Upload } from "@lucide/astro";
+import { fundingProducts } from "@/data/funding-products";
+import { org } from "@/data/portal-fixtures";
+import { UPLOAD_ACCEPT, UPLOAD_TYPE_LABEL, MAX_UPLOAD_FILE_BYTES, formatMb } from "@/lib/upload-config";
+
+// The email-shaped submission, in the portal: name the merchant, drop the package, done. The
+// deal lands in "Needs details" and we key the rest from the application, exactly as an emailed
+// package does. For ISOs who won't retype a form they already have on paper.
+const fieldClass = "flex flex-col gap-1.5 text-sm font-medium";
+---
+
+<PartnerLayout title="Quick package" current="submit" intro="Just the package. We read the application and statements and key the deal; you confirm anything we can't read.">
+  <Fragment slot="actions">
+    <Button as="a" href="/partner/submit" variant="outline">Full form instead</Button>
+  </Fragment>
+
+  <form data-quick-form novalidate class="flex flex-col gap-6">
+    <Card title="Merchant">
+      <div class="grid grid-cols-1 gap-5 sm:grid-cols-3">
+        <label class={`${fieldClass} sm:col-span-2`}>Business name (legal or DBA)<Input name="merchant" required maxlength="300" /></label>
+        <label class={fieldClass}>Amount requested<Input name="amountRequested" type="number" inputmode="numeric" min="5000" step="1000" placeholder="$ (optional)" /></label>
+        <label class={fieldClass}>Product
+          <select name="product" class="h-9 border border-input bg-background px-2 text-sm">
+            <option value="">Let underwriting pick</option>
+            {fundingProducts.map((p) => <option value={p.title}>{p.title}</option>)}
+          </select>
+        </label>
+        <label class={`${fieldClass} sm:col-span-2`}>Open positions<Input name="positions" maxlength="300" placeholder="e.g. 1 × OnDeck, $18k balance (or 'none')" /></label>
+      </div>
+    </Card>
+
+    <Card title="Package" description={`Signed application and 3 to 6 months of statements. ${UPLOAD_TYPE_LABEL}, up to ${formatMb(MAX_UPLOAD_FILE_BYTES)} each.`}>
+      <div data-upload-dropzone role="button" tabindex="0" class="flex cursor-pointer flex-col items-center gap-2 border-2 border-dashed border-border p-8 text-center hover:border-primary data-[dragging]:border-primary data-[dragging]:bg-primary/5">
+        <Upload class="size-6 text-muted-foreground" aria-hidden="true" />
+        <p class="text-sm font-medium">Drop the whole package here or click to choose</p>
+        <p class="text-xs text-muted-foreground">We sort statements from the application by their content; you don't need to label them.</p>
+        <input data-upload-input type="file" multiple accept={UPLOAD_ACCEPT} class="sr-only" tabindex="-1" aria-hidden="true" />
+      </div>
+      <ul data-file-list class="divide-y divide-border empty:hidden"></ul>
+    </Card>
+
+    <p data-form-error hidden role="alert" class="text-sm text-destructive"></p>
+    <div class="flex flex-wrap items-center justify-between gap-3">
+      <p class="text-xs text-muted-foreground">Prefer email? Send the same package to <span class="font-mono">{org.inboundAlias}</span> from a team address.</p>
+      <Button type="submit" size="lg">Send package</Button>
+    </div>
+  </form>
+</PartnerLayout>
+
+<script>
+  import { listPickedFiles } from "@/lib/portal/files";
+
+  const form = document.querySelector<HTMLFormElement>("[data-quick-form]")!;
+  const picker = listPickedFiles({
+    dropzone: form.querySelector("[data-upload-dropzone]")!,
+    input: form.querySelector("[data-upload-input]")!,
+    list: form.querySelector("[data-file-list]")!,
+    // The server classifies by content once stored; the browser can only guess from the name.
+    kindOf: (f) => (/app|application/i.test(f.name) ? "application" : /stmt|statement|bank/i.test(f.name) ? "bank_statement" : "other"),
+  });
+  const errorEl = form.querySelector<HTMLElement>("[data-form-error]")!;
+  form.addEventListener("submit", (e) => {
+    e.preventDefault();
+    const merchant = String(new FormData(form).get("merchant") ?? "").trim();
+    const ready = picker.files().filter((f) => f.ok);
+    errorEl.hidden = true;
+    if (!merchant) return showError("Name the merchant.");
+    if (ready.length === 0) return showError("Add at least the signed application and statements.");
+    alert(`Prototype: ${ready.length} file(s) would be uploaded one by one, a deal created in "Needs details" and the package sent to underwriting.`);
+    location.assign("/partner/deals/VF-10240");
+  });
+  function showError(msg: string) {
+    errorEl.textContent = msg;
+    errorEl.hidden = false;
+  }
+</script>

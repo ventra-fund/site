@@ -1,0 +1,118 @@
+---
+import PartnerLayout from "@/layouts/PartnerLayout.astro";
+import Card from "@/components/partner/Card.astro";
+import DealStatusBadge from "@/components/partner/DealStatusBadge.astro";
+import SourceBadge from "@/components/partner/SourceBadge.astro";
+import { Button } from "@/ui/button";
+import { FilePlus, Upload, Phone, Mail } from "@lucide/astro";
+import { deals, events, org, currentUser, nextAction, formatDateTime, relativeDay, userName, daysSince } from "@/data/portal-fixtures";
+import { formatMoney, DEFAULT_COMMISSION_PLAN as plan } from "@/data/commission-plan";
+
+// The landing page after sign-in: the numbers an ISO checks every morning, what needs their
+// hand, and the fastest way to submit. KPIs are over the last 30 days of the fixtures.
+const recent = deals.filter((d) => daysSince(d.submittedAt) <= 30);
+const funded = recent.filter((d) => d.status === "funded");
+const offersOut = deals.filter((d) => d.status === "offers_ready" || d.status === "offer_selected");
+const inReview = deals.filter((d) => d.status === "in_review" || d.status === "on_hold");
+const fundedVolume = funded.reduce((sum, d) => sum + d.amountRequested, 0);
+const subToFund = recent.length ? Math.round((funded.length / recent.length) * 100) : 0;
+
+const kpis = [
+  { label: "Submitted", value: String(recent.length), sub: "last 30 days", href: "/partner/deals" },
+  { label: "In review", value: String(inReview.length), sub: `${inReview.filter((d) => d.status === "on_hold").length} on hold`, href: "/partner/deals?stage=review" },
+  { label: "Offers out", value: String(offersOut.length), sub: "awaiting a pick", href: "/partner/deals?stage=offers" },
+  { label: "Funded", value: formatMoney(fundedVolume), sub: `${funded.length} deals · ${subToFund}% sub-to-fund`, href: "/partner/deals?stage=funded" },
+];
+
+const needsAction = deals.map((d) => ({ deal: d, action: nextAction(d) })).filter((x) => x.action && x.deal.status !== "contracts_out");
+const activity = [...events].sort((a, b) => (a.at < b.at ? 1 : -1)).slice(0, 6);
+const dealOf = (id: string) => deals.find((d) => d.id === id)!;
+const firstName = currentUser.name.split(" ")[0];
+---
+
+<PartnerLayout title={`Good afternoon, ${firstName}`} current="dashboard" intro={`Here is where ${org.name} stands today.`}>
+  <Fragment slot="actions">
+    <Button as="a" href="/partner/submit/quick" variant="outline"><Upload class="size-4" aria-hidden="true" /> Quick package</Button>
+    <Button as="a" href="/partner/submit"><FilePlus class="size-4" aria-hidden="true" /> Submit a deal</Button>
+  </Fragment>
+
+  <dl class="grid grid-cols-2 gap-3 lg:grid-cols-4">
+    {kpis.map((k) => (
+      <a href={k.href} class="flex flex-col gap-1 border border-border bg-card p-4 hover:bg-muted/40">
+        <dt class="text-sm text-muted-foreground">{k.label}</dt>
+        <dd class="flex flex-col">
+          <span class="text-2xl font-semibold tabular-nums">{k.value}</span>
+          <span class="text-xs text-muted-foreground">{k.sub}</span>
+        </dd>
+      </a>
+    ))}
+  </dl>
+
+  <div class="grid gap-6 lg:grid-cols-[3fr_2fr]">
+    <div class="flex flex-col gap-6">
+      <Card title="Needs your action" description="Deals that are waiting on you, closest to funding first.">
+        {needsAction.length === 0 ? (
+          <p class="text-sm text-muted-foreground">Nothing is waiting on you.</p>
+        ) : (
+          <ul class="divide-y divide-border">
+            {needsAction.map(({ deal, action }) => (
+              <li class="flex flex-wrap items-center justify-between gap-3 py-3 first:pt-0 last:pb-0">
+                <div class="flex min-w-0 flex-col gap-0.5">
+                  <a href={`/partner/deals/${deal.number}`} class="truncate font-medium hover:underline">{deal.dba}</a>
+                  <div class="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+                    <span class="font-mono">{deal.number}</span>
+                    <DealStatusBadge status={deal.status} />
+                    <span>{relativeDay(deal.updatedAt)}</span>
+                  </div>
+                </div>
+                <Button as="a" href={action!.href} size="sm" variant={deal.status === "offers_ready" ? "default" : "outline"}>{action!.label}</Button>
+              </li>
+            ))}
+          </ul>
+        )}
+      </Card>
+
+      <Card title="Recent activity">
+        <ol class="flex flex-col gap-3">
+          {activity.map((e) => (
+            <li class="flex gap-3 text-sm">
+              <span class="w-24 shrink-0 text-xs text-muted-foreground tabular-nums">{formatDateTime(e.at)}</span>
+              <div class="flex min-w-0 flex-col gap-0.5">
+                <a href={`/partner/deals/${dealOf(e.dealId).number}`} class="font-medium hover:underline">{dealOf(e.dealId).dba} <span class="font-mono text-xs text-muted-foreground">{dealOf(e.dealId).number}</span></a>
+                <p class="text-muted-foreground">{e.text}</p>
+                <div class="flex gap-2 text-xs text-muted-foreground"><span>{userName(e.actor)}</span><SourceBadge source={dealOf(e.dealId).source} /></div>
+              </div>
+            </li>
+          ))}
+        </ol>
+      </Card>
+    </div>
+
+    <div class="flex flex-col gap-6">
+      <Card title="Your relationship manager">
+        <div class="flex flex-col gap-2 text-sm">
+          <p class="font-medium">{org.relationshipManager.name}</p>
+          <a href={`mailto:${org.relationshipManager.email}`} class="flex items-center gap-2 text-muted-foreground hover:text-foreground"><Mail class="size-4" aria-hidden="true" /> {org.relationshipManager.email}</a>
+          <a href={`tel:${org.relationshipManager.phone}`} class="flex items-center gap-2 text-muted-foreground hover:text-foreground"><Phone class="size-4" aria-hidden="true" /> {org.relationshipManager.phone}</a>
+        </div>
+      </Card>
+
+      <Card title="Three ways to submit">
+        <ul class="flex flex-col gap-3 text-sm">
+          <li><a href="/partner/submit" class="font-medium hover:underline">Full submission</a><p class="text-muted-foreground">Enter the merchant and owners, attach the package. Goes straight to review.</p></li>
+          <li><a href="/partner/submit/quick" class="font-medium hover:underline">Quick package</a><p class="text-muted-foreground">Drop the signed app and statements, name the merchant. We key the rest.</p></li>
+          <li><a href="/partner/developers#email" class="font-medium hover:underline">Email</a><p class="text-muted-foreground">Send the package to <span class="font-mono text-xs">{org.inboundAlias}</span> from a team address.</p></li>
+        </ul>
+      </Card>
+
+      <Card title="Your plan">
+        <dl class="grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
+          <dt class="text-muted-foreground">B paper buy rate</dt><dd class="tabular-nums">{plan.buyRates.B.toFixed(2)}</dd>
+          <dt class="text-muted-foreground">C paper buy rate</dt><dd class="tabular-nums">{plan.buyRates.C.toFixed(2)}</dd>
+          <dt class="text-muted-foreground">Max upsell</dt><dd class="tabular-nums">{plan.maxUpsellPoints} points</dd>
+        </dl>
+        <a href="/partner/calculator" class="text-sm text-primary hover:underline">Open the calculator</a>
+      </Card>
+    </div>
+  </div>
+</PartnerLayout>

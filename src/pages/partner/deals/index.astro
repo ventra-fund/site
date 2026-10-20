@@ -1,0 +1,132 @@
+---
+import PartnerLayout from "@/layouts/PartnerLayout.astro";
+import DealStatusBadge from "@/components/partner/DealStatusBadge.astro";
+import SourceBadge from "@/components/partner/SourceBadge.astro";
+import { Button } from "@/ui/button";
+import { Input } from "@/ui/input";
+import { FilePlus, Search } from "@lucide/astro";
+import { deals, PIPELINE_STAGES, DEAL_STATUS, SOURCE_LABEL, nextAction, formatDate, daysSince, userName, users } from "@/data/portal-fixtures";
+import { formatMoney } from "@/data/commission-plan";
+
+// The pipeline: a stepper with counts per stage, and the full table. Filtering (stage, status,
+// submitter, source, search) is client-side over the rendered rows (src/lib/portal/deals.ts);
+// the real page filters in SQL and paginates like /admin/drop-offs.
+const open = deals.filter((d) => !["funded", "declined", "withdrawn"].includes(d.status));
+const stageCount = (statuses: string[]) => deals.filter((d) => statuses.includes(d.status)).length;
+const closed: { key: string; label: string; count: number }[] = [
+  { key: "declined", label: "Declined", count: stageCount(["declined"]) },
+  { key: "withdrawn", label: "Withdrawn", count: stageCount(["withdrawn"]) },
+];
+const actionable = deals.filter((d) => nextAction(d)).length;
+const sorted = [...deals].sort((a, b) => (a.updatedAt < b.updatedAt ? 1 : -1));
+---
+
+<PartnerLayout title="Deals" current="deals" wide intro={`${open.length} open · ${actionable} waiting on you`}>
+  <Fragment slot="actions">
+    <Button as="a" href="/partner/submit"><FilePlus class="size-4" aria-hidden="true" /> Submit a deal</Button>
+  </Fragment>
+
+  {/* Stage stepper. Each stage is a filter; the count turns amber when something in it needs the partner. */}
+  <ol data-stages class="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-6">
+    <li>
+      <button type="button" data-stage="" class="flex w-full flex-col gap-1 border border-border bg-card px-3 py-2 text-left hover:bg-muted/40 aria-pressed:border-primary aria-pressed:bg-primary/5" aria-pressed="true">
+        <span class="text-xs text-muted-foreground">All open</span>
+        <span class="text-xl font-semibold tabular-nums">{open.length}</span>
+      </button>
+    </li>
+    {PIPELINE_STAGES.map((s) => {
+      const inStage = deals.filter((d) => s.statuses.includes(d.status));
+      const waiting = inStage.filter((d) => nextAction(d)).length;
+      return (
+        <li>
+          <button type="button" data-stage={s.key} class="flex w-full flex-col gap-1 border border-border bg-card px-3 py-2 text-left hover:bg-muted/40 aria-pressed:border-primary aria-pressed:bg-primary/5" aria-pressed="false">
+            <span class="text-xs text-muted-foreground">{s.label}</span>
+            <span class="flex items-baseline gap-2">
+              <span class="text-xl font-semibold tabular-nums">{inStage.length}</span>
+              {waiting > 0 && <span class="text-xs font-medium text-amber-700 dark:text-amber-300">{waiting} waiting on you</span>}
+            </span>
+          </button>
+        </li>
+      );
+    })}
+  </ol>
+
+  <div class="flex flex-wrap items-center gap-2">
+    <label class="relative flex-1 basis-56">
+      <Search class="pointer-events-none absolute top-1/2 left-2.5 size-4 -translate-y-1/2 text-muted-foreground" aria-hidden="true" />
+      <Input data-search type="search" placeholder="Search DBA, legal name or deal number" class="pl-8" aria-label="Search deals" />
+    </label>
+    <select data-filter="status" class="h-9 border border-input bg-background px-2 text-sm" aria-label="Status">
+      <option value="">Any status</option>
+      {Object.entries(DEAL_STATUS).map(([k, v]) => <option value={k}>{v.label}</option>)}
+    </select>
+    <select data-filter="submitter" class="h-9 border border-input bg-background px-2 text-sm" aria-label="Submitted by">
+      <option value="">Anyone</option>
+      {users.map((u) => <option value={u.id}>{u.name}</option>)}
+      <option value="email">Email intake</option>
+    </select>
+    <select data-filter="source" class="h-9 border border-input bg-background px-2 text-sm" aria-label="Source">
+      <option value="">Any source</option>
+      {Object.entries(SOURCE_LABEL).map(([k, v]) => <option value={k}>{v}</option>)}
+    </select>
+    <div class="ml-auto flex gap-1 text-xs">
+      {closed.map((c) => (
+        <button type="button" data-stage={c.key} aria-pressed="false" class="px-2 py-1 text-muted-foreground hover:text-foreground aria-pressed:bg-muted aria-pressed:text-foreground">{c.label} ({c.count})</button>
+      ))}
+    </div>
+  </div>
+
+  <div class="overflow-x-auto border border-border">
+    <table class="w-full text-left text-sm">
+      <thead class="border-b border-border bg-muted/40 text-xs text-muted-foreground">
+        <tr>
+          <th class="px-3 py-2 font-medium">Merchant</th>
+          <th class="px-3 py-2 font-medium">Status</th>
+          <th class="px-3 py-2 font-medium text-right">Requested</th>
+          <th class="px-3 py-2 font-medium">Product</th>
+          <th class="px-3 py-2 font-medium">Submitted</th>
+          <th class="px-3 py-2 font-medium text-right">Days</th>
+          <th class="px-3 py-2 font-medium">By</th>
+          <th class="px-3 py-2 font-medium">Next action</th>
+        </tr>
+      </thead>
+      <tbody data-rows>
+        {sorted.map((d) => {
+          const action = nextAction(d);
+          const stage = PIPELINE_STAGES.find((s) => s.statuses.includes(d.status))?.key ?? d.status;
+          return (
+            <tr
+              class="border-b border-border last:border-0 hover:bg-muted/40"
+              data-row
+              data-stage={stage}
+              data-open={["funded", "declined", "withdrawn"].includes(d.status) ? "" : "1"}
+              data-status={d.status}
+              data-submitter={d.submittedBy}
+              data-source={d.source}
+              data-text={`${d.dba} ${d.legalName} ${d.number}`.toLowerCase()}
+            >
+              <td class="px-3 py-2">
+                <a href={`/partner/deals/${d.number}`} class="font-medium text-primary hover:underline">{d.dba || "Unnamed merchant"}</a>
+                <div class="flex items-center gap-2 text-xs text-muted-foreground"><span class="font-mono">{d.number}</span><SourceBadge source={d.source} /></div>
+              </td>
+              <td class="px-3 py-2"><DealStatusBadge status={d.status} /></td>
+              <td class="whitespace-nowrap px-3 py-2 text-right tabular-nums">{d.amountRequested ? formatMoney(d.amountRequested) : <span class="text-muted-foreground">—</span>}</td>
+              <td class="whitespace-nowrap px-3 py-2 text-muted-foreground">{d.product}</td>
+              <td class="whitespace-nowrap px-3 py-2 text-muted-foreground">{formatDate(d.submittedAt)}</td>
+              <td class="px-3 py-2 text-right tabular-nums text-muted-foreground">{daysSince(d.submittedAt)}</td>
+              <td class="whitespace-nowrap px-3 py-2 text-muted-foreground">{userName(d.submittedBy)}</td>
+              <td class="whitespace-nowrap px-3 py-2">
+                {action ? <Button as="a" href={action.href} size="sm" variant={d.status === "offers_ready" ? "default" : "outline"}>{action.label}</Button> : <span class="text-xs text-muted-foreground">—</span>}
+              </td>
+            </tr>
+          );
+        })}
+      </tbody>
+    </table>
+    <p data-empty hidden class="px-3 py-6 text-center text-sm text-muted-foreground">No deals match.</p>
+  </div>
+</PartnerLayout>
+
+<script>
+  import "@/lib/portal/deals";
+</script>

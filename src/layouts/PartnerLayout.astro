@@ -1,0 +1,51 @@
+---
+import Layout from "@/layouts/Layout.astro";
+import PartnerNav, { type PartnerNavKey } from "@/components/partner/PartnerNav.astro";
+
+// The frame for every signed-in partner page: sidebar, a page header with title and actions,
+// and a content column. Without `current` (sign-in) there is no sidebar and the column is
+// narrow, like AdminLayout.
+//
+// PROTOTYPE: these pages are prerendered from src/data/portal-fixtures.ts and have no guard.
+// The real portal makes them on-demand behind the /partner/* check in src/middleware.ts.
+interface Props {
+  title: string;
+  current?: PartnerNavKey;
+  /** Shown under the title. */
+  intro?: string;
+  /** Widest content (the pipeline table); default fits reading-width pages. */
+  wide?: boolean;
+}
+
+const { title, current, intro, wide = false } = Astro.props;
+---
+
+<Layout title={`${title} · Partner portal`} noindex>
+  <slot name="head" slot="head" />
+  {current ? (
+    <div class="flex min-h-screen flex-col lg:flex-row">
+      <PartnerNav current={current} />
+      <main class="min-w-0 flex-1 px-4 py-6 sm:px-6 lg:px-10 lg:py-8">
+        <div class:list={["mx-auto flex flex-col gap-6", wide ? "max-w-6xl" : "max-w-4xl"]}>
+          <header class="flex flex-wrap items-end justify-between gap-4">
+            <div class="flex flex-col gap-1">
+              <h1 class="text-2xl font-semibold tracking-tight">{title}</h1>
+              {intro && <p class="max-w-2xl text-sm text-muted-foreground">{intro}</p>}
+            </div>
+            <div class="flex flex-wrap gap-2"><slot name="actions" /></div>
+          </header>
+          <slot />
+        </div>
+      </main>
+    </div>
+  ) : (
+    <main class="min-h-screen w-full px-4 py-10">
+      <div class="mx-auto flex max-w-sm flex-col gap-8">
+        <slot />
+      </div>
+    </main>
+  )}
+  <div class="fixed inset-x-0 bottom-0 z-40 border-t border-border bg-background/95 px-4 py-1.5 text-center text-xs text-muted-foreground backdrop-blur">
+    Prototype with sample data. Nothing here is saved or sent.
+  </div>
+</Layout>

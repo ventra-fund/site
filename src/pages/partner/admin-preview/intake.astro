@@ -1,0 +1,50 @@
+---
+import PartnerLayout from "@/layouts/PartnerLayout.astro";
+import Card from "@/components/partner/Card.astro";
+import { Button } from "@/ui/button";
+import { intakeEmails, org, formatDateTime } from "@/data/portal-fixtures";
+
+// PREVIEW of /admin/intake: every email the intake address received, and the queue of ones that
+// could not be matched to an organisation member. Nothing is silently dropped; an admin assigns
+// an unmatched email to an org (creating the deal) or rejects it.
+const tone = { matched: "text-emerald-700 dark:text-emerald-300", unmatched: "text-amber-700 dark:text-amber-300", rejected: "text-muted-foreground" };
+const unmatched = intakeEmails.filter((e) => e.status === "unmatched");
+---
+
+<PartnerLayout title="Email intake (admin preview)" current="dashboard" wide intro="Every message to the intake address, with what happened to it.">
+  <Card title={`Needs a decision (${unmatched.length})`} description="Sender isn't on any partner's team. Assign to the organisation it belongs to, or reject.">
+    {unmatched.map((e) => (
+      <div class="flex flex-col gap-2 border border-amber-500/40 bg-amber-500/5 p-3 text-sm">
+        <div class="flex flex-wrap justify-between gap-2"><span class="font-medium">{e.subject}</span><span class="text-muted-foreground">{formatDateTime(e.receivedAt)}</span></div>
+        <p class="text-muted-foreground">From <span class="font-mono">{e.from}</span> to <span class="font-mono">{e.to}</span> · {e.attachments} attachments</p>
+        <div class="flex flex-wrap items-center gap-2">
+          <select class="h-8 border border-input bg-background px-2 text-sm" aria-label="Assign to organisation"><option>{org.name}</option><option>Lakeshore Funding Group</option></select>
+          <Button size="sm">Assign and create deal</Button>
+          <Button size="sm" variant="outline">Add sender to that team</Button>
+          <Button size="sm" variant="ghost" class="text-destructive">Reject</Button>
+        </div>
+      </div>
+    ))}
+  </Card>
+
+  <Card title="All intake">
+    <div class="overflow-x-auto">
+      <table class="w-full text-left text-sm">
+        <thead class="text-xs text-muted-foreground"><tr><th class="py-1.5 pr-3 font-medium">Received</th><th class="py-1.5 pr-3 font-medium">From</th><th class="py-1.5 pr-3 font-medium">To</th><th class="py-1.5 pr-3 font-medium">Subject</th><th class="py-1.5 pr-3 font-medium text-right">Files</th><th class="py-1.5 pr-3 font-medium">Outcome</th></tr></thead>
+        <tbody>
+          {intakeEmails.map((e) => (
+            <tr class="border-t border-border">
+              <td class="whitespace-nowrap py-2 pr-3 text-muted-foreground">{formatDateTime(e.receivedAt)}</td>
+              <td class="py-2 pr-3 font-mono text-xs">{e.from}</td>
+              <td class="py-2 pr-3 font-mono text-xs">{e.to}</td>
+              <td class="py-2 pr-3">{e.subject}</td>
+              <td class="py-2 pr-3 text-right tabular-nums">{e.attachments}</td>
+              <td class:list={["py-2 pr-3", tone[e.status]]}>{e.note}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+    <p class="text-xs text-muted-foreground">Raw messages stay with Resend for 30 days; attachments are copied to R2 at receipt and the deal keeps them.</p>
+  </Card>
+</PartnerLayout>

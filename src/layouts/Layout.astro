@@ -19,8 +19,9 @@ const ogImage = new URL("/og-image.jpg", Astro.site ?? Astro.url).href;
 
 // Trailing-slash-insensitive, like the nav's own current-page check.
 const currentPath = Astro.url.pathname.replace(/\/+$/, "") || "/";
-// The admin pages and the signing page stand apart from the public site: no nav.
-const showNav = !/^\/(admin|sign)(\/|$)/.test(currentPath);
+// The admin pages, the signing page and the partner portal (/partner/<page>, not the public
+// /partner inquiry page) stand apart from the public site: no nav.
+const showNav = !/^\/(admin|sign)(\/|$)|^\/partner\//.test(currentPath);
 ---
 
 <!doctype html>

@@ -1,0 +1,309 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Ventra Fund Partner API",
+    "version": "1.0.0-draft",
+    "description": "Submit deals, upload documents, read status and offers, and receive webhooks. Designed in the prototype phase so the portal and the API share one contract; see docs/partner-portal.md.\n\nAuthenticate with an organisation API key as a bearer token. Keys are created under Developers in the partner portal and are shown once. `vf_test_` keys hit the sandbox, which never reaches underwriting."
+  },
+  "servers": [
+    { "url": "https://ventrafund.com/api/v1", "description": "Production" },
+    { "url": "https://sandbox.ventrafund.com/api/v1", "description": "Sandbox (vf_test_ keys)" }
+  ],
+  "security": [{ "ApiKey": [] }],
+  "tags": [
+    { "name": "Submissions" },
+    { "name": "Documents" },
+    { "name": "Offers" },
+    { "name": "Webhooks" }
+  ],
+  "paths": {
+    "/submissions": {
+      "post": {
+        "tags": ["Submissions"],
+        "summary": "Create a submission",
+        "description": "Creates a deal in `received`. Documents are uploaded afterwards. Send an `Idempotency-Key` so a retried request never creates a second deal.",
+        "operationId": "createSubmission",
+        "parameters": [{ "$ref": "#/components/parameters/IdempotencyKey" }],
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/SubmissionRequest" } } } },
+        "responses": {
+          "201": { "description": "Created", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Submission" } } } },
+          "400": { "$ref": "#/components/responses/ValidationError" },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "409": { "description": "A submission for this merchant is already open with another partner (partner of record).", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Error" } } } },
+          "429": { "$ref": "#/components/responses/RateLimited" }
+        }
+      },
+      "get": {
+        "tags": ["Submissions"],
+        "summary": "List submissions",
+        "operationId": "listSubmissions",
+        "parameters": [
+          { "name": "status", "in": "query", "schema": { "$ref": "#/components/schemas/Status" } },
+          { "name": "updated_since", "in": "query", "schema": { "type": "string", "format": "date-time" } },
+          { "name": "cursor", "in": "query", "schema": { "type": "string" } },
+          { "name": "limit", "in": "query", "schema": { "type": "integer", "minimum": 1, "maximum": 100, "default": 50 } }
+        ],
+        "responses": {
+          "200": { "description": "OK", "content": { "application/json": { "schema": { "type": "object", "properties": { "data": { "type": "array", "items": { "$ref": "#/components/schemas/Submission" } }, "next_cursor": { "type": ["string", "null"] } }, "required": ["data", "next_cursor"] } } } },
+          "401": { "$ref": "#/components/responses/Unauthorized" }
+        }
+      }
+    },
+    "/submissions/{id}": {
+      "parameters": [{ "$ref": "#/components/parameters/SubmissionId" }],
+      "get": {
+        "tags": ["Submissions"],
+        "summary": "Get a submission",
+        "operationId": "getSubmission",
+        "responses": {
+          "200": { "description": "OK", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Submission" } } } },
+          "404": { "$ref": "#/components/responses/NotFound" }
+        }
+      },
+      "patch": {
+        "tags": ["Submissions"],
+        "summary": "Amend a submission",
+        "description": "Correct or complete fields after submitting (for example to move a deal out of `needs_details`). Allowed until contracts are out.",
+        "operationId": "amendSubmission",
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/SubmissionPatch" } } } },
+        "responses": {
+          "200": { "description": "OK", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Submission" } } } },
+          "400": { "$ref": "#/components/responses/ValidationError" },
+          "404": { "$ref": "#/components/responses/NotFound" },
+          "409": { "description": "The submission can no longer be amended.", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Error" } } } }
+        }
+      }
+    },
+    "/submissions/{id}/status": {
+      "parameters": [{ "$ref": "#/components/parameters/SubmissionId" }],
+      "get": {
+        "tags": ["Submissions"],
+        "summary": "Get status, next action and open stips",
+        "description": "A light call for polling. Prefer webhooks.",
+        "operationId": "getSubmissionStatus",
+        "responses": {
+          "200": { "description": "OK", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/SubmissionStatus" } } } },
+          "404": { "$ref": "#/components/responses/NotFound" }
+        }
+      }
+    },
+    "/submissions/{id}/withdraw": {
+      "parameters": [{ "$ref": "#/components/parameters/SubmissionId" }],
+      "post": {
+        "tags": ["Submissions"],
+        "summary": "Withdraw a submission",
+        "operationId": "withdrawSubmission",
+        "responses": { "200": { "description": "OK", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Submission" } } } }, "404": { "$ref": "#/components/responses/NotFound" } }
+      }
+    },
+    "/submissions/{id}/documents": {
+      "parameters": [{ "$ref": "#/components/parameters/SubmissionId" }],
+      "get": {
+        "tags": ["Documents"],
+        "summary": "List documents",
+        "operationId": "listDocuments",
+        "responses": { "200": { "description": "OK", "content": { "application/json": { "schema": { "type": "array", "items": { "$ref": "#/components/schemas/Document" } } } } } }
+      },
+      "post": {
+        "tags": ["Documents"],
+        "summary": "Upload a document",
+        "description": "One file per request, up to 10 MB, PDF, JPG or PNG. Either multipart with a `file` part, or JSON with a `url` we fetch (must be reachable without credentials, expiring links are fine). Pass `stip_id` to clear a specific stip. The same bytes uploaded twice return the existing document with `duplicate: true`.",
+        "operationId": "uploadDocument",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": { "schema": { "type": "object", "properties": { "file": { "type": "string", "format": "binary" }, "kind": { "$ref": "#/components/schemas/DocumentKind" }, "stip_id": { "type": "string" } }, "required": ["file", "kind"] } },
+            "application/json": { "schema": { "type": "object", "properties": { "url": { "type": "string", "format": "uri" }, "filename": { "type": "string" }, "kind": { "$ref": "#/components/schemas/DocumentKind" }, "stip_id": { "type": "string" } }, "required": ["url", "filename", "kind"] } }
+          }
+        },
+        "responses": {
+          "201": { "description": "Stored", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Document" } } } },
+          "400": { "$ref": "#/components/responses/ValidationError" },
+          "413": { "description": "Over 10 MB.", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Error" } } } },
+          "415": { "description": "Not a PDF, JPG or PNG (checked by content, not extension).", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Error" } } } }
+        }
+      }
+    },
+    "/submissions/{id}/offers": {
+      "parameters": [{ "$ref": "#/components/parameters/SubmissionId" }],
+      "get": {
+        "tags": ["Offers"],
+        "summary": "List offers",
+        "operationId": "listOffers",
+        "responses": { "200": { "description": "OK", "content": { "application/json": { "schema": { "type": "array", "items": { "$ref": "#/components/schemas/Offer" } } } } }, "404": { "$ref": "#/components/responses/NotFound" } }
+      }
+    },
+    "/submissions/{id}/offers/{offer_id}/select": {
+      "parameters": [{ "$ref": "#/components/parameters/SubmissionId" }, { "name": "offer_id", "in": "path", "required": true, "schema": { "type": "string" } }],
+      "post": {
+        "tags": ["Offers"],
+        "summary": "Select an offer",
+        "description": "Optionally reprice down from the issued points (never above your plan's maximum).",
+        "operationId": "selectOffer",
+        "requestBody": { "content": { "application/json": { "schema": { "type": "object", "properties": { "points": { "type": "number", "minimum": 0 } } } } } },
+        "responses": { "200": { "description": "OK", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Offer" } } } }, "404": { "$ref": "#/components/responses/NotFound" }, "409": { "description": "Offer expired or another offer already selected.", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Error" } } } } }
+      }
+    },
+    "/webhook-endpoints": {
+      "get": { "tags": ["Webhooks"], "summary": "List webhook endpoints", "operationId": "listWebhookEndpoints", "responses": { "200": { "description": "OK", "content": { "application/json": { "schema": { "type": "array", "items": { "$ref": "#/components/schemas/WebhookEndpoint" } } } } } } },
+      "post": {
+        "tags": ["Webhooks"],
+        "summary": "Create a webhook endpoint",
+        "description": "The signing secret is returned once, in this response.",
+        "operationId": "createWebhookEndpoint",
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "type": "object", "properties": { "url": { "type": "string", "format": "uri" }, "events": { "type": "array", "items": { "$ref": "#/components/schemas/WebhookEventType" } } }, "required": ["url", "events"] } } } },
+        "responses": { "201": { "description": "Created", "content": { "application/json": { "schema": { "allOf": [{ "$ref": "#/components/schemas/WebhookEndpoint" }, { "type": "object", "properties": { "secret": { "type": "string", "description": "Shown once." } } }] } } } } }
+      }
+    },
+    "/webhook-endpoints/{id}": {
+      "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }],
+      "delete": { "tags": ["Webhooks"], "summary": "Delete a webhook endpoint", "operationId": "deleteWebhookEndpoint", "responses": { "204": { "description": "Deleted" } } }
+    },
+    "/webhook-endpoints/{id}/test": {
+      "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }],
+      "post": { "tags": ["Webhooks"], "summary": "Send a test event", "operationId": "testWebhookEndpoint", "responses": { "202": { "description": "Queued" } } }
+    }
+  },
+  "webhooks": {
+    "event": {
+      "post": {
+        "summary": "Event delivery",
+        "description": "POSTed to each endpoint subscribed to the event. Headers: `X-Ventra-Signature: t=<unix seconds>,v1=<hex HMAC-SHA256 of \"<t>.<raw body>\" with your endpoint secret>` and `X-Ventra-Event-Id` for de-duplication. Reject if `t` is more than 5 minutes old. Respond 2xx within 10 seconds; anything else is retried with backoff for 24 hours, then marked failed and visible under Developers.",
+        "requestBody": { "content": { "application/json": { "schema": { "$ref": "#/components/schemas/WebhookEvent" } } } },
+        "responses": { "200": { "description": "Received" } }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": { "ApiKey": { "type": "http", "scheme": "bearer", "description": "`Authorization: Bearer vf_live_...`" } },
+    "parameters": {
+      "SubmissionId": { "name": "id", "in": "path", "required": true, "schema": { "type": "string" }, "description": "The deal id (`sub_...`) or its number (`VF-10241`)." },
+      "IdempotencyKey": { "name": "Idempotency-Key", "in": "header", "required": false, "schema": { "type": "string", "maxLength": 128 }, "description": "Any unique string per logical request, kept for 24 hours." }
+    },
+    "responses": {
+      "Unauthorized": { "description": "Missing, revoked or expired key.", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Error" } } } },
+      "NotFound": { "description": "No such submission for this organisation.", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Error" } } } },
+      "ValidationError": { "description": "A field failed validation; `issues` names each one.", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Error" } } } },
+      "RateLimited": { "description": "Over the key's limit. `Retry-After` is set.", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Error" } } } }
+    },
+    "schemas": {
+      "Error": { "type": "object", "properties": { "error": { "type": "string", "description": "A short code, e.g. `invalid_body`, `unauthorized`, `not_found`, `rate_limited`." }, "message": { "type": "string" }, "issues": { "type": "array", "items": { "type": "object", "properties": { "path": { "type": "string" }, "message": { "type": "string" } } } } }, "required": ["error"] },
+      "Status": { "type": "string", "enum": ["received", "needs_details", "in_review", "on_hold", "offers_ready", "offer_selected", "contracts_out", "final_diligence", "funded", "declined", "withdrawn"] },
+      "Product": { "type": "string", "enum": ["merchant_cash_advance", "term_financing", "line_of_credit", "consolidation", "cash_credit"] },
+      "DocumentKind": { "type": "string", "enum": ["application", "bank_statement", "id", "voided_check", "processing", "other"] },
+      "Address": { "type": "object", "properties": { "line1": { "type": "string" }, "line2": { "type": "string" }, "city": { "type": "string" }, "state": { "type": "string", "minLength": 2, "maxLength": 2 }, "postal_code": { "type": "string" } }, "required": ["line1", "city", "state", "postal_code"] },
+      "Business": {
+        "type": "object",
+        "properties": {
+          "legal_name": { "type": "string", "maxLength": 300 },
+          "dba": { "type": "string", "maxLength": 200 },
+          "ein": { "type": "string", "pattern": "^\\d{2}-?\\d{7}$" },
+          "entity_type": { "type": "string", "enum": ["corporation", "llc", "partnership", "sole_proprietorship", "other"] },
+          "start_date": { "type": "string", "format": "date" },
+          "industry": { "type": "string", "maxLength": 200 },
+          "address": { "$ref": "#/components/schemas/Address" },
+          "phone": { "type": "string" },
+          "website": { "type": "string", "format": "uri" },
+          "monthly_revenue": { "type": "integer", "minimum": 0 }
+        },
+        "required": ["legal_name", "ein", "entity_type", "start_date", "industry", "address", "phone"]
+      },
+      "Owner": {
+        "type": "object",
+        "properties": {
+          "first_name": { "type": "string" }, "last_name": { "type": "string" },
+          "ownership_percent": { "type": "integer", "minimum": 1, "maximum": 100 },
+          "date_of_birth": { "type": "string", "format": "date" },
+          "ssn": { "type": "string", "pattern": "^\\d{3}-?\\d{2}-?\\d{4}$", "description": "Encrypted at rest; never returned." },
+          "email": { "type": "string", "format": "email" }, "mobile": { "type": "string" },
+          "address": { "$ref": "#/components/schemas/Address" },
+          "estimated_fico": { "type": "integer", "minimum": 300, "maximum": 850 }
+        },
+        "required": ["first_name", "last_name", "ownership_percent", "date_of_birth", "ssn", "email", "mobile", "address"]
+      },
+      "OpenPosition": { "type": "object", "properties": { "funder": { "type": "string" }, "balance": { "type": "integer", "minimum": 0 }, "payment": { "type": "integer", "minimum": 0 }, "frequency": { "type": "string", "enum": ["daily", "weekly", "monthly"] } }, "required": ["funder", "balance"] },
+      "SubmissionRequest": {
+        "type": "object",
+        "properties": {
+          "business": { "$ref": "#/components/schemas/Business" },
+          "owners": { "type": "array", "minItems": 1, "items": { "$ref": "#/components/schemas/Owner" }, "description": "Must cover at least 51% ownership." },
+          "product": { "$ref": "#/components/schemas/Product" },
+          "amount_requested": { "type": "integer", "minimum": 5000 },
+          "use_of_funds": { "type": "string", "maxLength": 300 },
+          "open_positions": { "type": "array", "items": { "$ref": "#/components/schemas/OpenPosition" } },
+          "notes": { "type": "string", "maxLength": 2000 },
+          "external_ref": { "type": "string", "maxLength": 100, "description": "Your CRM's id, echoed back on every object and webhook." },
+          "submitted_by_email": { "type": "string", "format": "email", "description": "The team member to credit; must be a member of your organisation. Defaults to the key's creator." }
+        },
+        "required": ["business", "owners", "product", "amount_requested"]
+      },
+      "SubmissionPatch": { "type": "object", "description": "Any subset of SubmissionRequest.", "properties": { "business": { "$ref": "#/components/schemas/Business" }, "owners": { "type": "array", "items": { "$ref": "#/components/schemas/Owner" } }, "product": { "$ref": "#/components/schemas/Product" }, "amount_requested": { "type": "integer" }, "open_positions": { "type": "array", "items": { "$ref": "#/components/schemas/OpenPosition" } }, "notes": { "type": "string" }, "external_ref": { "type": "string" } } },
+      "Submission": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string", "examples": ["sub_01J9X4K2P7"] },
+          "number": { "type": "string", "examples": ["VF-10241"] },
+          "status": { "$ref": "#/components/schemas/Status" },
+          "source": { "type": "string", "enum": ["portal", "email", "api"] },
+          "business": { "$ref": "#/components/schemas/Business" },
+          "owners": { "type": "array", "items": { "allOf": [{ "$ref": "#/components/schemas/Owner" }, { "type": "object", "properties": { "ssn": { "type": "string", "description": "Always `***-**-1234`." } } }] } },
+          "product": { "$ref": "#/components/schemas/Product" },
+          "amount_requested": { "type": "integer" },
+          "open_positions": { "type": "array", "items": { "$ref": "#/components/schemas/OpenPosition" } },
+          "external_ref": { "type": ["string", "null"] },
+          "decline_reasons": { "type": "array", "items": { "type": "string" } },
+          "portal_url": { "type": "string", "format": "uri" },
+          "created_at": { "type": "string", "format": "date-time" },
+          "updated_at": { "type": "string", "format": "date-time" }
+        },
+        "required": ["id", "number", "status", "source", "created_at", "updated_at"]
+      },
+      "Stip": { "type": "object", "properties": { "id": { "type": "string" }, "short_text": { "type": "string" }, "long_text": { "type": "string" }, "status": { "type": "string", "enum": ["open", "received", "cleared"] } }, "required": ["id", "short_text", "status"] },
+      "SubmissionStatus": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" }, "number": { "type": "string" },
+          "status": { "$ref": "#/components/schemas/Status" },
+          "next_action": { "type": ["object", "null"], "properties": { "code": { "type": "string", "enum": ["finish_submission", "upload_documents", "view_offers", "upload_stips"] }, "label": { "type": "string" }, "url": { "type": "string", "format": "uri" } } },
+          "stips": { "type": "array", "items": { "$ref": "#/components/schemas/Stip" } },
+          "decline_reasons": { "type": "array", "items": { "type": "string" } },
+          "updated_at": { "type": "string", "format": "date-time" }
+        },
+        "required": ["id", "number", "status", "stips", "updated_at"]
+      },
+      "Document": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" }, "kind": { "$ref": "#/components/schemas/DocumentKind" }, "filename": { "type": "string" }, "content_type": { "type": "string" }, "bytes": { "type": "integer" },
+          "duplicate": { "type": "boolean", "description": "True when the bytes matched a document already on the deal; the existing document is returned." },
+          "stip_id": { "type": ["string", "null"] }, "uploaded_at": { "type": "string", "format": "date-time" }
+        },
+        "required": ["id", "kind", "filename", "content_type", "bytes", "uploaded_at"]
+      },
+      "Offer": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" }, "product": { "$ref": "#/components/schemas/Product" },
+          "amount": { "type": "integer" }, "paper_grade": { "type": "string", "enum": ["B", "C"] },
+          "buy_rate": { "type": "number" }, "points": { "type": "number" }, "sell_rate": { "type": "number" },
+          "term_months": { "type": "integer" }, "frequency": { "type": "string", "enum": ["daily", "weekly"] },
+          "payment": { "type": "number" }, "payback": { "type": "number" }, "commission": { "type": "number" },
+          "status": { "type": "string", "enum": ["open", "selected", "expired"] }, "expires_at": { "type": "string", "format": "date-time" }
+        },
+        "required": ["id", "product", "amount", "paper_grade", "buy_rate", "points", "sell_rate", "term_months", "frequency", "payback", "commission", "status"]
+      },
+      "WebhookEventType": { "type": "string", "enum": ["submission.status_changed", "offer.created", "stip.requested"] },
+      "WebhookEndpoint": { "type": "object", "properties": { "id": { "type": "string" }, "url": { "type": "string", "format": "uri" }, "events": { "type": "array", "items": { "$ref": "#/components/schemas/WebhookEventType" } }, "status": { "type": "string", "enum": ["active", "paused"] }, "created_at": { "type": "string", "format": "date-time" } }, "required": ["id", "url", "events", "status", "created_at"] },
+      "WebhookEvent": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string", "examples": ["evt_01J9X5..."] },
+          "type": { "$ref": "#/components/schemas/WebhookEventType" },
+          "created_at": { "type": "string", "format": "date-time" },
+          "data": { "type": "object", "properties": { "submission_id": { "type": "string" }, "number": { "type": "string" }, "external_ref": { "type": ["string", "null"] }, "status": { "$ref": "#/components/schemas/Status" }, "previous_status": { "$ref": "#/components/schemas/Status" }, "offer": { "$ref": "#/components/schemas/Offer" }, "stip": { "$ref": "#/components/schemas/Stip" } }, "required": ["submission_id", "number", "status"] }
+        },
+        "required": ["id", "type", "created_at", "data"]
+      }
+    }
+  }
+}

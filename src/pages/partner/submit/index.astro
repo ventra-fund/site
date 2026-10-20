@@ -1,0 +1,171 @@
+---
+import PartnerLayout from "@/layouts/PartnerLayout.astro";
+import Card from "@/components/partner/Card.astro";
+import { Button } from "@/ui/button";
+import { Input } from "@/ui/input";
+import { Checkbox } from "@/ui/checkbox";
+import DateField from "@/components/DateField.astro";
+import AddressField from "@/components/AddressField.astro";
+import { Upload, Check } from "@lucide/astro";
+import { fundingProducts } from "@/data/funding-products";
+import { FILE_KIND_LABEL } from "@/data/portal-fixtures";
+import { UPLOAD_ACCEPT, UPLOAD_TYPE_LABEL, MAX_UPLOAD_FILE_BYTES, formatMb } from "@/lib/upload-config";
+
+// The full submission: five steps, one form. Steps are sections shown one at a time by
+// src/lib/portal/submit.ts, which also keeps a draft in localStorage so a half-done deal survives
+// a tab close. The field set is the merchant apply form's (src/lib/apply-schema.ts) plus what an
+// ISO adds: owners with ownership %, open positions, the product and the file kinds.
+const steps = [
+  { key: "business", label: "Business" },
+  { key: "owners", label: "Owners" },
+  { key: "request", label: "Funding request" },
+  { key: "documents", label: "Documents" },
+  { key: "review", label: "Review" },
+];
+const fieldClass = "flex flex-col gap-1.5 text-sm font-medium";
+const EMAIL_PATTERN = "[^@\\s]+@[^@\\s]+\\.[^@\\s]{2,}";
+const docSections: { kind: keyof typeof FILE_KIND_LABEL; help: string; required: boolean }[] = [
+  { kind: "application", help: "The merchant's signed funding application.", required: true },
+  { kind: "bank_statement", help: "The last 3 to 6 months, every page. One PDF per month or one combined PDF.", required: true },
+  { kind: "id", help: "Driver's licence or passport for every owner with 50% or more.", required: false },
+  { kind: "voided_check", help: "Voided business check or a bank letter for the funding account.", required: false },
+  { kind: "processing", help: "Card processing statements, if card sales are a big part of revenue.", required: false },
+];
+---
+
+<PartnerLayout title="Submit a deal" current="submit" intro="A complete package goes to review the moment you submit. Missing something? Submit anyway and add it from the deal page.">
+  <Fragment slot="actions">
+    <Button as="a" href="/partner/submit/quick" variant="outline"><Upload class="size-4" aria-hidden="true" /> Quick package instead</Button>
+  </Fragment>
+
+  <ol data-stepper class="flex flex-wrap gap-x-6 gap-y-2 text-sm">
+    {steps.map((s, i) => (
+      <li data-step-tab={s.key} class="flex items-center gap-2 text-muted-foreground aria-[current=step]:font-medium aria-[current=step]:text-foreground data-[done]:text-foreground">
+        <span class="grid size-6 place-items-center border border-border text-xs tabular-nums data-[done]:border-primary data-[done]:bg-primary data-[done]:text-primary-foreground" data-step-num>{i + 1}</span>
+        {s.label}
+      </li>
+    ))}
+  </ol>
+
+  <form data-submit-form novalidate class="flex flex-col gap-6">
+    <p data-draft-note hidden class="text-xs text-muted-foreground">Draft restored from this browser. <button type="button" data-draft-clear class="underline">Start over</button></p>
+
+    <section data-step="business" class="flex flex-col gap-5">
+      <Card title="Business">
+        <div class="grid grid-cols-1 gap-5 sm:grid-cols-2">
+          <label class={fieldClass}>Legal business name<Input name="legalName" required maxlength="300" autocomplete="organization" /></label>
+          <label class={fieldClass}>DBA <span class="font-normal text-muted-foreground">(optional)</span><Input name="dba" maxlength="200" /></label>
+          <label class={fieldClass}>EIN<Input name="ein" required inputmode="numeric" placeholder="12-3456789" data-mask="ein" /></label>
+          <label class={fieldClass}>Entity type
+            <select name="entityType" required class="h-9 border border-input bg-background px-2 text-sm">
+              <option value="">Select</option>
+              {["Corporation", "Limited Liability Company", "Partnership", "Sole Proprietorship", "Other"].map((t) => <option value={t}>{t}</option>)}
+            </select>
+          </label>
+          <label class={fieldClass}>Business start date<DateField name="businessStartDate" required maxToday /></label>
+          <label class={fieldClass}>Industry<Input name="industry" required maxlength="200" placeholder="e.g. restaurant" /></label>
+          <div class={`${fieldClass} sm:col-span-2`} data-field>
+            <label for="businessAddress">Business address</label>
+            <AddressField name="businessAddress" required placeholder="Street, city, state, ZIP" />
+          </div>
+          <label class={fieldClass}>Business phone<Input name="phone" type="tel" required minlength="7" maxlength="30" /></label>
+          <label class={fieldClass}>Website <span class="font-normal text-muted-foreground">(optional)</span><Input name="website" type="url" maxlength="300" /></label>
+        </div>
+      </Card>
+    </section>
+
+    <section data-step="owners" hidden class="flex flex-col gap-5">
+      <Card title="Owners" description="Everyone with 20% or more. Ownership must add up to at least 51%.">
+        <div data-owners class="flex flex-col gap-6">
+          <fieldset data-owner class="grid grid-cols-1 gap-4 border border-border p-4 sm:grid-cols-2">
+            <legend class="px-1 text-sm font-medium">Owner 1</legend>
+            <label class={fieldClass}>First name<Input name="owner[0].firstName" required maxlength="200" /></label>
+            <label class={fieldClass}>Last name<Input name="owner[0].lastName" required maxlength="200" /></label>
+            <label class={fieldClass}>Ownership %<Input name="owner[0].percent" type="number" required min="1" max="100" step="1" /></label>
+            <label class={fieldClass}>Date of birth<DateField name="owner[0].dob" required maxToday /></label>
+            <label class={fieldClass}>SSN<Input name="owner[0].ssn" required inputmode="numeric" placeholder="123-45-6789" data-mask="ssn" /></label>
+            <label class={fieldClass}>Estimated FICO<Input name="owner[0].fico" type="number" inputmode="numeric" min="300" max="850" step="1" /></label>
+            <label class={fieldClass}>Email<Input name="owner[0].email" type="email" required pattern={EMAIL_PATTERN} /></label>
+            <label class={fieldClass}>Mobile<Input name="owner[0].mobile" type="tel" required minlength="7" maxlength="30" /></label>
+            <div class={`${fieldClass} sm:col-span-2`} data-field>
+              <label for="owner[0].address">Home address</label>
+              <AddressField name="owner[0].address" required placeholder="Street, city, state, ZIP" />
+            </div>
+          </fieldset>
+        </div>
+        <Button type="button" variant="outline" size="sm" class="self-start" data-add-owner>Add another owner</Button>
+      </Card>
+    </section>
+
+    <section data-step="request" hidden class="flex flex-col gap-5">
+      <Card title="Funding request">
+        <div class="grid grid-cols-1 gap-5 sm:grid-cols-2">
+          <label class={fieldClass}>Product
+            <select name="product" required class="h-9 border border-input bg-background px-2 text-sm">
+              <option value="">Select</option>
+              {fundingProducts.map((p) => <option value={p.title}>{p.title} · {p.amount}</option>)}
+            </select>
+          </label>
+          <label class={fieldClass}>Amount requested<Input name="amountRequested" type="number" inputmode="numeric" required min="5000" max="5000000" step="1000" placeholder="$" /></label>
+          <label class={fieldClass}>Average monthly revenue<Input name="monthlyRevenue" type="number" inputmode="numeric" required min="0" step="1" placeholder="$" /></label>
+          <label class={fieldClass}>Use of funds<Input name="useOfFunds" maxlength="300" placeholder="e.g. second location build-out" /></label>
+        </div>
+        <fieldset class="flex flex-col gap-3">
+          <legend class="text-sm font-medium">Open positions <span class="font-normal text-muted-foreground">(existing advances or loans)</span></legend>
+          <p class="text-sm text-muted-foreground">Disclose every one. An undisclosed position found in the statements puts the deal on hold.</p>
+          <div data-positions class="flex flex-col gap-2"></div>
+          <Button type="button" variant="outline" size="sm" class="self-start" data-add-position>Add a position</Button>
+        </fieldset>
+        <label class={fieldClass}>Notes for underwriting <span class="font-normal text-muted-foreground">(optional)</span>
+          <textarea name="notes" rows="3" maxlength="2000" class="w-full border border-input bg-background p-2 text-sm font-normal" placeholder="Seasonality, a one-off deposit, anything that explains the statements."></textarea>
+        </label>
+      </Card>
+    </section>
+
+    <section data-step="documents" hidden class="flex flex-col gap-5">
+      <Card title="Documents" description={`${UPLOAD_TYPE_LABEL}, up to ${formatMb(MAX_UPLOAD_FILE_BYTES)} each. Files are checked as you add them.`}>
+        <div class="flex flex-col gap-5">
+          {docSections.map((s) => (
+            <div class="flex flex-col gap-2" data-doc-section={s.kind}>
+              <div class="flex items-baseline justify-between gap-3">
+                <p class="text-sm font-medium">{FILE_KIND_LABEL[s.kind]}{s.required ? "" : <span class="font-normal text-muted-foreground"> (optional)</span>}</p>
+                <span class="text-xs text-muted-foreground" data-doc-count></span>
+              </div>
+              <p class="text-xs text-muted-foreground">{s.help}</p>
+              <div data-upload-dropzone role="button" tabindex="0" class="flex cursor-pointer items-center gap-3 border-2 border-dashed border-border px-4 py-3 hover:border-primary data-[dragging]:border-primary data-[dragging]:bg-primary/5">
+                <Upload class="size-4 shrink-0 text-muted-foreground" aria-hidden="true" />
+                <span class="text-sm">Drop files here or click to choose</span>
+                <input data-upload-input type="file" multiple accept={UPLOAD_ACCEPT} class="sr-only" tabindex="-1" aria-hidden="true" />
+              </div>
+              <ul data-file-list class="divide-y divide-border empty:hidden"></ul>
+            </div>
+          ))}
+        </div>
+      </Card>
+    </section>
+
+    <section data-step="review" hidden class="flex flex-col gap-5">
+      <Card title="Review" description="Check the summary. You can go back to any step.">
+        <dl data-review class="grid grid-cols-1 gap-x-6 gap-y-2 text-sm sm:grid-cols-2"></dl>
+        <Checkbox id="sb-consent" name="consent" required labelClass="items-start [&>span:first-child]:mt-0.5">
+          <span class="text-sm">The merchant has authorised this submission and I have disclosed every open position. Submitting under the <a href="/partner/terms" class="underline" target="_blank" rel="noopener">partner terms</a>.</span>
+        </Checkbox>
+      </Card>
+    </section>
+
+    <p data-form-error hidden role="alert" class="text-sm text-destructive"></p>
+
+    <div class="flex flex-wrap items-center justify-between gap-3 border-t border-border pt-4">
+      <Button type="button" variant="outline" data-prev>Back</Button>
+      <div class="flex items-center gap-3">
+        <span data-draft-status class="text-xs text-muted-foreground"></span>
+        <Button type="button" data-next>Continue</Button>
+        <Button type="submit" data-submit hidden><Check class="size-4" aria-hidden="true" /> Submit to review</Button>
+      </div>
+    </div>
+  </form>
+</PartnerLayout>
+
+<script>
+  import "@/lib/portal/submit";
+</script>
