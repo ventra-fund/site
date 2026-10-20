@@ -1,0 +1,42 @@
+---
+import PageShell from "@/components/page/PageShell.astro";
+import PageHero from "@/components/page/PageHero.astro";
+import Section from "@/components/page/Section.astro";
+import NumberedGrid from "@/components/page/NumberedGrid.astro";
+import Photo from "@/components/page/Photo.astro";
+import CtaBand from "@/components/page/CtaBand.astro";
+import { leadership, values } from "@/data/company";
+import LinkedIn from "@/components/LinkedIn.astro";
+---
+
+<PageShell title="Leadership">
+  <PageHero eyebrow="About us" title="Meet our leadership">
+    <p>Experienced operators, lenders and technologists who've spent their careers working with small businesses.</p>
+  </PageHero>
+
+  <Section>
+    <ul class="grid list-none grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-3">
+      {leadership.map((person) => (
+        <li class="flex flex-col gap-4">
+          <Photo photo={person.photo} alt={`${person.name}, ${person.title}`} sizes="(min-width: 1024px) 22rem, (min-width: 640px) calc(50vw - 3rem), calc(100vw - 2rem)" class="aspect-square" />
+          <div class="flex flex-col gap-1">
+            <h2 class="text-xl font-bold text-foreground">{person.name}</h2>
+            <p class="text-base font-semibold text-primary">{person.title}</p>
+          </div>
+          {person.quote && <blockquote class="border-l-4 border-primary pl-4 text-base text-muted-foreground">"{person.quote}"</blockquote>}
+          {person.linkedin && (
+            <a href={person.linkedin} class="inline-flex items-center gap-2 text-sm font-semibold text-primary underline-offset-4 hover:underline">
+              <LinkedIn class="size-4" />LinkedIn<span class="sr-only"> profile of {person.name}</span>
+            </a>
+          )}
+        </li>
+      ))}
+    </ul>
+  </Section>
+
+  <Section title="How we lead" tone="muted">
+    <NumberedGrid items={values} columns={4} />
+  </Section>
+
+  <CtaBand title="Want to join us?" text="We're always looking for people who care about small businesses." href="/careers" label="View careers" />
+</PageShell>

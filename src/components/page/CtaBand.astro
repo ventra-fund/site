@@ -1,0 +1,28 @@
+---
+// Closing call to action, the same on every content page unless the copy is overridden.
+import { Button } from "@/ui/button";
+import HandCoins from "@lucide/astro/icons/hand-coins";
+
+interface Props {
+  title?: string;
+  text?: string;
+  href?: string;
+  label?: string;
+}
+
+const {
+  title = "Ready to see your options?",
+  text = "Checking your eligibility takes a few minutes and won't affect your credit score. A funding advisor will walk through the offers you qualify for, with no obligation to accept.",
+  href = "/apply",
+  label = "Apply for Funding",
+} = Astro.props;
+---
+
+<section class="mx-auto w-[calc(100%-2rem)] max-w-6xl md:w-[calc(100%-8rem)]">
+  <div class="flex flex-col items-center gap-6 bg-accent px-6 py-16 text-center text-accent-foreground md:px-16">
+    <HandCoins class="size-12" stroke-width={1.5} aria-hidden="true" />
+    <h2 class="text-3xl font-bold sm:text-4xl">{title}</h2>
+    <p class="max-w-2xl text-lg opacity-90">{text}</p>
+    <Button as="a" href={href} size="lg" variant="secondary" class="rounded-full px-6 font-semibold">{label}</Button>
+  </div>
+</section>

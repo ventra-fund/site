@@ -1,0 +1,21 @@
+---
+// Icon, title and a line of text per item, in a row of up to three (or four with `columns={4}`).
+interface Props {
+  items: { icon: any; title: string; text: string }[];
+  columns?: 3 | 4;
+}
+
+const { items, columns = 3 } = Astro.props;
+---
+
+<ul class:list={["grid list-none grid-cols-1 gap-8 sm:grid-cols-2", columns === 4 ? "lg:grid-cols-4" : "lg:grid-cols-3"]}>
+  {items.map(({ icon: Icon, title, text }) => (
+    <li class="flex flex-col gap-3">
+      <span class="flex size-14 items-center justify-center rounded-full bg-accent/10 text-accent">
+        <Icon class="size-7" stroke-width={1.5} aria-hidden="true" />
+      </span>
+      <h3 class="text-xl font-bold text-foreground">{title}</h3>
+      <p class="text-base text-muted-foreground">{text}</p>
+    </li>
+  ))}
+</ul>

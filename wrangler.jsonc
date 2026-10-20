@@ -129,5 +129,46 @@
 	],
 	"observability": {
 		"enabled": true
+	},
+	// Worker Previews (`wrangler preview`, and Workers Builds on non-production branches). Previews
+	// inherit none of the bindings above, so each is redeclared here against staging copies: test
+	// applications, uploads and admin sign-ins never touch production data. Apply schema changes to
+	// the staging databases with `pnpm migrate:preview`. Secrets are separate too:
+	// `wrangler preview base-config secret put NAME`.
+	"previews": {
+		// Astro sessions. Production's SESSION is added by the adapter and provisioned by `wrangler
+		// deploy`, but `wrangler preview` won't provision one, so it needs a real namespace id here
+		// (declaring it also stops the adapter adding an id-less one).
+		"kv_namespaces": [
+			{ "binding": "SESSION", "id": "f4387630a4ed4b88a3384c33a3244ca0" }
+		],
+		// Same limits as production, on their own counters (namespace ids 2xxx vs 1xxx).
+		"ratelimits": [
+			{ "name": "FORM_RATE_LIMIT", "namespace_id": "2001", "simple": { "limit": 2, "period": 60 } },
+			{ "name": "UPLOAD_RATE_LIMIT", "namespace_id": "2002", "simple": { "limit": 4, "period": 60 } },
+			{ "name": "STATUS_RATE_LIMIT", "namespace_id": "2003", "simple": { "limit": 30, "period": 60 } },
+			{ "name": "DRAFT_RATE_LIMIT", "namespace_id": "2004", "simple": { "limit": 12, "period": 60 } },
+			{ "name": "SIGN_RATE_LIMIT", "namespace_id": "2005", "simple": { "limit": 10, "period": 60 } },
+			{ "name": "CONTACT_RATE_LIMIT", "namespace_id": "2006", "simple": { "limit": 12, "period": 60 } },
+			{ "name": "ADDRESS_RATE_LIMIT", "namespace_id": "2007", "simple": { "limit": 60, "period": 60 } }
+		],
+		"r2_buckets": [
+			{ "binding": "DOCUMENTS", "bucket_name": "ventra-fund-documents-preview" },
+			{ "binding": "ventra_fund_documents", "bucket_name": "ventra-fund-documents-preview" }
+		],
+		"d1_databases": [
+			{
+				"binding": "AUTH_DB",
+				"database_name": "ventra-fund-auth-preview",
+				"database_id": "4ba5639a-c034-4de0-9fa0-3c7536063583",
+				"migrations_dir": "migrations"
+			},
+			{
+				"binding": "DRAFTS_DB",
+				"database_name": "ventra-fund-drafts-preview",
+				"database_id": "781de14e-05b8-4b41-851d-ede5846692ce",
+				"migrations_dir": "migrations-drafts"
+			}
+		]
 	}
 }

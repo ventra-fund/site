@@ -1,0 +1,43 @@
+---
+// Top of a content page: eyebrow, H1, intro (slot), up to two calls to action, and an optional photo
+// beside it on wide screens. Pass four photos for a 2x2 collage instead.
+import { Button } from "@/ui/button";
+import Photo from "./Photo.astro";
+import type { Photo as PhotoData } from "@/data/photos";
+
+interface Props {
+  eyebrow?: string;
+  title: string;
+  cta?: { href: string; label: string };
+  secondary?: { href: string; label: string };
+  /** Omit for a text-only hero. */
+  image?: PhotoData | PhotoData[];
+  class?: string;
+}
+
+const { eyebrow, title, cta, secondary, image, class: className } = Astro.props;
+// The photo column is 2/5 of the max-w-6xl header from lg up, full width below.
+const sizes = "(min-width: 1024px) 27rem, (min-width: 768px) calc(100vw - 8rem), calc(100vw - 2rem)";
+const collageSizes = "(min-width: 1024px) 14rem, (min-width: 768px) calc(50vw - 4rem), calc(50vw - 1rem)";
+---
+
+<header class:list={["mx-auto grid w-[calc(100%-2rem)] max-w-6xl items-center gap-10 md:w-[calc(100%-8rem)]", image && "lg:grid-cols-[3fr_2fr]", className]}>
+  <div class="flex flex-col gap-5">
+    {eyebrow && <p class="text-sm font-semibold uppercase tracking-widest text-primary">{eyebrow}</p>}
+    <h1 class="text-3xl font-bold text-accent sm:text-5xl">{title}</h1>
+    <div class="flex max-w-2xl flex-col gap-4 text-lg text-muted-foreground">
+      <slot />
+    </div>
+    {(cta || secondary) && (
+      <div class="mt-2 flex flex-wrap gap-3">
+        {cta && <Button as="a" href={cta.href} size="lg">{cta.label}</Button>}
+        {secondary && <Button as="a" href={secondary.href} size="lg" variant="outline">{secondary.label}</Button>}
+      </div>
+    )}
+  </div>
+  {Array.isArray(image) ? (
+    <div class="grid grid-cols-2 gap-2">
+      {image.map((photo) => <Photo photo={photo} sizes={collageSizes} eager />)}
+    </div>
+  ) : image && <Photo photo={image} sizes={sizes} eager />}
+</header>

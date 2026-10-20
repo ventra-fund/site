@@ -1,0 +1,55 @@
+---
+import PageShell from "@/components/page/PageShell.astro";
+import PageHero from "@/components/page/PageHero.astro";
+import Section from "@/components/page/Section.astro";
+import NumberedGrid from "@/components/page/NumberedGrid.astro";
+import CheckList from "@/components/page/CheckList.astro";
+import CtaBand from "@/components/page/CtaBand.astro";
+import { partnerPrograms, type PartnerProgram } from "@/data/partner-programs";
+
+export function getStaticPaths() {
+  return partnerPrograms.map((program) => ({ params: { program: program.slug }, props: { program } }));
+}
+
+interface Props {
+  program: PartnerProgram;
+}
+
+const { program } = Astro.props;
+const others = partnerPrograms.filter((p) => p.slug !== program.slug);
+---
+
+<PageShell title={program.name}>
+  <PageHero eyebrow={`Partners · ${program.name}`} title={program.heading} cta={{ href: "/partner", label: "Become a partner" }} secondary={{ href: "/partner/login", label: "Partner login" }} image={program.image}>
+    <p>{program.intro}</p>
+  </PageHero>
+
+  <Section title="Who it's for" tone="muted">
+    <CheckList items={program.whoFor} columns={2} />
+  </Section>
+
+  <Section title="Why partner with Ventra Fund">
+    <CheckList items={program.benefits} columns={2} />
+  </Section>
+
+  <Section title="How it works" tone="muted">
+    <NumberedGrid items={program.steps} columns={4} />
+  </Section>
+
+  {others.length > 0 && (
+    <Section title="Other ways to partner">
+      <ul class="grid list-none grid-cols-1 gap-4 md:grid-cols-2">
+        {others.map((o) => (
+          <li>
+            <a href={`/partners/${o.slug}`} class="flex h-full flex-col gap-2 border border-border bg-card p-6 transition-colors hover:border-primary">
+              <span class="text-xl font-bold text-foreground">{o.name}</span>
+              <span class="text-base text-muted-foreground">{o.intro}</span>
+            </a>
+          </li>
+        ))}
+      </ul>
+    </Section>
+  )}
+
+  <CtaBand title="Want to become a partner?" text="Tell us about your business and the clients you serve. We'll be in touch within one business day." href="/partner" label="Get started" />
+</PageShell>

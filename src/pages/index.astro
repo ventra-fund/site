@@ -1,41 +1,37 @@
 ---
 import Layout from "@/layouts/Layout.astro";
-import StepsBackground from "@/components/StepsBackground.astro";
 import StepsAccent from "@/components/StepsAccent.astro";
 import Star from "@/components/Star.astro";
 import Footer from "@/components/Footer.astro";
 import { Button } from "@/ui/button";
 import { Image } from "astro:assets";
+import { reviews } from "@/data/reviews";
 // Photos live in src/assets so Astro resizes/re-encodes them at build time (see astro.config.mjs
 // `imageService: "compile"`): the outputs in dist/_astro are plain static files, no runtime work.
 // `widths` caps the candidates at the source width; `sizes` mirrors each slot's CSS width.
-import businesswoman from "@/assets/media/businesswoman.webp";
+import growthSteps from "@/assets/media/growth-steps.jpg";
 import handshake from "@/assets/media/business-handshake.jpeg";
 import hvac from "@/assets/media/hvac.jpeg";
+import heroImg from "@/assets/media/vf-heroimg.webp";
 import { BadgeDollarSign, ChevronLeft, ChevronRight, CircleCheck, CircleDollarSign, ClipboardCheck, Quote, Sheet, ShieldCheck, ToolCase, Timer, TrendingUp, UsersRound, Wallet } from "@lucide/astro";
 
-const reviews = [
-  { rating: 5, name: "Sandra K.", when: "2 days ago", title: "Applied Monday, funded Wednesday", body: "Had a big payroll week and an old tax bill land at the same time. Ventra covered both without the endless paperwork I expected. Now I just pay a fixed amount each week and it's easy to plan around." },
-  { rating: 5, name: "Marcus T.", when: "5 days ago", title: "Finally a lender that answers the phone", body: "Every other company kept us waiting for weeks or called back to resell us. The rep explained the flat fee upfront and helped schedule payments around our slower months." },
-  { rating: 4, name: "Priya S.", when: "6 days ago", title: "Good rates, honest terms", body: "Funding cleared quickly for our inventory order and the weekly repayments are easy to budget. Took a day longer to hit our account than promised, but the true cost was clear from day one." },
-  { rating: 5, name: "Dan & Lyn M.", when: "1 week ago", title: "Kept our bakery running through summer", body: "Our delivery van gave out right before our busiest season. Ventra approved us in 24 hours and we had a replacement on the road the next week. Can't recommend them enough." },
-  { rating: 4, name: "Renee C.", when: "2 weeks ago", title: "Rescued a late-paying client's contract", body: "A client paid late and we nearly missed payroll. The application took ten minutes and the decision came back the same day. Only downer is the fixed weekly payment day was a bit of a squeeze." },
-];
 ---
 
 <Layout>
 <main>
-  <!-- The steps background spans 210vh behind both the hero and the content that follows it -->
-  <div class="relative isolate overflow-hidden bg-background">
-    <StepsBackground class="absolute inset-x-0 top-0 -z-10 w-full h-[210vh]" />
-    <div class="w-full h-[120vh] flex flex-col items-center mb-50 px-6">
-      <h1 class="text-center text-3xl sm:text-5xl pt-50 mx-auto">Working capital<br>built for small businesses</h1>
-      <p class="mx-auto text-center py-5 text-lg">Boost cash flow, inventory, operations, and more with Ventra Fund.</p>
-    </div>
-    
-  </div>
-  <section class="relative z-10 mx-auto grid w-[calc(100%-2rem)] max-w-[1300px] mt-[-70vh] mb-[4rem] grid-cols-1 md:min-h-176 md:grid-cols-[1fr_2fr] md:w-[calc(100%-8rem)]">
-    <Image class="h-80 w-full bg-muted object-cover md:h-0 md:min-h-full" src={businesswoman} alt="Small business owner" widths={[400, 600]} sizes="(min-width: 768px) calc((100vw - 8rem) / 3), calc(100vw - 2rem)" format="webp" quality={75} loading="lazy" decoding="async" />
+  <!-- Full-bleed photo hero that starts under the fixed nav (h-18, plus the h-10 utility bar from xl up) and fills
+       the rest of the first screen. The photo is decorative; bg-black shows until it loads, and the scrim keeps the
+       white copy readable over the glowing VF mark. -->
+  <section class="relative isolate mt-18 flex min-h-[calc(100svh-4.5rem)] flex-col items-center justify-center bg-black px-6 py-24 text-center text-white xl:mt-28 xl:min-h-[calc(100svh-7rem)]">
+    <Image class="absolute inset-0 -z-10 size-full object-cover" src={heroImg} alt="" widths={[640, 1280, 1920, 2560]} sizes="100vw" format="webp" quality={75} loading="eager" fetchpriority="high" decoding="async" />
+    <div class="absolute inset-0 -z-10 bg-black/40" aria-hidden="true"></div>
+    <h1 class="text-4xl font-bold tracking-tight sm:text-6xl lg:text-7xl">Working <span class="text-chart-1">capital.</span><br>Built for <span class="text-chart-1">growth.</span></h1>
+    <p class="mt-6 max-w-xl text-lg text-white/80">Fast, flexible funding for cash flow, inventory, payroll, and more. Apply in minutes and get a decision in as fast as 24 hours.</p>
+    <Button as="a" href="/apply" size="lg" variant="outline" class="mt-10 h-12 border-2 border-white bg-transparent px-8 text-base font-semibold text-white hover:border-white hover:bg-white hover:text-black">Apply for funding</Button>
+  </section>
+
+  <section class="mx-auto grid w-[calc(100%-2rem)] max-w-[1300px] my-[4rem] grid-cols-1 md:min-h-176 md:grid-cols-[1fr_2fr] md:w-[calc(100%-8rem)]">
+    <Image class="h-80 w-full bg-muted object-cover md:h-0 md:min-h-full" src={growthSteps} alt="Staircase rising diagonally up the face of a teal glass building" widths={[400, 600, 900]} sizes="(min-width: 768px) calc((100vw - 8rem) / 3), calc(100vw - 2rem)" format="webp" quality={75} loading="lazy" decoding="async" />
     <div class="flex flex-col gap-8 bg-secondary px-6 py-12 md:px-16 md:py-20">
       <h2 class="text-4xl font-bold text-accent md:text-5xl">Business financing to fuel your growth.</h2>
       <p class="max-w-xl text-lg text-secondary-foreground">Apply for working capital with Ventra Fund to cover inventory, payroll, marketing, and more, all from one simple application.</p>

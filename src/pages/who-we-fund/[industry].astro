@@ -1,0 +1,78 @@
+---
+import PageShell from "@/components/page/PageShell.astro";
+import PageHero from "@/components/page/PageHero.astro";
+import Section from "@/components/page/Section.astro";
+import NumberedGrid from "@/components/page/NumberedGrid.astro";
+import CheckList from "@/components/page/CheckList.astro";
+import Photo from "@/components/page/Photo.astro";
+import CtaBand from "@/components/page/CtaBand.astro";
+import { industries, type Industry } from "@/data/industries";
+import { productPages } from "@/data/product-pages";
+import { minimumRequirements } from "@/data/funding-products";
+
+export function getStaticPaths() {
+  return industries.map((industry) => ({ params: { industry: industry.slug }, props: { industry } }));
+}
+
+interface Props {
+  industry: Industry;
+}
+
+const { industry } = Astro.props;
+const recommended = industry.products.map((slug) => {
+  const page = productPages.find((p) => p.slug === slug);
+  if (!page) throw new Error(`Industry "${industry.slug}" recommends unknown product "${slug}"`);
+  return page;
+});
+---
+
+<PageShell title={`${industry.name} financing`}>
+  <PageHero eyebrow={`Who we fund · ${industry.name}`} title={industry.heading} cta={{ href: "/apply", label: "Apply for Funding" }} secondary={{ href: "/who-we-fund", label: "All industries" }} image={industry.image}>
+    <p>{industry.intro}</p>
+  </PageHero>
+
+  <Section title={`Challenges we help ${industry.audience} solve`}>
+    <NumberedGrid items={industry.challenges} />
+  </Section>
+
+  <Section tone="muted">
+    <div class="grid items-center gap-10 lg:grid-cols-2">
+      <Photo photo={industry.usesImage} class="aspect-square" />
+      <div class="flex flex-col gap-6">
+        <h2 class="text-3xl font-bold text-accent sm:text-4xl">How {industry.audience} use our funding</h2>
+        <CheckList items={industry.uses} />
+        <p class="border-l-4 border-primary pl-5 text-lg text-muted-foreground">{industry.example}</p>
+      </div>
+    </div>
+  </Section>
+
+  <Section title="Recommended options" intro="Every business is different. A funding advisor will help you compare these and anything else you qualify for.">
+    <ul class="grid list-none grid-cols-1 gap-4 md:grid-cols-3">
+      {recommended.map((p) => (
+        <li>
+          <a href={`/capital/${p.slug}`} class="flex h-full flex-col gap-3 border border-border bg-card p-6 transition-colors hover:border-primary">
+            <span class="text-sm text-muted-foreground">{p.product.category}</span>
+            <span class="text-xl font-bold text-foreground">{p.product.title}</span>
+            <span class="text-base text-muted-foreground">{p.product.description}</span>
+            <span class="mt-auto pt-2 text-sm font-semibold text-foreground">{p.product.amountLabel}: {p.product.amount}</span>
+          </a>
+        </li>
+      ))}
+    </ul>
+  </Section>
+
+  <Section title="Minimum requirements" tone="muted">
+    <CheckList
+      columns={2}
+      items={[
+        `At least ${minimumRequirements.timeInBusiness.replace("+", "")} in business`,
+        `${minimumRequirements.monthlyRevenue} in average monthly revenue`,
+        `A personal credit score of ${minimumRequirements.creditScore} or higher`,
+        "An active business checking account",
+      ]}
+    />
+    <p class="text-sm text-muted-foreground italic">Requirements vary by product; these are the lowest across our options.</p>
+  </Section>
+
+  <CtaBand />
+</PageShell>

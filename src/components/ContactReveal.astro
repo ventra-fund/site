@@ -1,12 +1,13 @@
 ---
 // One contact detail behind the anti-scrape reveal (docs/contact-reveal.md). The page never holds
 // the value: "Show" passes Turnstile and asks /api/contact/reveal for vector outlines, drawn here on a
-// canvas in the surrounding text's size and colour. Copy / Call each pass Turnstile again and fetch
-// the text only on that click. Multi-instance: every [data-contact-reveal] on the page is wired by
-// the one bundled script below. Turnstile loads on the first click, not with the page.
+// canvas in the surrounding text's size and colour. The same response carries the text, held only in
+// this script's memory, so Copy / Call need no second check. Multi-instance: every [data-contact-reveal] on the page is wired by
+// the one bundled script below. Turnstile loads on the first click, not with the page, and lives in a
+// popover anchored to the detail, which opens for "Checking…" and any challenge that needs a person.
 import Turnstile from '@/components/Turnstile.astro';
 import { CONTACT_META, type ContactKey } from '@/lib/contact/keys';
-import Eye from '@lucide/astro/icons/eye';
+import Check from '@lucide/astro/icons/check';
 import Copy from '@lucide/astro/icons/copy';
 import Mail from '@lucide/astro/icons/mail';
 import Phone from '@lucide/astro/icons/phone';
@@ -23,19 +24,31 @@ const btn = 'inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-sm tex
 ---
 
 <span data-contact-reveal data-contact={contact}
-  class:list={['inline-flex flex-wrap items-center gap-x-2 gap-y-1 align-middle', className]}>
-  <button type="button" data-cr-show class="inline-flex items-center gap-1 font-medium text-accent underline underline-offset-4 hover:no-underline disabled:opacity-50" aria-label={`Show our ${noun}`}>
-    <Eye size={16} aria-hidden="true" /> Show {meta.kind === 'email' ? 'email' : 'number'}
+  class:list={['inline', className]}>
+  <!-- Inline and inheriting font and colour, so "Show number" reads as part of the sentence or link row it sits in. -->
+  <button type="button" data-cr-show class="inline cursor-pointer p-0 [font:inherit] text-inherit underline decoration-dotted underline-offset-4 hover:decoration-solid disabled:opacity-50" aria-label={`Show our ${noun}`}>
+    Show {meta.kind === 'email' ? 'email' : 'number'}
   </button>
-  <canvas data-cr-canvas hidden role="img" aria-label={`Our ${noun}, shown as an image. Use the buttons beside it to copy it or ${meta.kind === 'email' ? 'write to us' : 'call'}.`}></canvas>
-  <span data-cr-actions hidden class="inline-flex items-center gap-1">
-    <button type="button" data-cr-copy class={btn} aria-label={`Copy ${noun}`}><Copy size={14} aria-hidden="true" /> Copy</button>
+  <canvas data-cr-canvas hidden class="inline" role="img" aria-label={`Our ${noun}, shown as an image. Use the buttons beside it to copy it or ${meta.kind === 'email' ? 'write to us' : 'call'}.`}></canvas>
+  <span data-cr-actions hidden class="ml-2 inline-flex items-center gap-1 align-middle">
+    <!-- Copy swaps to "Copied" in place for a moment; both faces live in the button so the width barely moves. -->
+    <button type="button" data-cr-copy class={btn} aria-label={`Copy ${noun}`}>
+      <span data-cr-copy-idle class="inline-flex items-center gap-1"><Copy size={14} aria-hidden="true" /> Copy</span>
+      <span data-cr-copy-done class="inline-flex items-center gap-1" hidden><Check size={14} aria-hidden="true" /> Copied</span>
+    </button>
     {meta.kind === 'email'
       ? <button type="button" data-cr-open class={btn} aria-label="Write an email"><Mail size={14} aria-hidden="true" /> Email</button>
       : <button type="button" data-cr-open class={btn} aria-label="Call this number"><Phone size={14} aria-hidden="true" /> Call</button>}
   </span>
-  <span data-cr-status role="status" class="text-sm text-muted-foreground" hidden></span>
-  <Turnstile action="contact-reveal" class="block w-full empty:hidden" />
+  <span data-cr-note role="status" class="ml-2 text-sm text-muted-foreground" hidden></span>
+  <!-- Native popover, not @/ui/popover: that one moves its panel to <body> on open, and moving the
+       Turnstile iframe reloads it, losing its token. The top layer also clears the fixed site nav.
+       Positioned by the script below; `display` only while open, so the UA's closed display:none wins. -->
+  <span data-cr-popover popover="auto"
+    class="inset-auto m-0 w-max max-w-[min(22rem,calc(100vw-1rem))] flex-col gap-3 rounded-lg bg-popover p-4 text-left text-sm font-normal leading-normal text-popover-foreground shadow-md ring-1 ring-foreground/10 [&:popover-open]:flex">
+    <span data-cr-status role="status" class="text-muted-foreground">Checking…</span>
+    <Turnstile action="contact-reveal" class="block empty:hidden" />
+  </span>
 </span>
 
 <script>
@@ -43,20 +56,23 @@ const btn = 'inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-sm tex
 
   interface Outline { d: string; width: number; height: number; baseline: number; unitsPerEm: number }
 
-  async function reveal(key: string, format: 'outline' | 'text', token: string) {
+  interface Revealed { outline: Outline; text: string; href: string }
+
+  async function reveal(key: string, token: string): Promise<Revealed> {
     const res = await fetch('/api/contact/reveal', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ key, format, token }),
+      body: JSON.stringify({ key, token }),
     });
     // A WAF challenge (no pre-clearance cookie) answers with an HTML page, not JSON.
     const data = await res.json().catch(() => null) as { outline?: Outline; text?: string; href?: string; error?: string } | null;
-    if (!res.ok || !data) throw new Error(data?.error ?? `http_${res.status}`);
-    return data;
+    if (!res.ok || !data?.outline || !data.text || !data.href) throw new Error(data?.error ?? `http_${res.status}`);
+    return data as Revealed;
   }
 
   function draw(canvas: HTMLCanvasElement, outline: Outline) {
-    const style = getComputedStyle(canvas.parentElement ?? canvas);
+    // The canvas inherits the surrounding text's size and colour like any inline element.
+    const style = getComputedStyle(canvas);
     const fontSize = parseFloat(style.fontSize) || 16;
     const scale = fontSize / outline.unitsPerEm;
     const dpr = window.devicePixelRatio || 1;
@@ -66,6 +82,9 @@ const btn = 'inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-sm tex
     canvas.height = Math.ceil(h * dpr);
     canvas.style.width = `${w}px`;
     canvas.style.height = `${h}px`;
+    // Sit the drawn baseline on the text's baseline: an inline replaced element's bottom edge rests on
+    // the baseline, so drop it by the outline's descent.
+    canvas.style.verticalAlign = `${-((outline.height - outline.baseline) * scale)}px`;
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
     ctx.setTransform(dpr * scale, 0, 0, dpr * scale, 0, 0);
@@ -82,80 +101,121 @@ const btn = 'inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-sm tex
     return 'Could not verify. Please try again.';
   }
 
+  // Below the detail, left edges aligned, kept inside the viewport; above it when there's no room below.
+  function place(popover: HTMLElement, anchor: HTMLElement) {
+    const gap = 8;
+    const a = anchor.getBoundingClientRect();
+    const { offsetWidth: w, offsetHeight: h } = popover;
+    const left = Math.min(Math.max(gap, a.left), window.innerWidth - w - gap);
+    const below = a.bottom + gap;
+    const top = below + h > window.innerHeight - gap && a.top - gap - h >= gap ? a.top - gap - h : below;
+    popover.style.position = 'fixed';
+    popover.style.left = `${Math.max(gap, left)}px`;
+    popover.style.top = `${top}px`;
+  }
+
   function init(root: HTMLElement) {
     const key = root.dataset.contact!;
     const showBtn = root.querySelector<HTMLButtonElement>('[data-cr-show]')!;
     const canvas = root.querySelector<HTMLCanvasElement>('[data-cr-canvas]')!;
     const actions = root.querySelector<HTMLElement>('[data-cr-actions]')!;
     const copyBtn = root.querySelector<HTMLButtonElement>('[data-cr-copy]')!;
+    const copyIdle = copyBtn.querySelector<HTMLElement>('[data-cr-copy-idle]')!;
+    const copyDone = copyBtn.querySelector<HTMLElement>('[data-cr-copy-done]')!;
+    const copyLabel = copyBtn.getAttribute('aria-label')!;
     const openBtn = root.querySelector<HTMLButtonElement>('[data-cr-open]')!;
-    const status = root.querySelector<HTMLElement>('[data-cr-status]')!;
-    const widget = root.querySelector('turnstile-widget')!;
-    let outline: Outline | null = null;
+    const note = root.querySelector<HTMLElement>('[data-cr-note]')!;
+    const popover = root.querySelector<HTMLElement>('[data-cr-popover]')!;
+    const status = popover.querySelector<HTMLElement>('[data-cr-status]')!;
+    const widget = popover.querySelector('turnstile-widget')!;
+    // Set once Show succeeds; never written to the DOM.
+    let revealed: Revealed | null = null;
+    let busy = false;
 
-    const say = (msg: string) => { status.textContent = msg; status.hidden = !msg; };
-    const fail = (err: unknown) => say(messageFor(err));
-
-    // Each text request spends a token; start solving the next one right away.
-    const fetchText = async () => {
-      const token = await awaitTurnstileToken(widget);
-      try { return await reveal(key, 'text', token); } finally { refreshTurnstile(widget); }
+    const reposition = () => place(popover, root);
+    // The Turnstile widget grows when it shows a challenge, so follow its size as well as scrolling.
+    const resizes = new ResizeObserver(reposition);
+    popover.addEventListener('toggle', (event) => {
+      if ((event as ToggleEvent).newState === 'open') {
+        reposition();
+        resizes.observe(popover);
+        window.addEventListener('scroll', reposition, { passive: true });
+        window.addEventListener('resize', reposition);
+      } else {
+        resizes.disconnect();
+        window.removeEventListener('scroll', reposition);
+        window.removeEventListener('resize', reposition);
+      }
+    });
+    const openPopover = (msg: string) => {
+      status.textContent = msg;
+      if (!popover.matches(':popover-open')) popover.showPopover();
+    };
+    const closePopover = () => { if (popover.matches(':popover-open')) popover.hidePopover(); };
+    // Errors stay up in the popover, where the visitor was looking, until dismissed.
+    const fail = (err: unknown) => openPopover(messageFor(err));
+    const flash = (msg: string) => {
+      note.textContent = msg;
+      note.hidden = false;
+      setTimeout(() => { note.hidden = true; }, 2000);
+    };
+    // Success shows on the button itself: "Copied" with a check, then back to "Copy".
+    let copiedTimer: ReturnType<typeof setTimeout> | undefined;
+    const showCopied = () => {
+      copyIdle.hidden = true;
+      copyDone.hidden = false;
+      copyBtn.setAttribute('aria-label', 'Copied');
+      clearTimeout(copiedTimer);
+      copiedTimer = setTimeout(() => {
+        copyIdle.hidden = false;
+        copyDone.hidden = true;
+        copyBtn.setAttribute('aria-label', copyLabel);
+      }, 2000);
     };
 
+
     showBtn.addEventListener('click', async () => {
-      showBtn.disabled = true;
-      say('Checking…');
+      // Dismissing the popover doesn't cancel a check in progress; a second click brings it back.
+      if (busy) return openPopover(status.textContent || 'Checking…');
+      busy = true;
+      openPopover('Checking…');
       try {
         const token = await awaitTurnstileToken(widget);
-        const data = await reveal(key, 'outline', token);
-        refreshTurnstile(widget);
-        outline = data.outline!;
-        draw(canvas, outline);
+        closePopover();
+        try {
+          revealed = await reveal(key, token);
+        } catch (err) {
+          // The token is spent; start solving a fresh one for the retry.
+          refreshTurnstile(widget);
+          throw err;
+        }
+        draw(canvas, revealed.outline);
         showBtn.hidden = true;
         canvas.hidden = false;
         actions.hidden = false;
-        say('');
       } catch (err) {
-        refreshTurnstile(widget);
-        showBtn.disabled = false;
         fail(err);
+      } finally {
+        busy = false;
       }
     });
 
     copyBtn.addEventListener('click', async () => {
-      copyBtn.disabled = true;
+      if (!revealed) return;
       try {
-        // ClipboardItem with a pending promise keeps Safari's user-gesture window open across the
-        // Turnstile wait and the fetch; plain writeText is the fallback elsewhere.
-        const pending = fetchText().then((d) => d.text!);
-        if (typeof ClipboardItem !== 'undefined' && navigator.clipboard?.write) {
-          await navigator.clipboard.write([new ClipboardItem({ 'text/plain': pending.then((t) => new Blob([t], { type: 'text/plain' })) })]);
-        } else {
-          await navigator.clipboard.writeText(await pending);
-        }
-        say('Copied.');
-        setTimeout(() => say(''), 2000);
-      } catch (err) {
-        fail(err);
-      } finally {
-        copyBtn.disabled = false;
+        await navigator.clipboard.writeText(revealed.text);
+        showCopied();
+      } catch {
+        flash("Couldn't copy. Please try again.");
       }
     });
 
-    openBtn.addEventListener('click', async () => {
-      openBtn.disabled = true;
-      try {
-        const { href } = await fetchText();
-        if (href) window.location.href = href;
-      } catch (err) {
-        fail(err);
-      } finally {
-        openBtn.disabled = false;
-      }
+    openBtn.addEventListener('click', () => {
+      if (revealed) window.location.href = revealed.href;
     });
 
     // Redraw in the new text colour when the theme flips.
-    new MutationObserver(() => { if (outline) draw(canvas, outline); })
+    new MutationObserver(() => { if (revealed) draw(canvas, revealed.outline); })
       .observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
   }
 

@@ -1,0 +1,54 @@
+---
+import PageShell from "@/components/page/PageShell.astro";
+import PageHero from "@/components/page/PageHero.astro";
+import Section from "@/components/page/Section.astro";
+import NumberedGrid from "@/components/page/NumberedGrid.astro";
+import CheckList from "@/components/page/CheckList.astro";
+import Photo from "@/components/page/Photo.astro";
+import { photos } from "@/data/photos";
+import CtaBand from "@/components/page/CtaBand.astro";
+---
+
+<PageShell title="How it works">
+  <PageHero eyebrow="Why us" title="From application to funding in four steps" cta={{ href: "/apply", label: "Start your application" }} image={photos.deskLaptopNotes}>
+    <p>No business plans, no weeks of back-and-forth. Here's what to expect when you apply with Ventra Fund.</p>
+  </PageHero>
+
+  <Section>
+    <NumberedGrid
+      columns={4}
+      items={[
+        { title: "Apply in minutes", text: "Tell us about your business and connect or upload recent bank statements. It's a soft credit pull, so your score isn't affected." },
+        { title: "Talk to an advisor", text: "A funding advisor reviews your application with you and answers any questions." },
+        { title: "Review your offers", text: "See the amount, total cost and payment schedule for each option, in plain language." },
+        { title: "Get funded", text: "Sign electronically and receive funds as fast as the next business day." },
+      ]}
+    />
+  </Section>
+
+  <Section tone="muted">
+    <div class="grid items-center gap-10 lg:grid-cols-2">
+      <div class="flex flex-col gap-6">
+        <h2 class="text-3xl font-bold text-accent sm:text-4xl">What you'll need</h2>
+        <CheckList
+          items={[
+            "Basic business details: legal name, address and tax ID",
+            "Your last three to four months of business bank statements",
+            "Owner details for anyone with 20% or more ownership",
+            "A business checking account for your deposit",
+          ]}
+        />
+      </div>
+      <Photo photo={photos.ownerReviewingStatements} class="aspect-square" />
+    </div>
+  </Section>
+
+  <Section title="After you're funded">
+    <div class="flex max-w-3xl flex-col gap-4 text-lg text-muted-foreground">
+      <p>Your advisor stays your point of contact. Payments come out automatically on the schedule in your agreement, and you can reach us any time to ask about your balance, an early payoff or additional funding.</p>
+      <p>Customers in good standing can often renew or add funding with a shorter review.</p>
+    </div>
+  </Section>
+
+  <CtaBand />
+</PageShell>

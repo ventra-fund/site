@@ -15,14 +15,15 @@ import { enforceRateLimit } from '@/lib/server/rate-limit';
 //      from a passed Turnstile widget gets through. Needs a zone, so it is absent on workers.dev and
 //      the checks below carry the load there.
 //   2. Same-origin + a per-IP rate limit.
-//   3. Turnstile, verified here: every call, outline or text, needs its own fresh token, minted for
-//      the contact-reveal widget on this site's hostname.
+//   3. Turnstile, verified here: every call needs its own fresh token, minted for the
+//      contact-reveal widget on this site's hostname.
 //   4. Bot Management, when the zone has it: request.cf.botManagement is only populated on plans
 //      with Bot Management, so the check is skipped when it is absent and starts enforcing by
 //      itself once it is present.
 //
-// format 'outline' (the Show button) returns vector outlines for a canvas, never the text.
-// format 'text' (Copy / Call) returns the text, only on that explicit click.
+// One call per Show click returns vector outlines for the canvas plus the text and link, which the
+// page keeps in memory (never in the DOM) so Copy / Call work without another check. Sending the
+// text costs nothing: a separate text request would sit behind the same Turnstile token anyway.
 export const prerender = false;
 
 const TAG = 'contact-reveal';
@@ -33,7 +34,6 @@ const MIN_BOT_SCORE = 30;
 
 const revealRequest = z.object({
   key: z.enum(CONTACT_KEYS),
-  format: z.enum(['outline', 'text']),
   token: z.string().min(1).max(2048),
 });
 
@@ -58,7 +58,7 @@ export const POST: APIRoute = async ({ request }) => {
   if ('response' in read) return read.response;
   const parsed = revealRequest.safeParse(read.payload);
   if (!parsed.success) return reply(400, { error: 'invalid_body' });
-  const { key, format, token } = parsed.data;
+  const { key, token } = parsed.data;
 
   const env = requireSecrets(TAG, { TURNSTILE_SECRET_KEY });
   if ('response' in env) return env.response;
@@ -77,7 +77,7 @@ export const POST: APIRoute = async ({ request }) => {
   const bm = (request as Request & { cf?: { botManagement?: BotManagement } }).cf?.botManagement;
   const botScore = typeof bm?.score === 'number' ? bm.score : null;
   if (bm?.verifiedBot || (botScore !== null && botScore < MIN_BOT_SCORE)) {
-    console.warn(`[${TAG}] blocked`, { key, format, botScore, verifiedBot: !!bm?.verifiedBot });
+    console.warn(`[${TAG}] blocked`, { key, botScore, verifiedBot: !!bm?.verifiedBot });
     return reply(403, { error: 'verification_failed' });
   }
 
@@ -87,9 +87,7 @@ export const POST: APIRoute = async ({ request }) => {
     return reply(503, { error: 'not_configured' });
   }
 
-  return format === 'outline'
-    ? reply(200, { outline: composeOutline(value.display) })
-    : reply(200, { text: value.display, href: value.href });
+  return reply(200, { outline: composeOutline(value.display), text: value.display, href: value.href });
 };
 
 export const ALL: APIRoute = methodNotAllowed;

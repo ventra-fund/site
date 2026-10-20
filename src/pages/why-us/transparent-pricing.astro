@@ -1,0 +1,62 @@
+---
+import PageShell from "@/components/page/PageShell.astro";
+import PageHero from "@/components/page/PageHero.astro";
+import Section from "@/components/page/Section.astro";
+import FeatureTiles from "@/components/page/FeatureTiles.astro";
+import CheckList from "@/components/page/CheckList.astro";
+import CtaBand from "@/components/page/CtaBand.astro";
+import { fundingProducts, productSlug } from "@/data/funding-products";
+import { BadgePercent, FileText, PiggyBank } from "@lucide/astro";
+---
+
+<PageShell title="Transparent pricing">
+  <PageHero eyebrow="Why us" title="Know your full cost before you sign" cta={{ href: "/apply", label: "See your offers" }}>
+    <p>Every offer shows the total amount you'll repay, how often you'll pay and what each payment is. No hidden fees, no surprises at signing.</p>
+  </PageHero>
+
+  <Section>
+    <FeatureTiles
+      items={[
+        { icon: FileText, title: "One clear total", text: "Your offer states the total repayment amount in dollars, not just a buy rate." },
+        { icon: BadgePercent, title: "Comparable rates", text: "We show an estimated APR alongside buy rates so you can compare offers." },
+        { icon: PiggyBank, title: "Pay early, pay less", text: "Eligible products include prepayment discounts that lower your total cost." },
+      ]}
+    />
+  </Section>
+
+  <Section title="Starting buy rates by product" intro="Your actual pricing depends on your business's revenue, history and credit, and is set during review." tone="muted">
+    <div class="overflow-x-auto border border-border bg-card">
+      <table class="w-full border-collapse text-left text-base">
+        <thead class="bg-secondary text-xs font-semibold uppercase tracking-widest text-muted-foreground">
+          <tr><th scope="col" class="p-4">Product</th><th scope="col" class="p-4">Starting cost</th><th scope="col" class="p-4">Repayment</th><th scope="col" class="p-4">Term</th></tr>
+        </thead>
+        <tbody>
+          {fundingProducts.map((p) => (
+            <tr class="border-t border-border">
+              <th scope="row" class="p-4 font-semibold"><a href={`/capital/${productSlug(p)}`} class="text-foreground underline-offset-4 hover:underline">{p.title}</a></th>
+              <td class="p-4 text-muted-foreground">{p.rateCost}</td>
+              <td class="p-4 text-muted-foreground">{p.repayment}</td>
+              <td class="p-4 text-muted-foreground">{p.termLength}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  </Section>
+
+  <Section title="What affects your price">
+    <CheckList
+      columns={2}
+      items={[
+        { title: "Revenue and cash flow", text: "Higher, steadier deposits generally mean better pricing." },
+        { title: "Time in business", text: "A longer track record lowers risk." },
+        { title: "Credit history", text: "Considered alongside revenue, never on its own." },
+        { title: "Existing debt", text: "Open advances or financing positions affect what you can carry." },
+        { title: "Industry", text: "Some industries carry more seasonal or market risk." },
+        { title: "Product and term", text: "Shorter, more flexible products typically cost more." },
+      ]}
+    />
+  </Section>
+
+  <CtaBand />
+</PageShell>

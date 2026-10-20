@@ -59,6 +59,9 @@ const isDevCommand = process.argv[2] === "dev";
 
 // https://astro.build/config
 export default defineConfig({
+  // The production origin, for absolute URLs in the page head (the og:image in src/layouts/Layout.astro).
+  // Previews point there too, which is what a link preview wants.
+  site: "https://ventrafund.com",
   fonts: BEJAMAS_ASTRO_FONTS,
   // Pages stay prerendered; only routes with `prerender = false` (the form APIs, drop-off capture
   // and the admin pages) run on the Worker. Skip the adapter for `astro dev`: its workerd dev runner

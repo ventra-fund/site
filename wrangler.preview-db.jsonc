@@ -1,0 +1,20 @@
+// Staging databases for Worker Previews, for `pnpm migrate:preview` only. `wrangler d1 migrations`
+// doesn't read the `previews` block in wrangler.jsonc, so the staging databases are listed here as
+// top-level entries. Keep in sync with `previews.d1_databases` there. Never deployed.
+{
+	"name": "site",
+	"d1_databases": [
+		{
+			"binding": "AUTH_DB",
+			"database_name": "ventra-fund-auth-preview",
+			"database_id": "4ba5639a-c034-4de0-9fa0-3c7536063583",
+			"migrations_dir": "migrations"
+		},
+		{
+			"binding": "DRAFTS_DB",
+			"database_name": "ventra-fund-drafts-preview",
+			"database_id": "781de14e-05b8-4b41-851d-ede5846692ce",
+			"migrations_dir": "migrations-drafts"
+		}
+	]
+}

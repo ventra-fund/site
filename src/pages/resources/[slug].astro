@@ -1,0 +1,67 @@
+---
+// Article template: renders the block body from articles.ts, then the FAQ section.
+import PageShell from "@/components/page/PageShell.astro";
+import Section from "@/components/page/Section.astro";
+import Photo from "@/components/page/Photo.astro";
+import ArticleCard from "@/components/page/ArticleCard.astro";
+import CtaBand from "@/components/page/CtaBand.astro";
+import { articles, type Article } from "@/data/articles";
+
+export function getStaticPaths() {
+  return articles.map((article) => ({ params: { slug: article.slug }, props: { article } }));
+}
+
+interface Props {
+  article: Article;
+}
+
+const { article } = Astro.props;
+const date = new Date(article.date).toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric", timeZone: "UTC" });
+const related = articles.filter((a) => a.slug !== article.slug && a.category === article.category).slice(0, 3);
+---
+
+<PageShell title={article.title}>
+  <article class="mx-auto flex w-[calc(100%-2rem)] max-w-3xl flex-col gap-8">
+    <a href="/resources" class="text-sm font-semibold text-primary underline-offset-4 hover:underline">← All resources</a>
+    <header class="flex flex-col gap-4">
+      <p class="text-sm font-semibold uppercase tracking-widest text-primary">{article.category} · <time datetime={article.date}>{date}</time></p>
+      <h1 class="text-3xl font-bold text-accent sm:text-5xl">{article.title}</h1>
+      <p class="text-lg text-muted-foreground">{article.excerpt}</p>
+    </header>
+    <Photo photo={article.image} sizes="(min-width: 768px) 48rem, calc(100vw - 2rem)" eager class="aspect-video" />
+    <div class="flex flex-col gap-4 text-lg text-foreground">
+      {article.body.map((block) =>
+        block.type === "p" ? (
+          <p set:html={block.text} />
+        ) : block.type === "h2" ? (
+          <h2 class="mt-6 text-2xl font-bold text-accent first:mt-0">{block.text}</h2>
+        ) : (
+          <ul class="flex list-disc flex-col gap-3 pl-6 marker:text-primary">
+            {block.items.map((item) => <li set:html={item} />)}
+          </ul>
+        )
+      )}
+    </div>
+    {article.faq.length > 0 && (
+      <section aria-label="Frequently asked questions" class="flex flex-col gap-5 border-t border-border pt-8">
+        <h2 class="text-2xl font-bold text-accent">Frequently asked questions</h2>
+        {article.faq.map((item) => (
+          <div class="flex flex-col gap-2">
+            <h3 class="text-lg font-semibold text-foreground">{item.q}</h3>
+            <p class="text-base text-muted-foreground">{item.a}</p>
+          </div>
+        ))}
+      </section>
+    )}
+  </article>
+
+  {related.length > 0 && (
+    <Section title="Related reading">
+      <div class="grid grid-cols-1 gap-4 md:grid-cols-3">
+        {related.map((a) => <ArticleCard article={a} />)}
+      </div>
+    </Section>
+  )}
+
+  <CtaBand />
+</PageShell>

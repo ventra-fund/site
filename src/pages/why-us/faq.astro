@@ -1,0 +1,36 @@
+---
+import PageShell from "@/components/page/PageShell.astro";
+import PageHero from "@/components/page/PageHero.astro";
+import Section from "@/components/page/Section.astro";
+import FaqList from "@/components/page/FaqList.astro";
+import CtaBand from "@/components/page/CtaBand.astro";
+import { faqGroups } from "@/data/faqs";
+---
+
+<PageShell title="FAQ">
+  <PageHero eyebrow="Why us" title="Frequently asked questions">
+    <p>Can't find what you're looking for? <a href="/contact" class="font-semibold text-primary underline-offset-4 hover:underline">Contact us</a> and a funding advisor will get back to you.</p>
+  </PageHero>
+
+  <Section>
+    <div class="grid gap-10 lg:grid-cols-[1fr_3fr]">
+      <nav aria-label="FAQ topics" class="lg:sticky lg:top-36 lg:self-start">
+        <ul class="flex list-none flex-wrap gap-2 lg:flex-col lg:gap-1">
+          {faqGroups.map((g) => (
+            <li><a href={`#${g.id}`} class="block bg-secondary px-3 py-2 text-sm font-medium text-secondary-foreground hover:text-accent lg:bg-transparent lg:px-0">{g.title}</a></li>
+          ))}
+        </ul>
+      </nav>
+      <div class="flex flex-col gap-14">
+        {faqGroups.map((g) => (
+          <div id={g.id} class="flex scroll-mt-36 flex-col gap-4">
+            <h2 class="text-2xl font-bold text-accent">{g.title}</h2>
+            <FaqList items={g.items} />
+          </div>
+        ))}
+      </div>
+    </div>
+  </Section>
+
+  <CtaBand />
+</PageShell>

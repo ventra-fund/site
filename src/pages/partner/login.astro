@@ -1,0 +1,21 @@
+---
+// Placeholder until the partner portal exists: there are no partner accounts yet, so this page
+// points partners at their relationship manager instead of showing a sign-in form that can't work.
+import PageShell from "@/components/page/PageShell.astro";
+import PageHero from "@/components/page/PageHero.astro";
+import Section from "@/components/page/Section.astro";
+import { Button } from "@/ui/button";
+---
+
+<PageShell title="Partner login">
+  <PageHero eyebrow="Partners" title="Partner portal">
+    <p>Our online partner portal is on its way. Until it launches, your relationship manager can submit deals, share status updates and answer commission questions.</p>
+  </PageHero>
+
+  <Section tone="muted">
+    <div class="flex flex-wrap gap-3">
+      <Button as="a" href="/contact" size="lg">Contact us</Button>
+      <Button as="a" href="/partner" size="lg" variant="outline">Become a partner</Button>
+    </div>
+  </Section>
+</PageShell>
