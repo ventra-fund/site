@@ -1,6 +1,4 @@
 // Company facts for the About, Leadership and Careers pages.
-// Synthetic figures and people for the pre-launch site; swap for audited numbers and real
-// team members before launch.
 import { photos, type Photo } from "@/data/photos";
 
 export const companyFacts = {
