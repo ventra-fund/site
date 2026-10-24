@@ -1,75 +1,21 @@
 ---
-import PartnerLayout from "@/layouts/PartnerLayout.astro";
+// Placeholder until the partner portal exists: there are no partner accounts yet, so this page
+// points partners at their relationship manager instead of showing a sign-in form that can't work.
+import PageShell from "@/components/page/PageShell.astro";
+import PageHero from "@/components/page/PageHero.astro";
+import Section from "@/components/page/Section.astro";
 import { Button } from "@/ui/button";
-import { Input } from "@/ui/input";
-import Turnstile from "@/components/Turnstile.astro";
-import { KeyRound, Fingerprint } from "@lucide/astro";
-
-// Partner sign-in. PROTOTYPE: the three states (email, code, password) are switched client-side
-// by src/lib/portal/login.ts and "Sign in" just goes to the dashboard. The real flow is the admin
-// sign-in's (src/pages/admin/sign-in.astro) with Better Auth: email → one-time code by default;
-// a user who turned on password + code enters a password first; passkeys skip both.
 ---
 
-<PartnerLayout title="Sign in">
-  <div class="flex flex-col gap-2">
-    <a href="/" class="flex items-center gap-2 text-sm font-semibold">
-      <span class="grid size-7 place-items-center bg-primary text-xs font-bold text-primary-foreground">VF</span>
-      Ventra Fund
-    </a>
-    <h1 class="text-xl font-semibold">Partner sign in</h1>
-    <p class="text-sm text-muted-foreground">Sign in with your work email. We'll send a one-time code, or use a passkey if you've set one up.</p>
-  </div>
+<PageShell title="Partner login">
+  <PageHero eyebrow="Partners" title="Partner portal">
+    <p>Our online partner portal is on its way. Until it launches, your relationship manager can submit deals, share status updates and answer commission questions.</p>
+  </PageHero>
 
-  <form data-step="email" novalidate class="flex flex-col gap-3">
-    <label class="flex flex-col gap-1.5 text-sm text-muted-foreground">
-      Email
-      <Input name="email" type="email" required maxlength="254" autocomplete="email webauthn" placeholder="you@yourcompany.com" />
-    </label>
-    <Turnstile action="partner-sign-in" />
-    <Button type="submit">Continue</Button>
-    <Button type="button" variant="outline" data-passkey>
-      <Fingerprint class="size-4" aria-hidden="true" />
-      Sign in with a passkey
-    </Button>
-  </form>
-
-  {/* Only for users who turned on "password + code" in Settings. */}
-  <form data-step="password" hidden novalidate class="flex flex-col gap-3">
-    <p class="text-sm text-muted-foreground">Signing in as <span data-email class="font-medium text-foreground"></span>. <button type="button" data-restart class="text-primary hover:underline">Change</button></p>
-    <label class="flex flex-col gap-1.5 text-sm text-muted-foreground">
-      Password
-      <Input name="password" type="password" required autocomplete="current-password" />
-    </label>
-    <Button type="submit">Continue</Button>
-    <a href="#" class="self-start text-sm text-primary hover:underline">Forgot password</a>
-  </form>
-
-  <form data-step="code" hidden novalidate class="flex flex-col gap-3">
-    <p class="text-sm text-muted-foreground">We emailed a 6-digit code to <span data-email class="font-medium text-foreground"></span>. It expires in 5 minutes.</p>
-    <label class="flex flex-col gap-1.5 text-sm text-muted-foreground">
-      Code
-      <Input name="otp" type="text" required inputmode="numeric" pattern="[0-9]{6}" maxlength="6" autocomplete="one-time-code" />
-    </label>
-    <label class="flex items-center gap-2 text-sm text-muted-foreground">
-      <input type="checkbox" name="remember" class="size-4" checked />
-      Remember this device for 30 days
-    </label>
-    <Button type="submit">Sign in</Button>
-    <div class="flex gap-4 text-sm">
-      <button type="button" data-resend class="text-primary hover:underline">Resend code</button>
-      <button type="button" data-restart class="text-muted-foreground hover:underline">Different email</button>
+  <Section tone="muted">
+    <div class="flex flex-wrap gap-3">
+      <Button as="a" href="/contact" size="lg">Contact us</Button>
+      <Button as="a" href="/partner" size="lg" variant="outline">Become a partner</Button>
     </div>
-  </form>
-
-  <p data-auth-error hidden role="alert" class="text-sm text-destructive"></p>
-
-  <div class="flex flex-col gap-2 border-t border-border pt-4 text-sm text-muted-foreground">
-    <p class="flex items-center gap-2"><KeyRound class="size-4" aria-hidden="true" /> Not a partner yet? <a href="/partner" class="text-primary hover:underline">Apply to partner with us</a></p>
-    <p>Prototype: any email continues. Use one ending in <code class="font-mono">+pw</code> before the @ to see the password step.</p>
-  </div>
-</PartnerLayout>
-
-<script>
-  import "@/lib/portal/login";
-</script>
+  </Section>
+</PageShell>
