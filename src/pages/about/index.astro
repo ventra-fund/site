@@ -13,16 +13,14 @@ import { fundingProducts } from "@/data/funding-products";
 
 <PageShell title="About us">
   <PageHero eyebrow="About us" title={`${companyFacts.totalFunded} in working capital, and counting`} cta={{ href: "/apply", label: "Apply for Funding", rounded: true }} image={photos.teamMeeting} class="min-h-[calc(100vh-7.5rem)] content-center">
-    <p>Ventra Fund provides working capital to established small businesses across the United States. We combine data-driven underwriting with people who pick up the phone, so owners get a fast answer and an offer that makes sense for their business.</p>
-    <p>We work with owners directly and through a nationwide network of brokers and referral partners.</p>
+    <p>Ventra Fund provides working capital to established small businesses across the United States, with fast answers from people who pick up the phone.</p>
   </PageHero>
 
   <Section tone="muted">
     <div class="grid items-center gap-10 lg:grid-cols-2">
       <div class="flex flex-col gap-5">
         <h2 class="text-3xl font-bold text-accent sm:text-4xl">Why we built Ventra Fund</h2>
-        <p class="text-lg text-muted-foreground">We've run businesses ourselves. We've made payroll before paying ourselves and waited on capital that came too late. Banks weren't built for owners who need an answer this week, and too many alternatives hide the real cost.</p>
-        <p class="text-lg text-muted-foreground">So in 2019 we founded Ventra Fund to be the lender we wished we'd had: clear terms, real people and offers sized to what your business can actually carry.</p>
+        <p class="text-lg text-muted-foreground">We've run businesses ourselves and waited on capital that came too late. So in 2019 we founded Ventra Fund to be the lender we wished we'd had: clear terms, real people and offers sized to what your business can carry.</p>
         <Button as="a" href="/why-us" variant="outline" size="lg" class="self-start">Why choose Ventra Fund</Button>
       </div>
       <Photo photo={photos.leadersConversation} class="aspect-square lg:order-first" />
@@ -34,8 +32,7 @@ import { fundingProducts } from "@/data/funding-products";
       <Photo photo={photos.ownerLaptopCelebrating} class="aspect-square lg:order-last" />
       <div class="flex flex-col gap-5">
         <h2 class="text-3xl font-bold text-accent sm:text-4xl">What we do</h2>
-        <p class="text-lg text-muted-foreground">We fund established small businesses with {fundingProducts.map((p) => p.title.toLowerCase().replace(/ \(.*\)/, "")).join(", ").replace(/, ([^,]*)$/, " and $1")}. We work across hundreds of industries, from restaurants and retail to construction, healthcare and trucking.</p>
-        <p class="text-lg text-muted-foreground">We don't fund startups, personal loans or grants. We focus on working capital for businesses that are already operating.</p>
+        <p class="text-lg text-muted-foreground">We offer {fundingProducts.map((p) => p.title.toLowerCase().replace(/ \(.*\)/, "")).join(", ").replace(/, ([^,]*)$/, " and $1")} to businesses in hundreds of industries, directly and through brokers and referral partners.</p>
         <Button as="a" href="/who-we-fund" variant="outline" size="lg" class="self-start">Who we fund</Button>
       </div>
     </div>
@@ -55,7 +52,7 @@ import { fundingProducts } from "@/data/funding-products";
       <div class="flex flex-col gap-5">
         <h2 class="text-3xl font-bold text-accent sm:text-4xl">Come work with us</h2>
         <p class="text-lg text-muted-foreground">We're building a team that's smart, owner-focused and ready to help American small businesses grow.</p>
-        <Button as="a" href="/careers" size="lg" class="mt-auto self-start">Explore open positions</Button>
+        <Button as="a" href="/careers" size="lg" class="mt-auto self-start">View careers</Button>
       </div>
     </div>
   </Section>

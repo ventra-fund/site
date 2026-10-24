@@ -2,10 +2,11 @@
 import Layout from "@/layouts/Layout.astro";
 import Footer from "@/components/Footer.astro";
 import { Button } from "@/ui/button";
-import { fundingProducts, minimumRequirements, type FundingProduct } from "@/data/funding-products";
+import { fundingProducts, minimumRequirements, productSlug, type FundingProduct } from "@/data/funding-products";
 import { Gauge, CircleDollarSign, Calendar } from "@lucide/astro";
 
 const tableRows = [
+  { label: "Best For", value: (p: FundingProduct) => p.bestFor },
   { label: "Amount", value: (p: FundingProduct) => p.amount },
   { label: "Time to Fund", value: (p: FundingProduct) => p.timeToFund },
   { label: "Term Length", value: (p: FundingProduct) => p.termLength },
@@ -32,7 +33,7 @@ const tableRows = [
             {fundingProducts.map((p) => (
               <th scope="col" class="text-left pr-3 py-2 md:py-3 lg:py-6 border-b border-border">
                 <span class="block text-sm text-muted-foreground">{p.category}</span>
-                <span class="text-base text-foreground">{p.title}</span>
+                <a href={`/capital/${productSlug(p)}`} class="text-base text-foreground underline-offset-4 hover:underline">{p.title}</a>
               </th>
             ))}
           </tr>
@@ -50,75 +51,40 @@ const tableRows = [
       </table>
     </div>
 
-    <div class="mt-10 sm:mt-20 flex flex-col gap-4">
-      {fundingProducts.map((product, i) => {
-        const num = String(i + 1).padStart(2, "0");
-        return (
-          <>
-            {/* Mobile */}
-            <div class="sm:hidden rounded-xl border border-border bg-card p-6 flex flex-col gap-4">
-              <div class="grid grid-cols-[auto_1fr] gap-4">
-                <span class="text-sm font-semibold text-primary bg-secondary rounded-lg self-stretch aspect-square flex items-center justify-center">{num}</span>
-                <div class="flex flex-col gap-2">
-                  <span class="text-sm text-muted-foreground">{product.category}</span>
-                  <h2 class="text-[clamp(1rem,4.5vw,1.25rem)] font-bold text-foreground">{product.title}</h2>
-                </div>
-              </div>
-              <p class="text-base text-muted-foreground">{product.description}</p>
-              <hr class="border-border" />
-              <div class="grid grid-cols-2 gap-4">
-                <div>
-                  <span class="block text-xs font-semibold uppercase tracking-widest text-muted-foreground mb-1">{product.amountLabel}</span>
-                  <span class="text-sm font-semibold text-foreground">{product.amount}</span>
-                </div>
-                <div>
-                  <span class="block text-xs font-semibold uppercase tracking-widest text-muted-foreground mb-1">Time to Fund</span>
-                  <span class="text-sm font-semibold text-foreground">{product.timeToFund}</span>
-                </div>
-                <div>
-                  <span class="block text-xs font-semibold uppercase tracking-widest text-muted-foreground mb-1">Term Length</span>
-                  <span class="text-sm font-semibold text-foreground">{product.termLength}</span>
-                </div>
-                <div>
-                  <span class="block text-xs font-semibold uppercase tracking-widest text-muted-foreground mb-1">Repayment</span>
-                  <span class="text-sm font-semibold text-foreground">{product.repayment}</span>
-                </div>
-                <div>
-                  <span class="block text-xs font-semibold uppercase tracking-widest text-muted-foreground mb-1">Buy Rate / Cost</span>
-                  <span class="text-sm font-semibold text-foreground">{product.rateCost}</span>
-                </div>
-              </div>
-              <hr class="border-border" />
-              <div class="flex items-center justify-between gap-3 bg-secondary p-3">
-                <span class="text-sm text-foreground"><span class="font-bold">Best for:</span> {product.bestFor}</span>
-              </div>
+    {/* The table covers wider screens; on mobile each product is a card linking to its page. */}
+    <div class="mt-10 flex flex-col gap-4 sm:hidden">
+      {fundingProducts.map((product, i) => (
+        <a href={`/capital/${productSlug(product)}`} class="rounded-xl border border-border bg-card p-6 flex flex-col gap-4 transition-colors hover:border-primary">
+          <div class="grid grid-cols-[auto_1fr] gap-4">
+            <span class="text-sm font-semibold text-primary bg-secondary rounded-lg self-stretch aspect-square flex items-center justify-center">{String(i + 1).padStart(2, "0")}</span>
+            <div class="flex flex-col gap-2">
+              <span class="text-sm text-muted-foreground">{product.category}</span>
+              <h2 class="text-[clamp(1rem,4.5vw,1.25rem)] font-bold text-foreground">{product.title}</h2>
             </div>
-
-            {/* Desktop */}
-            <div class="hidden sm:flex rounded-xl border border-border bg-card p-6 flex-row items-start gap-6">
-              <div class="flex items-start gap-4 flex-1">
-                <span class="text-sm font-semibold text-primary bg-secondary rounded-lg px-3 py-2 shrink-0">{num}</span>
-                <div class="flex flex-col gap-2">
-                  <span class="text-sm text-muted-foreground">{product.category}</span>
-                  <h2 class="text-xl font-bold text-foreground">{product.title}</h2>
-                  <p class="text-base text-muted-foreground">{product.description}</p>
-                </div>
-              </div>
-              <div class="w-px self-stretch bg-border shrink-0"></div>
-              <div class="flex flex-col gap-4 shrink-0 w-50">
-                <div>
-                  <span class="block text-xs font-semibold uppercase tracking-widest text-muted-foreground mb-1">Best For</span>
-                  <span class="text-sm font-semibold text-foreground">{product.bestFor}</span>
-                </div>
-                <div>
-                  <span class="block text-xs font-semibold uppercase tracking-widest text-muted-foreground mb-1">{product.amountLabel}</span>
-                  <span class="text-sm font-semibold text-foreground">{product.amount}</span>
-                </div>
-              </div>
+          </div>
+          <p class="text-base text-muted-foreground">{product.description}</p>
+          <hr class="border-border" />
+          <div class="grid grid-cols-2 gap-4">
+            <div>
+              <span class="block text-xs font-semibold uppercase tracking-widest text-muted-foreground mb-1">{product.amountLabel}</span>
+              <span class="text-sm font-semibold text-foreground">{product.amount}</span>
             </div>
-          </>
-        );
-      })}
+            <div>
+              <span class="block text-xs font-semibold uppercase tracking-widest text-muted-foreground mb-1">Time to Fund</span>
+              <span class="text-sm font-semibold text-foreground">{product.timeToFund}</span>
+            </div>
+            <div>
+              <span class="block text-xs font-semibold uppercase tracking-widest text-muted-foreground mb-1">Term Length</span>
+              <span class="text-sm font-semibold text-foreground">{product.termLength}</span>
+            </div>
+            <div>
+              <span class="block text-xs font-semibold uppercase tracking-widest text-muted-foreground mb-1">Buy Rate / Cost</span>
+              <span class="text-sm font-semibold text-foreground">{product.rateCost}</span>
+            </div>
+          </div>
+          <span class="text-sm font-semibold text-primary">Learn more →</span>
+        </a>
+      ))}
     </div>
 
     <section class="mt-20 bg-secondary w-full py-16 px-6 md:px-10 rounded-xl">

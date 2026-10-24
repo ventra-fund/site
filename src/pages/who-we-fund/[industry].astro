@@ -46,14 +46,14 @@ const recommended = industry.products.map((slug) => {
     </div>
   </Section>
 
-  <Section title="Recommended options" intro="Every business is different. A funding advisor will help you compare these and anything else you qualify for.">
+  <Section title="Recommended options" intro="An advisor will help you compare these and anything else you qualify for.">
     <ul class="grid list-none grid-cols-1 gap-4 md:grid-cols-3">
       {recommended.map((p) => (
         <li>
           <a href={`/capital/${p.slug}`} class="flex h-full flex-col gap-3 border border-border bg-card p-6 transition-colors hover:border-primary">
             <span class="text-sm text-muted-foreground">{p.product.category}</span>
             <span class="text-xl font-bold text-foreground">{p.product.title}</span>
-            <span class="text-base text-muted-foreground">{p.product.description}</span>
+            <span class="text-base text-muted-foreground">Best for {p.product.bestFor.toLowerCase()}.</span>
             <span class="mt-auto pt-2 text-sm font-semibold text-foreground">{p.product.amountLabel}: {p.product.amount}</span>
           </a>
         </li>

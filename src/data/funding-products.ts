@@ -20,7 +20,7 @@ export const fundingProducts: FundingProduct[] = [
   {
     title: "Merchant Cash Advances",
     category: "Working Capital",
-    description: "An advance against your future sales. You get a lump sum today and repay it automatically as a small slice of each day's deposits, so payments rise and fall with your revenue.",
+    description: "A lump sum today, repaid as a small share of your daily deposits. Payments ease off in slow weeks and pick up when business is busy.",
     bestFor: "Seasonal businesses and high card-volume merchants",
     amountLabel: "Funding Amount",
     amount: "$5K – $1M",
@@ -37,7 +37,7 @@ export const fundingProducts: FundingProduct[] = [
   {
     title: "Term Financing",
     category: "Fixed Financing",
-    description: "A classic fixed-payment facility. You receive the full amount up front and pay it back in equal installments over a set number of months, so your cost is fixed and easy to budget around.",
+    description: "The full amount up front, repaid in equal installments over a set term. Your cost is fixed when you sign, so it's easy to budget.",
     bestFor: "Planned investments like equipment or expansion",
     amountLabel: "Funding Amount",
     amount: "$10K – $5M",
@@ -54,7 +54,7 @@ export const fundingProducts: FundingProduct[] = [
   {
     title: "Lines of Credit",
     category: "Flexible Capital",
-    description: "A revolving pool of capital you can tap whenever you need it. Draw any amount up to your limit, repay it, and draw again. You only pay interest on the balance you are actually using.",
+    description: "A credit limit you can draw on whenever you need it. Repay and draw again, paying interest only on what you've used.",
     bestFor: "Managing cash flow gaps and unexpected costs",
     amountLabel: "Credit Limit",
     amount: "Up to $250K",
@@ -71,7 +71,7 @@ export const fundingProducts: FundingProduct[] = [
   {
     title: "Consolidations",
     category: "Debt Restructuring",
-    description: "One new facility that pays off several existing advances or financing positions. Instead of juggling multiple withdrawals, you make a single payment, usually at a lower combined cost.",
+    description: "One new facility that pays off your existing advances or loans. You make a single payment, usually at a lower combined cost.",
     bestFor: "Businesses carrying two or more open positions",
     amountLabel: "Funding Amount",
     amount: "$25K – $2M",
@@ -88,7 +88,7 @@ export const fundingProducts: FundingProduct[] = [
   {
     title: "Cash Credit (CC)",
     category: "Revolving Facility",
-    description: "A running credit account secured against your business assets. Draw funds up to your sanctioned limit, repay, and draw again, paying interest only on the amount outstanding.",
+    description: "A revolving credit account secured by your inventory, receivables or other business assets. You pay interest only on what's outstanding.",
     bestFor: "Day-to-day working capital and inventory",
     amountLabel: "Funding Amount",
     amount: "$15K – $975K",

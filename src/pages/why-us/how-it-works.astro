@@ -11,17 +11,17 @@ import CtaBand from "@/components/page/CtaBand.astro";
 
 <PageShell title="How it works">
   <PageHero eyebrow="Why us" title="From application to funding in four steps" cta={{ href: "/apply", label: "Start your application" }} image={photos.deskLaptopNotes}>
-    <p>No business plans, no weeks of back-and-forth. Here's what to expect when you apply with Ventra Fund.</p>
+    <p>No business plans, no weeks of back-and-forth.</p>
   </PageHero>
 
   <Section>
     <NumberedGrid
       columns={4}
       items={[
-        { title: "Apply in minutes", text: "Tell us about your business and connect or upload recent bank statements. It's a soft credit pull, so your score isn't affected." },
-        { title: "Talk to an advisor", text: "A funding advisor reviews your application with you and answers any questions." },
+        { title: "Apply in minutes", text: "Tell us about your business and upload recent bank statements. There's no credit check to apply." },
+        { title: "Talk to an advisor", text: "A funding advisor reviews your application with you and answers questions." },
         { title: "Review your offers", text: "See the amount, total cost and payment schedule for each option, in plain language." },
-        { title: "Get funded", text: "Sign electronically and receive funds as fast as the next business day." },
+        { title: "Get funded", text: "Sign electronically and receive funds as soon as the next business day." },
       ]}
     />
   </Section>
@@ -33,7 +33,7 @@ import CtaBand from "@/components/page/CtaBand.astro";
         <CheckList
           items={[
             "Basic business details: legal name, address and tax ID",
-            "Your last three to four months of business bank statements",
+            "Three to six months of business bank statements (three to four recommended)",
             "Owner details for anyone with 20% or more ownership",
             "A business checking account for your deposit",
           ]}
@@ -45,8 +45,7 @@ import CtaBand from "@/components/page/CtaBand.astro";
 
   <Section title="After you're funded">
     <div class="flex max-w-3xl flex-col gap-4 text-lg text-muted-foreground">
-      <p>Your advisor stays your point of contact. Payments come out automatically on the schedule in your agreement, and you can reach us any time to ask about your balance, an early payoff or additional funding.</p>
-      <p>Customers in good standing can often renew or add funding with a shorter review.</p>
+      <p>Your advisor stays your point of contact for your balance, an early payoff or more funding. Payments come out automatically on your agreed schedule, and customers in good standing can often renew with a shorter review.</p>
     </div>
   </Section>
 

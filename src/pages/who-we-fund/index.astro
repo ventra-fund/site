@@ -7,23 +7,22 @@ import CtaBand from "@/components/page/CtaBand.astro";
 import { industries, moreIndustries, notFunded } from "@/data/industries";
 import { photos } from "@/data/photos";
 import { minimumRequirements } from "@/data/funding-products";
-import { Store, CalendarCheck, CircleDollarSign, Gauge, Landmark, Rocket, X } from "@lucide/astro";
+import { CalendarCheck, CircleDollarSign, Gauge, Landmark, X } from "@lucide/astro";
 ---
 
 <PageShell title="Who we fund">
   <PageHero eyebrow="Who we fund" title="Funding for established small businesses" cta={{ href: "/apply", label: "Check eligibility" }} image={[photos.mechanicWorkshop, photos.florist, photos.constructionSite, photos.barista]}>
-    <p>We work with businesses across hundreds of industries nationwide. If you've been operating for a while and have steady revenue, there's a good chance we can help.</p>
+    <p>We fund businesses in hundreds of industries. If you have steady revenue and some history, there's a good chance we can help.</p>
   </PageHero>
 
-  <Section title="Do you qualify?" intro="These are the basics we look at first. If you have them covered, the application takes a few minutes and won't affect your credit score." tone="muted">
+  <Section title="Do you qualify?" tone="muted">
     <FeatureTiles
+      columns={4}
       items={[
-        { icon: CalendarCheck, title: `In business ${minimumRequirements.timeInBusiness}`, text: "Enough history to show your business has staying power." },
-        { icon: Gauge, title: `Credit score ${minimumRequirements.creditScore}+`, text: "Your credit doesn't need to be perfect. The minimum applies to every owner on the application." },
-        { icon: CircleDollarSign, title: `${minimumRequirements.monthlyRevenue} monthly revenue`, text: "Consistent deposits that show up in your business bank statements." },
-        { icon: Store, title: "An eligible industry", text: "We fund most industries. If you're not sure about yours, ask us." },
-        { icon: Landmark, title: "A business checking account", text: "We use it to verify revenue and deposit your funds quickly." },
-        { icon: Rocket, title: "Not a startup", text: "We fund operating businesses, not new ventures or ideas." },
+        { icon: CalendarCheck, title: `In business ${minimumRequirements.timeInBusiness}`, text: "Long enough to show a track record." },
+        { icon: Gauge, title: `Credit score ${minimumRequirements.creditScore}+`, text: "Applies to every owner on the application." },
+        { icon: CircleDollarSign, title: `${minimumRequirements.monthlyRevenue} monthly revenue`, text: "Consistent deposits in your business account." },
+        { icon: Landmark, title: "Business checking", text: "To verify revenue and receive your funds." },
       ]}
     />
   </Section>
@@ -48,7 +47,7 @@ import { Store, CalendarCheck, CircleDollarSign, Gauge, Landmark, Rocket, X } fr
     </div>
   </Section>
 
-  <Section title="What we don't fund" intro="We focus on working capital for established businesses, so a few things are outside what we do." tone="muted">
+  <Section title="What we don't fund" tone="muted">
     <ul class="grid list-none grid-cols-1 gap-4 sm:grid-cols-2">
       {notFunded.map((item) => (
         <li class="flex items-center gap-3 text-base text-foreground"><X class="size-5 shrink-0 text-destructive" aria-hidden="true" />{item}</li>

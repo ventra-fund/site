@@ -58,7 +58,7 @@ export const articles: Article[] = [
       ] },
       { type: "h2", text: "How to choose" },
       { type: "p", text: "Ask yourself two questions. First, does my revenue swing week to week? If yes, the advance's remittances will protect you in slow periods, and the higher buy rate buys real flexibility. Second, is this a planned, one-time investment? If yes, fixed payments at a lower buy rate usually cost less over the life of the facility." },
-      { type: "p", text: "And you do not have to guess alone. <a href=\"/apply\">Apply in minutes</a> with a soft credit pull that does not affect your score, and a funding advisor will walk you through the amount, the buy rate and the payment schedule for every option you qualify for, in plain language, before you commit to anything." },
+      { type: "p", text: "And you do not have to guess alone. <a href=\"/apply\">Apply in minutes</a> with no credit check, and a funding advisor will walk you through the amount, the buy rate and the payment schedule for every option you qualify for, in plain language, before you commit to anything." },
     ],
     faq: [
       { q: "Is a merchant cash advance more expensive than term financing?", a: "Usually, yes. An advance carries a higher buy rate because it is priced for speed and for revenue that swings. If your revenue is steady and you can commit to fixed payments, term financing typically costs less overall." },
@@ -83,7 +83,7 @@ export const articles: Article[] = [
       { type: "p", text: "Ending balances show how much cushion your business keeps. Frequent overdrafts, negative balances, returned payments or constant movement between personal and business accounts all raise questions about stability. None of these are automatic noes, but cleaning them up before you apply makes the review shorter." },
       { type: "h2", text: "What to have ready" },
       { type: "list", items: [
-        "Your last three to four months of business bank statements, the same ones we ask for on the <a href=\"/apply\">application</a>.",
+        "Your last three to four months of business bank statements. The <a href=\"/apply\">application</a> accepts three to six.",
         "One account, used consistently. If revenue lands in two accounts, tell us upfront so nothing looks like it is being hidden.",
         "A short explanation for anything unusual: a seasonal dip, a big one-time expense, a recently opened account.",
         "Clear ownership. Statements should be in the business's name for anyone with 20% or more ownership.",
@@ -92,7 +92,7 @@ export const articles: Article[] = [
       { type: "p", text: "Deposits drive our underwriting more than any single number. We size an offer to what your cash flow can actually carry, which is why <a href=\"/who-we-fund\">owners across hundreds of industries</a> with imperfect credit still qualify. Clean statements do not just speed up a decision; they often improve the terms you are offered." },
     ],
     faq: [
-      { q: "How many months of bank statements do I need?", a: "Three to four months is standard for an application with Ventra Fund. Some larger or more complex facilities call for six." },
+      { q: "How many months of bank statements do I need?", a: "You can apply with three to six months. Your last three full months plus month-to-date is optimal, and some larger facilities call for six." },
       { q: "Do you need statements from every account?", a: "We need the account your revenue lands in. If you use more than one, share both and explain the split; consistency matters more than which one you pick." },
       { q: "Will a low ending balance hurt my application?", a: "Not on its own. We care most about deposits and how they trend. A thin balance alongside steady revenue usually matters less than you would expect." },
     ],

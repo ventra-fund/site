@@ -24,7 +24,7 @@ export const industries: Industry[] = [
     name: "Restaurants",
     audience: "restaurants",
     heading: "Restaurant financing that keeps the kitchen running",
-    intro: "Thin margins, seasonal swings and equipment that always breaks at the worst time. We fund restaurants, cafés, bars and food trucks based on the sales they're already doing.",
+    intro: "We fund restaurants, cafés, bars and food trucks based on the sales they're already doing.",
     image: photos.chefPlating,
     usesImage: photos.restaurantServer,
     challenges: [
@@ -41,7 +41,7 @@ export const industries: Industry[] = [
     name: "Retail",
     audience: "retailers",
     heading: "Retail financing for inventory, storefronts and growth",
-    intro: "From boutiques to hardware stores, retail runs on having the right stock at the right time. We fund retailers with capital sized to their sales.",
+    intro: "From boutiques to hardware stores, we fund retailers with capital sized to their sales.",
     image: photos.retailShelves,
     usesImage: photos.boutiqueOwner,
     challenges: [
@@ -58,7 +58,7 @@ export const industries: Industry[] = [
     name: "Construction",
     audience: "contractors",
     heading: "Construction financing that bridges the gap between jobs",
-    intro: "Contractors front materials and labor long before the final invoice is paid. We help general contractors and trades keep crews working while they wait.",
+    intro: "We help general contractors and trades keep crews working while they wait on invoices.",
     image: photos.contractorsPlans,
     usesImage: photos.excavatorCrew,
     challenges: [
@@ -75,7 +75,7 @@ export const industries: Industry[] = [
     name: "Healthcare",
     audience: "healthcare practices",
     heading: "Financing for medical, dental and wellness practices",
-    intro: "Insurance reimbursements take time, and equipment doesn't get cheaper. We fund independent practices, clinics and wellness businesses on their real cash flow.",
+    intro: "We fund independent practices, clinics and wellness businesses based on their real cash flow.",
     image: photos.clinicFrontDesk,
     usesImage: photos.practiceFrontOffice,
     challenges: [
@@ -92,7 +92,7 @@ export const industries: Industry[] = [
     name: "Trucking & Transportation",
     audience: "trucking companies",
     heading: "Trucking and transportation financing",
-    intro: "Fuel, maintenance, insurance and slow-paying brokers. We fund owner-operators and fleets so their trucks stay on the road.",
+    intro: "We fund owner-operators and fleets so their trucks stay on the road.",
     image: photos.truckFleet,
     usesImage: photos.semiTruckHighway,
     challenges: [

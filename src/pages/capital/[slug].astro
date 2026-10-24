@@ -1,6 +1,6 @@
 ---
 // One page per funding product, in the order a product page reads on comparable lender sites: what
-// it is, three headline facts, advantages, a comparison, requirements, FAQs, real-world use.
+// it is, three headline facts, advantages, a comparison, who it suits, FAQs.
 import PageShell from "@/components/page/PageShell.astro";
 import PageHero from "@/components/page/PageHero.astro";
 import Section from "@/components/page/Section.astro";
@@ -8,8 +8,6 @@ import FeatureTiles from "@/components/page/FeatureTiles.astro";
 import CheckList from "@/components/page/CheckList.astro";
 import CompareTable from "@/components/page/CompareTable.astro";
 import FaqList from "@/components/page/FaqList.astro";
-import Photo from "@/components/page/Photo.astro";
-import { photos } from "@/data/photos";
 import CtaBand from "@/components/page/CtaBand.astro";
 import { Button } from "@/ui/button";
 import { productPages, type ProductPage } from "@/data/product-pages";
@@ -32,74 +30,62 @@ const others = productPages.filter((p) => p.slug !== page.slug);
 
 <PageShell title={product.title}>
   <PageHero eyebrow={product.category} title={page.heading} cta={{ href: "/apply", label: "Apply for Funding", rounded: true }} secondary={{ href: "/capital", label: "Compare options" }} image={page.image}>
-    {page.intro.map((p) => <p>{p}</p>)}
+    <p>{product.description}</p>
   </PageHero>
 
-  <Section wide title={`What is ${product.title.toLowerCase().replace(/ \(.*\)/, "")} and how does it work?`}>
-    <div class="flex flex-col gap-4 text-lg text-muted-foreground">
-      {page.howItWorks.map((p) => <p>{p}</p>)}
-    </div>
+  <Section wide title={`How ${page.noun} works`}>
+    <p class="max-w-3xl text-lg text-muted-foreground">{page.howItWorks}</p>
     <FeatureTiles
       items={[
-        { icon: CalendarSync, title: "Flexible", text: product.repayment },
-        { icon: ChartNoAxesCombined, title: "Scalable", text: `${product.amountLabel}: ${product.amount}` },
-        { icon: Timer, title: "Fast", text: `Time to fund: ${product.timeToFund}` },
+        { icon: CalendarSync, title: "Repayment", text: product.repayment },
+        { icon: ChartNoAxesCombined, title: "Amount", text: product.amount },
+        { icon: Timer, title: "Time to fund", text: product.timeToFund },
       ]}
     />
   </Section>
 
-  <Section title="What are the advantages?" tone="muted">
+  <Section title="Advantages" tone="muted">
     <CheckList items={page.advantages} columns={2} />
   </Section>
 
-  <Section title={page.comparison.title} intro={page.comparison.intro}>
+  <Section title={page.comparison.title}>
     <CompareTable them={page.comparison.them} rows={page.comparison.rows} />
   </Section>
 
-  <Section>
-    <div class="grid items-center gap-10 lg:grid-cols-2">
-      <div class="flex flex-col gap-6">
-        <h2 class="text-3xl font-bold text-accent sm:text-4xl">Minimum requirements</h2>
-        <p class="text-lg text-muted-foreground">{product.title} is a fit for {product.bestFor.toLowerCase()}. To qualify, your business should have:</p>
+  <Section title="Is it right for you?" tone="muted">
+    <div class="grid gap-10 md:grid-cols-2 lg:grid-cols-3">
+      <div class="flex flex-col gap-4">
+        <h3 class="text-xl font-bold text-foreground">A good fit if</h3>
+        <CheckList items={page.goodFitIf} />
+      </div>
+      <div class="flex flex-col gap-4">
+        <h3 class="text-xl font-bold text-foreground">Common uses</h3>
+        <CheckList items={page.uses} />
+      </div>
+      <div class="flex flex-col gap-4">
+        <h3 class="text-xl font-bold text-foreground">Minimum requirements</h3>
         <CheckList
           items={[
-            `At least ${product.requirements.timeInBusiness.replace("+", "")} in business`,
-            `${product.requirements.monthlyRevenue} in average monthly revenue`,
-            `A personal credit score of ${product.requirements.creditScore} or higher`,
-            "An active business checking account",
+            `${product.requirements.timeInBusiness} in business`,
+            `${product.requirements.monthlyRevenue} average monthly revenue`,
+            `Credit score of ${product.requirements.creditScore}+`,
+            "A business checking account",
           ]}
         />
         <p class="text-sm text-muted-foreground italic">Additional underwriting criteria apply.</p>
         <Button as="a" href="/who-we-fund" variant="outline" size="lg" class="self-start">View eligibility</Button>
       </div>
-      <Photo photo={photos.requirementsChecklist} class="aspect-8/5" />
     </div>
+    <p class="max-w-3xl border-l-4 border-primary pl-5 text-lg text-muted-foreground">{page.example}</p>
   </Section>
 
-  <Section title="FAQs" tone="muted">
-    <div class="grid gap-10 lg:grid-cols-[1fr_2fr]">
-      <div class="flex flex-col gap-6">
-        <div class="flex flex-col gap-3">
-          <h3 class="text-xl font-bold text-foreground">What can it be used for?</h3>
-          <CheckList items={page.uses} />
-        </div>
-        <div class="flex flex-col gap-3">
-          <h3 class="text-xl font-bold text-foreground">A good fit if</h3>
-          <CheckList items={page.goodFitIf} />
-        </div>
-      </div>
+  <Section title="FAQs">
+    <div class="max-w-3xl">
       <FaqList items={faqs} />
     </div>
   </Section>
 
-  <Section wide title={`How small businesses use ${product.title.toLowerCase().replace(/ \(.*\)/, "")}`}>
-    <div class="flex flex-col gap-4 text-lg text-muted-foreground">
-      {page.stories.map((p) => <p>{p}</p>)}
-    </div>
-    <a href="/resources" class="self-start text-base font-semibold text-primary underline-offset-4 hover:underline">More reading →</a>
-  </Section>
-
-  <Section title="Other ways to fund your business">
+  <Section title="Other ways to fund your business" tone="muted">
     <ul class="grid list-none grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
       {others.map((o) => (
         <li>

@@ -17,9 +17,9 @@ interface Entry { title: string; href: string; section: string; text: string }
 
 const entries: Entry[] = [
   { title: "Home", href: "/", section: "Pages", text: "Working capital built for small businesses." },
-  { title: "Apply for funding", href: "/apply", section: "Pages", text: "Start your application. Soft credit pull, decisions in about a day." },
+  { title: "Apply for funding", href: "/apply", section: "Pages", text: "Start your application. No credit check, decisions in about a day." },
   { title: "Compare financing options", href: "/capital", section: "Pages", text: "Every product side by side: amounts, terms, costs and requirements." },
-  ...productPages.map((p) => ({ title: p.product.title, href: `/capital/${p.slug}`, section: "Financing", text: `${p.product.description} ${p.intro.join(" ")}` })),
+  ...productPages.map((p) => ({ title: p.product.title, href: `/capital/${p.slug}`, section: "Financing", text: `${p.product.description} ${p.howItWorks}` })),
   ...industries.map((i) => ({ title: `${i.name} financing`, href: `/who-we-fund/${i.slug}`, section: "Who we fund", text: `${i.intro} ${i.uses.join(", ")}` })),
   ...partnerPrograms.map((p) => ({ title: p.name, href: `/partners/${p.slug}`, section: "Partners", text: p.intro })),
   ...articles.map((a) => ({ title: a.title, href: `/resources/${a.slug}`, section: a.category, text: a.excerpt })),
