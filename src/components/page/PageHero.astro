@@ -5,11 +5,18 @@ import { Button } from "@/ui/button";
 import Photo from "./Photo.astro";
 import type { Photo as PhotoData } from "@/data/photos";
 
+interface Cta {
+  href: string;
+  label: string;
+  /** Pill corners, like the nav's "Apply For Funding", instead of the site's square default. */
+  rounded?: boolean;
+}
+
 interface Props {
   eyebrow?: string;
   title: string;
-  cta?: { href: string; label: string };
-  secondary?: { href: string; label: string };
+  cta?: Cta;
+  secondary?: Cta;
   /** Omit for a text-only hero. */
   image?: PhotoData | PhotoData[];
   class?: string;
@@ -19,6 +26,7 @@ const { eyebrow, title, cta, secondary, image, class: className } = Astro.props;
 // The photo column is 2/5 of the max-w-6xl header from lg up, full width below.
 const sizes = "(min-width: 1024px) 27rem, (min-width: 768px) calc(100vw - 8rem), calc(100vw - 2rem)";
 const collageSizes = "(min-width: 1024px) 14rem, (min-width: 768px) calc(50vw - 4rem), calc(50vw - 1rem)";
+const pill = "rounded-full px-6";
 ---
 
 <header class:list={["mx-auto grid w-[calc(100%-2rem)] max-w-6xl items-center gap-10 md:w-[calc(100%-8rem)]", image && "lg:grid-cols-[3fr_2fr]", className]}>
@@ -30,8 +38,8 @@ const collageSizes = "(min-width: 1024px) 14rem, (min-width: 768px) calc(50vw - 
     </div>
     {(cta || secondary) && (
       <div class="mt-2 flex flex-wrap gap-3">
-        {cta && <Button as="a" href={cta.href} size="lg">{cta.label}</Button>}
-        {secondary && <Button as="a" href={secondary.href} size="lg" variant="outline">{secondary.label}</Button>}
+        {cta && <Button as="a" href={cta.href} size="lg" class={cta.rounded ? pill : undefined}>{cta.label}</Button>}
+        {secondary && <Button as="a" href={secondary.href} size="lg" variant="outline" class={secondary.rounded ? pill : undefined}>{secondary.label}</Button>}
       </div>
     )}
   </div>

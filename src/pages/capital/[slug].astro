@@ -31,7 +31,7 @@ const others = productPages.filter((p) => p.slug !== page.slug);
 ---
 
 <PageShell title={product.title}>
-  <PageHero eyebrow={product.category} title={page.heading} cta={{ href: "/apply", label: "Apply for Funding" }} secondary={{ href: "/capital", label: "Compare options" }} image={page.image}>
+  <PageHero eyebrow={product.category} title={page.heading} cta={{ href: "/apply", label: "Apply for Funding", rounded: true }} secondary={{ href: "/capital", label: "Compare options" }} image={page.image}>
     {page.intro.map((p) => <p>{p}</p>)}
   </PageHero>
 
