@@ -4,12 +4,13 @@ import PageHero from "@/components/page/PageHero.astro";
 import Section from "@/components/page/Section.astro";
 import NumberedGrid from "@/components/page/NumberedGrid.astro";
 import CheckList from "@/components/page/CheckList.astro";
+import ContactReveal from "@/components/ContactReveal.astro";
 import { photos } from "@/data/photos";
+import ChevronDown from "@lucide/astro/icons/chevron-down";
 import { Button } from "@/ui/button";
+import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from "@/ui/accordion";
 import { careerBenefits, values } from "@/data/company";
-
-// No current openings; the section below shows an empty state until roles are added here.
-const openings: { title: string; team: string; location: string; href: string }[] = [];
+import { openings } from "@/data/careers";
 ---
 
 <PageShell title="Careers">
@@ -26,17 +27,34 @@ const openings: { title: string; team: string; location: string; href: string }[
   </Section>
 
   <Section id="openings" title="Open positions" tone="muted">
+    {/* Same accordion as the FAQs (FaqList.astro): closed rows stay findable with find-in-page. */}
     {openings.length > 0 ? (
-      <ul class="flex list-none flex-col border-t border-border">
-        {openings.map((job) => (
-          <li class="border-b border-border">
-            <a href={job.href} class="flex flex-wrap items-center justify-between gap-2 py-5 hover:text-accent">
-              <span class="text-lg font-semibold">{job.title}</span>
-              <span class="text-sm text-muted-foreground">{job.team} · {job.location}</span>
-            </a>
-          </li>
+      <Accordion multiple data-hidden-until-found class="border-t border-border">
+        {openings.map((job, i) => (
+          <AccordionItem value={`job-${i}`} class="border-border">
+            <AccordionTrigger class="items-center gap-6 py-5 text-lg font-semibold text-foreground hover:no-underline **:data-[slot=accordion-trigger-icon]:size-5 **:data-[slot=accordion-trigger-icon]:text-foreground">
+              <span class="flex flex-wrap items-baseline gap-x-4 gap-y-1">
+                <span>{job.title}</span>
+                <span class="text-sm font-normal text-muted-foreground">{job.team} · {job.highlight}</span>
+              </span>
+              <ChevronDown slot="icon" class="size-5 transition-transform group-aria-expanded/accordion-trigger:rotate-180" aria-hidden="true" />
+            </AccordionTrigger>
+            <AccordionContent class="flex max-w-3xl flex-col gap-3 pb-6 text-base text-muted-foreground [&_p:not(:last-child)]:mb-0">
+              <p>{job.intro}</p>
+              {job.sections.map((section) => (
+                <>
+                  <h3 class="mt-3 font-semibold text-foreground">{section.title}</h3>
+                  {section.text.map((p) => <p>{p}</p>)}
+                </>
+              ))}
+              <h3 class="mt-3 font-semibold text-foreground">How to apply</h3>
+              <p>Email us and mention the {job.title} role. {job.apply}</p>
+              {/* The address is never in the page: it sits behind the anti-scrape reveal (docs/contact-reveal.md). */}
+              <p class="text-foreground"><ContactReveal contact="careers" /></p>
+            </AccordionContent>
+          </AccordionItem>
         ))}
-      </ul>
+      </Accordion>
     ) : (
       <div class="flex flex-col gap-4">
         <p class="text-lg text-muted-foreground">We don't have any openings right now, but we're always glad to hear from great people.</p>

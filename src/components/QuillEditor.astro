@@ -1,6 +1,12 @@
 ---
 import ChevronDown from '@lucide/astro/icons/chevron-down';
 
+// The theme stylesheet is imported here, not in the client <script> below, so it ships as part of
+// the page's own CSS. Imported from the script, `astro dev` only injects it once that script (and
+// Quill with it) has loaded: until then, or for good if the script fails to load, the
+// server-rendered toolbar shows as unstyled, black-filled icons.
+import 'quill/dist/quill.snow.css';
+
 import boldSvg from 'quill/assets/icons/bold.svg?raw';
 import italicSvg from 'quill/assets/icons/italic.svg?raw';
 import underlineSvg from 'quill/assets/icons/underline.svg?raw';
@@ -156,7 +162,6 @@ const hasActionsRow = !toolbarOpen || Astro.slots.has('actions');
 
 <script>
   import Quill from 'quill';
-  import 'quill/dist/quill.snow.css';
 
   // Multi-instance: the component's script is bundled once, so wire every editor on the page.
   // All element lookups are scoped to each instance's [data-quill-root] so several editors can

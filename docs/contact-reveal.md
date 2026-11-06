@@ -2,6 +2,8 @@
 
 The phone number on `/contact` never appears in any page, script, stylesheet, the static build or the repo. A visitor clicks **Show number**, passes the bot checks, and the number is drawn on a `<canvas>` from vector outlines. The same response carries the text, which the page holds in memory only (never in the DOM), so **Copy** and **Call** work straight away without another check. Ported from fundedexperts (`docs/contact-reveal.md` there); the one difference is that the value is a secret, not a source file.
 
+The careers email on `/careers` (the `careers` detail, `CONTACT_CAREERS_EMAIL`) goes through the same reveal: **Show email**, then **Copy** and **Email**. Everything below applies to it too.
+
 ## The layers
 
 | Layer | Where | Applies in |
@@ -16,18 +18,19 @@ OCR on a screenshot defeats any visual scheme. The checks are the real protectio
 
 ## Files
 
-- **The value is not in the repo.** `CONTACT_PHONE` (E.164, e.g. `+15555550123`) is an `astro:env` server secret: in `.env` and `.dev.vars` locally (both gitignored) and a Worker secret in production. Unset, the endpoint answers 503 and the page says to send a message instead.
-- `src/lib/contact/values.ts`: **server-only** resolver from the secret to display text `(555) 555-0123` and link `tel:+15555550123`. Only the reveal endpoint may import it.
-- `src/lib/contact/keys.ts`: client-safe list of details (just `phone`), kinds and labels.
+- **The values are not in the repo.** `CONTACT_PHONE` (E.164, e.g. `+15555550123`) and `CONTACT_CAREERS_EMAIL` are `astro:env` server secrets: in `.env` and `.dev.vars` locally (both gitignored) and a Worker secret in production. Unset, the endpoint answers 503 and the page says to send a message instead.
+- `src/lib/contact/values.ts`: **server-only** resolver from the secret to display text `(555) 555-0123` and link `tel:+15555550123` (for the email: the address and a `mailto:` link). Only the reveal endpoint may import it.
+- `src/lib/contact/keys.ts`: client-safe list of details (`phone`, `careers`), kinds and labels.
 - `src/lib/contact/glyphs.ts`: **generated** outlines (Inter, weight 400) for digits, phone punctuation and the characters an email would need. Rerun `node scripts/contact-glyphs.mjs` after changing the font; `composeOutline` throws naming the script if a character is missing.
 - `src/components/ContactReveal.astro`: the Show / Copy / Call UI, one instance per detail. Turnstile loads on the first click, not with the page, in a native popover anchored to the detail that opens for "Checking…" and any challenge. One check per Show; Copy / Call use the text from that response.
 - `src/lib/turnstile.ts`: `awaitTurnstileToken` / `refreshTurnstile`, used by the component. After each spend the widget is reset, so the next token is usually ready before the next click.
-- `scripts/check-contact-values.mjs` (`pnpm check:contact`): fails if the configured number, in any of its shapes, appears in a committable file or in `dist/`, or if anything but the endpoint imports `values.ts`. Run it after `pnpm build`.
+- `scripts/check-contact-values.mjs` (`pnpm check:contact`): fails if a configured value (the number in any of its shapes, or the careers address) appears in a committable file or in `dist/`, or if anything but the endpoint imports `values.ts`. Run it after `pnpm build`.
 
 ## Setup
 
 - [ ] Put the real number in `.env` and `.dev.vars` as `CONTACT_PHONE=+1…` (a `555` placeholder is there now)
 - [ ] `wrangler secret put CONTACT_PHONE` for production
+- [ ] Put the careers address in `.env` and `.dev.vars` as `CONTACT_CAREERS_EMAIL=…`, and `wrangler secret put CONTACT_CAREERS_EMAIL` for production
 - [ ] Deploy the new `CONTACT_RATE_LIMIT` binding (namespace `1006`) with the next `wrangler deploy`
 - [ ] **Turnstile widget** (dashboard): Widget Mode **Managed**; turn on "Skip future security rule challenges for verified visitors" (pre-clearance), clearance level **Managed**. Make sure the production hostname is on the widget, since tokens are now checked against it
 - [ ] Once the site is on a custom domain, add a **WAF custom rule** on the zone (Security → WAF → Custom rules):

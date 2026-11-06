@@ -94,6 +94,9 @@ export default defineConfig({
       // The public phone number, E.164 (+15555550123). Secret so it never lands in the repo or the
       // static build: only /api/contact/reveal reads it, behind Turnstile (docs/contact-reveal.md).
       CONTACT_PHONE: envField.string({ context: "server", access: "secret", optional: true }),
+      // The address job applicants write to, shown on /careers. Secret for the same reason as the
+      // phone number: only /api/contact/reveal reads it, behind Turnstile.
+      CONTACT_CAREERS_EMAIL: envField.string({ context: "server", access: "secret", optional: true }),
       // LocationIQ, for address suggestions on the apply form (/api/address/suggest). Called from
       // the Worker only.
       LOCATIONIQ_API_KEY: envField.string({ context: "server", access: "secret", optional: true }),

@@ -1,7 +1,7 @@
 #!/usr/bin/env node
-// Guards the contact reveal (docs/contact-reveal.md): the phone number must exist only as a secret.
-// Fails if the configured CONTACT_PHONE (read from the local .env / .dev.vars files) appears in any
-// file `git add -A` would stage, or in the build output under dist/ when there is one, or if anything
+// Guards the contact reveal (docs/contact-reveal.md): the phone number and the careers email must
+// exist only as secrets. Fails if a configured value (VARS below, read from the local .env /
+// .dev.vars files) appears in any file `git add -A` would stage, or in the build output under dist/ when there is one, or if anything
 // but the reveal endpoint imports src/lib/contact/values.ts. Run after `pnpm build` to cover dist/:
 //   pnpm check:contact
 // Failures name the variable and the file, never the value.
@@ -10,7 +10,7 @@ import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs';
 import { join } from 'node:path';
 
 const ENV_FILES = ['.env', '.dev.vars', ...readdirSync('.').filter((f) => /^\.env\..+/.test(f) && f !== '.env.example')];
-const VARS = ['CONTACT_PHONE'];
+const VARS = ['CONTACT_PHONE', 'CONTACT_CAREERS_EMAIL'];
 const VALUES_FILE = 'src/lib/contact/values.ts';
 const IMPORTERS = ['src/pages/api/contact/reveal.ts'];
 const BINARY = /\.(png|jpe?g|gif|webp|avif|ico|woff2?|ttf|pdf|zip)$/i;
@@ -64,7 +64,8 @@ for (const file of committable) {
   if (/contact\/values['"]/.test(readFileSync(file, 'utf8'))) problems.add(`${file} imports ${VALUES_FILE} (only the reveal endpoint may)`);
 }
 
-if (needles.length === 0) console.warn('check:contact: no CONTACT_PHONE in the local env files, so only the import rule was checked.');
+if (needles.length === 0) console.warn(`check:contact: no ${VARS.join(' or ')} in the local env files, so only the import rule was checked.`);
+else for (const name of VARS.filter((v) => !needles.some((n) => n.name === v))) console.warn(`check:contact: no ${name} in the local env files, so that value was not checked.`);
 if (problems.size > 0) {
   console.error(`check:contact failed:\n  ${[...problems].join('\n  ')}`);
   process.exit(1);
