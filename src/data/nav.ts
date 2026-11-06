@@ -56,6 +56,8 @@ export const navMenus: NavMenu[] = [
     links: [
       { href: "/capital", label: "Compare All Options" },
       ...fundingProducts.map((p) => ({ href: `/capital/${productSlug(p)}`, label: p.title })),
+      // A service rather than a funding product, so it has its own page outside /capital.
+      { href: "/debt-relief", label: "Business Debt Relief" },
     ],
   },
   {

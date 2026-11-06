@@ -1,0 +1,82 @@
+---
+// Business debt relief: a service page, not a funding product, so it sits outside the /capital
+// comparison table. The copy comes from oceandebtrelief.com (the firm the owner works with on debt
+// relief), with the brand swapped and Ocean's own details (its New York headquarters) taken out.
+import PageShell from "@/components/page/PageShell.astro";
+import PageHero from "@/components/page/PageHero.astro";
+import Section from "@/components/page/Section.astro";
+import FeatureTiles from "@/components/page/FeatureTiles.astro";
+import CheckList from "@/components/page/CheckList.astro";
+import NumberedGrid from "@/components/page/NumberedGrid.astro";
+import Photo from "@/components/page/Photo.astro";
+import CtaBand from "@/components/page/CtaBand.astro";
+import { photos } from "@/data/photos";
+import { Handshake, Layers, ShieldCheck } from "@lucide/astro";
+
+const services = [
+  {
+    icon: ShieldCheck,
+    title: "Merchant Cash Advance (MCA) Defense",
+    text: "Halt the drain on your working capital. We restructure high-frequency MCAs into sustainable monthly payments, shielding your cash flow from aggressive daily withdrawals.",
+  },
+  {
+    icon: Handshake,
+    title: "Strategic Creditor Settlements",
+    text: "Negotiate direct principal reductions with your creditors. We leverage industry-specific legal frameworks to secure full-balance settlements at a fraction of the original cost, restoring your balance sheet solvency.",
+  },
+  {
+    icon: Layers,
+    title: "Corporate Debt Consolidation",
+    text: "Centralize your repayment architecture to optimize monthly liquidity. Our team audits and consolidates your existing obligations into one unified plan, eliminating the headache of managing multiple creditors simultaneously.",
+  },
+];
+
+const differentiators = [
+  { title: "The 50% Liquidity Mission", text: "While most settle for small reductions, our mission is to return 50% of your monthly debt budget back to your business operating account." },
+  { title: "Data-Driven Auditing", text: "We don’t use “one-size-fits-all” estimates. We perform a detailed audit of every contract in your portfolio to identify the most effective path for restructuring your specific obligations." },
+  { title: "Built for Business Owners", text: "Most debt relief companies focus on consumer credit. Our entire infrastructure, from our negotiators to our reporting, is built specifically for the unique cash-flow needs of business operations." },
+  { title: "The Lender-Friendly Advantage", text: "While most firms use aggressive tactics that burn bridges, we are lender friendly, negotiating fair, sustainable resolutions that keep all parties in good standing." },
+  { title: "Principal-Focused Intervention", text: "While others simply “kick the can” by moving interest around, we target the underlying principal balance for a true path to solvency." },
+];
+
+const whoWeAre = [
+  { title: "High-Touch, Personalized Service", text: "We reject the call-center model. Every client is paired with a Senior Negotiator who provides a direct line of communication and a strategy tailored to your specific industry and debt profile." },
+  { title: "Proven MCA Specialization", text: "MCAs require an aggressive defensive posture. We leverage deep knowledge of the New York creditor landscape to immediately halt daily withdrawals and restructure advances into sustainable monthly obligations." },
+  { title: "Transparency & Tech-Forward Auditing", text: "Maintain total oversight of your path to solvency. We utilize advanced financial auditing to deliver real-time status updates, honest portfolio assessments, and a transparent view of every negotiation." },
+];
+---
+
+<PageShell title="Business Debt Relief">
+  <PageHero eyebrow="Debt relief" title="Reclaim your business freedom" cta={{ href: "/contact", label: "Contact us today", rounded: true }} image={photos.ownerReviewingStatements}>
+    <p>Dealing with the burden of business debt? Our goal is to establish an affordable payment plan that puts at least <strong class="font-semibold text-foreground">50%</strong> of your monthly debt budget back in your pocket.</p>
+  </PageHero>
+
+  <Section>
+    <div class="grid items-center gap-10 lg:grid-cols-2">
+      <div class="flex flex-col gap-5">
+        <h2 class="text-3xl font-bold text-accent sm:text-4xl">Regional advocacy &amp; national reach</h2>
+        <p class="text-lg text-muted-foreground">Ventra Fund provides high-level representation for business owners across all 50 states. Our negotiators maintain the jurisdictional expertise required to navigate diverse state-specific lending regulations and creditor behaviors. Whether you are a local operation or a national enterprise, we provide the localized strategy necessary to secure a favorable settlement.</p>
+      </div>
+      <Photo photo={photos.advisorClientDesk} class="lg:order-first" />
+    </div>
+  </Section>
+
+  <Section wide title="Advanced solutions for business debt recovery" tone="muted">
+    <FeatureTiles items={services} />
+    <a href="/capital/consolidations" class="self-start text-base font-semibold text-primary underline-offset-4 hover:underline">Looking to refinance instead? See consolidation financing →</a>
+  </Section>
+
+  <Section title="Why Ventra Fund is superior">
+    <CheckList items={differentiators} columns={2} />
+  </Section>
+
+  <Section title="What makes us who we are" tone="muted">
+    <NumberedGrid items={whoWeAre} />
+  </Section>
+
+  <Section title="Professional standards & data security">
+    <p class="max-w-3xl text-lg text-muted-foreground">All consultations at Ventra Fund are conducted under strict non-disclosure protocols. We utilize bank-grade encryption to secure your financial records, and our negotiation team adheres to the highest standards of fiduciary integrity. Your proprietary business data is never shared with third-party marketers.</p>
+  </Section>
+
+  <CtaBand title="Ready to reclaim your business freedom?" text="Contact us today for a confidential consultation." href="/contact" label="Contact us today" />
+</PageShell>
