@@ -59,7 +59,7 @@ export const openings: Opening[] = [
       },
       {
         title: "Location",
-        text: ["Remote is available, though onboarding includes hybrid sessions for the first two weeks. Connecticut or Westchester County residents are preferred; otherwise you must live in the New York City metro area."],
+        text: ["Remote is available, though onboarding includes hybrid sessions for the first two weeks. Fairfield County or Westchester County residents are preferred; otherwise you must live in the New York City metro area."],
       },
     ],
     apply: "Include a link to something you've deployed.",
