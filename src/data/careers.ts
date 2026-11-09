@@ -34,7 +34,7 @@ export const openings: Opening[] = [
       },
       {
         title: "Location",
-        text: ["In person in Greenwich or Darien, Connecticut, or Bedford, New York."],
+        text: ["Candidates in Harrison, White Plains and the wider Westchester County area are preferred; otherwise you must be in the New York City metro area."],
       },
     ],
     apply: "Tell us a little about yourself and any sales or finance experience you have.",

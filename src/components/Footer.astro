@@ -10,17 +10,10 @@ import LinkedIn from "@/components/LinkedIn.astro";
     <!-- The V's top bar spans the full width; at lg the links sit under it, right of the mark. Everything is sized from the mark's height (--mark-h) in viewBox units (1192 × 713, bar 61 tall) -->
     <div class="relative flex flex-col gap-16 [--mark-h:5rem] lg:block lg:min-h-(--mark-h) lg:[--mark-h:15rem]">
       <div class="relative h-(--mark-h) w-full lg:absolute lg:inset-x-0 lg:top-0">
-        <!-- VF mark with the hero's grainy gradient: the gradient-filled mark, then the same shape filled with the grain tile and overlay-blended on top.
+        <!-- VF mark in plain black.
              The mark sits at the box's left; the V's top bar runs on to the box's right edge, where a right-aligned mask cuts its slanted end back in. -->
-        <svg class="isolate absolute inset-0 size-full" role="img" aria-label="Ventra Fund" xmlns="http://www.w3.org/2000/svg">
+        <svg class="absolute inset-0 size-full" role="img" aria-label="Ventra Fund" xmlns="http://www.w3.org/2000/svg">
           <defs>
-            <linearGradient id="wordmark-gradient" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0" style="stop-color: var(--chart-2); stop-color: oklch(from var(--chart-1) calc(l * 0.7) c h)" />
-              <stop offset="1" style="stop-color: var(--chart-5); stop-color: oklch(from var(--chart-4) calc(l * 0.5) c h)" />
-            </linearGradient>
-            <pattern id="wordmark-grain" patternUnits="userSpaceOnUse" width="440" height="440">
-              <image href="/textures/grain.png" width="440" height="440" />
-            </pattern>
             <g id="wordmark">
             <path d="M0 0 L233 0 L381.68 362.64 L563 0 L100000 0 L100000 61 L599.5 61 L370.66 518.68 L183.01 61 L100.01 61 L342.32 652 L388 652 L646.5 135 L1144.5 135 L1046 332 L771 332 L734.5 405 L1009.5 405 L918.5 587 L643.5 587 L580.5 713 L509.5 713 L603 526 L879 526 L909 466 L633 466 L730.5 271 L1006.5 271 L1044 196 L693 196 L434.5 713 L292.33 713 Z" />
             </g>
@@ -33,8 +26,7 @@ import LinkedIn from "@/components/LinkedIn.astro";
           </defs>
           <g mask="url(#wordmark-bar-end)">
             <svg width="100%" height="100%" viewBox="0 0 1192 713" preserveAspectRatio="xMinYMid meet" overflow="visible">
-              <use href="#wordmark" fill="url(#wordmark-gradient)" />
-              <use href="#wordmark" fill="url(#wordmark-grain)" opacity="0.6" style="mix-blend-mode: overlay" />
+              <use href="#wordmark" fill="black" />
             </svg>
           </g>
         </svg>
