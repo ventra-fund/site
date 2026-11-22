@@ -10,19 +10,6 @@ export const MAX_BODY_BYTES = 1_000_000;
 export const json = (status: number, body: Record<string, unknown>, headers: Record<string, string> = {}) =>
   new Response(JSON.stringify(body), { status, headers: { 'Content-Type': 'application/json', ...headers } });
 
-// Multipart framing on top of a request's files and fields: boundaries, part headers.
-const MULTIPART_OVERHEAD_BYTES = 64 * 1024;
-
-/** Parse a JSON string under the body cap, or return the error response to send instead. */
-export function parseJsonText(raw: string): { payload: unknown } | { response: Response } {
-  if (raw.length > MAX_BODY_BYTES) return tooLarge();
-  try {
-    return { payload: JSON.parse(raw) };
-  } catch {
-    return { response: json(400, { error: 'invalid_json' }) };
-  }
-}
-
 /**
  * The request body capped at `max` bytes. A declared Content-Length over the cap is refused
  * before anything is read; the body is also counted as it streams, so a request that declares
@@ -56,20 +43,6 @@ export async function readJson(request: Request): Promise<{ payload: unknown } |
     return { payload: await capped.body.json() };
   } catch {
     return capped.exceeded() ? tooLarge() : { response: json(400, { error: 'invalid_json' }) };
-  }
-}
-
-/**
- * Parse a multipart body whose parts add up to at most `maxPartBytes` (files plus any JSON
- * field), or return the error response to send instead.
- */
-export async function readMultipart(request: Request, maxPartBytes: number): Promise<{ form: FormData } | { response: Response }> {
-  const capped = cappedBody(request, maxPartBytes + MULTIPART_OVERHEAD_BYTES);
-  if (!capped) return tooLarge();
-  try {
-    return { form: await capped.body.formData() };
-  } catch {
-    return capped.exceeded() ? tooLarge() : { response: json(400, { error: 'invalid_form' }) };
   }
 }
 

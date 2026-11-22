@@ -1,0 +1,147 @@
+---
+// The hero's tag lines as Main Capital's text accordion: each line shows its lead, and the rest of the
+// sentence unfolds on hover, focus or tap while the other lines dim.
+//
+// One change from Main Capital: there, the list grows down into empty space. Here the hero button
+// sits right under it, and the 3D scene re-frames whenever the hero copy changes size, so the list
+// reserves room for its tallest line to open into (--reserve, measured by the script). Opening a line
+// never moves the button or resizes the copy.
+interface Props {
+  points: { lead: string; rest: string }[];
+  class?: string;
+}
+
+const { points, class: className } = Astro.props;
+---
+
+<ul class:list={["hero-points list-none text-lg", className]} style={`--count: ${points.length}`} data-hero-points>
+  {points.map(({ lead, rest }) => (
+    <li class="hero-point" tabindex="0" data-hero-point>
+      <span class="hero-point-text">
+        <span class="hero-point-lead">{lead}</span>{" "}
+        <span class="hero-point-rest">{rest}</span>
+      </span>
+    </li>
+  ))}
+</ul>
+
+<style>
+  /* Each point is clipped to its first line; opening one unclips it to its full wrapped height and
+     fades in the rest of the sentence. */
+  .hero-points {
+    --line: 1.75rem;
+    --gap: 0.5rem;
+    --ease: cubic-bezier(0.22, 1, 0.36, 1);
+    /* Readable on the light sky; the site's muted grey is too faint there. */
+    --quiet: rgb(0 3 5 / 0.6);
+    display: flex;
+    flex-direction: column;
+    gap: var(--gap);
+    /* The collapsed height plus room for the tallest point to open into (see the note above). */
+    height: calc(var(--count) * var(--line) + (var(--count) - 1) * var(--gap) + var(--reserve, 0px));
+    line-height: var(--line);
+  }
+  .hero-point {
+    flex: none; /* never shrink to fit the reserved list height */
+    box-sizing: content-box;
+    height: var(--line);
+    overflow: hidden;
+    outline: none;
+    cursor: default;
+    -webkit-tap-highlight-color: transparent;
+    transition:
+      height 550ms var(--ease),
+      padding-bottom 550ms var(--ease),
+      color 300ms ease;
+  }
+  .hero-point-text {
+    display: block;
+    text-wrap: pretty;
+  }
+  .hero-point-rest {
+    color: var(--quiet);
+    opacity: 0;
+    filter: blur(2px);
+    transition:
+      opacity 200ms ease,
+      filter 200ms ease;
+  }
+  .hero-point[data-open] {
+    height: var(--open-h, auto);
+    padding-bottom: var(--gap);
+  }
+  .hero-point[data-open] .hero-point-rest {
+    opacity: 1;
+    filter: none;
+    transition-duration: 450ms;
+    transition-delay: 80ms;
+  }
+  .hero-points:has([data-open]) .hero-point:not([data-open]) {
+    color: var(--quiet);
+  }
+  /* Narrow screens: the rest of each sentence starts on its own line, so the hidden words don't share
+     the lead's line. */
+  @media (width < 48rem) {
+    .hero-point-rest {
+      display: block;
+      text-wrap: balance;
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .hero-point {
+      transition: color 300ms ease;
+    }
+    .hero-point-rest {
+      filter: none;
+    }
+  }
+</style>
+
+<script>
+  for (const list of document.querySelectorAll<HTMLElement>("[data-hero-points]")) {
+    const items = [...list.querySelectorAll<HTMLElement>("[data-hero-point]")];
+    const open = (target: Element | null) => {
+      for (const item of items) item.toggleAttribute("data-open", item === target);
+    };
+    const pointAt = (node: EventTarget | null) => (node instanceof Element ? node.closest("[data-hero-point]") : null);
+
+    // Height can't transition to `auto`, so give each point its real wrapped height, and give the list
+    // room for the tallest one. The observer re-measures on resize and when the web font swaps in.
+    const sizer = new ResizeObserver(() => {
+      const style = getComputedStyle(list);
+      const line = parseFloat(style.lineHeight);
+      const gap = parseFloat(style.rowGap) || 0;
+      let extra = 0;
+      for (const item of items) {
+        const height = (item.firstElementChild as HTMLElement | null)?.offsetHeight ?? line;
+        item.style.setProperty("--open-h", `${height}px`);
+        extra = Math.max(extra, height - line);
+      }
+      list.style.setProperty("--reserve", extra > 0 ? `${extra + gap}px` : "0px");
+    });
+    for (const item of items) if (item.firstElementChild) sizer.observe(item.firstElementChild);
+
+    // Mouse/pen: follow the pointer, keeping the current point open across the gaps.
+    list.addEventListener("pointerover", (e) => {
+      if (e.pointerType === "touch") return;
+      const point = pointAt(e.target);
+      if (point) open(point);
+    });
+    list.addEventListener("pointerleave", (e) => {
+      if (e.pointerType !== "touch") open(list.querySelector("[data-hero-point]:focus-visible"));
+    });
+
+    // Keyboard and touch: open whatever is focused or tapped; close when leaving.
+    list.addEventListener("focusin", (e) => open(pointAt(e.target)));
+    list.addEventListener("focusout", (e) => {
+      if (!list.contains(e.relatedTarget as Node | null)) open(null);
+    });
+    list.addEventListener("click", (e) => {
+      const point = pointAt(e.target);
+      if (point) open(point);
+    });
+    document.addEventListener("pointerdown", (e) => {
+      if (e.pointerType === "touch" && !list.contains(e.target as Node)) open(null);
+    });
+  }
+</script>

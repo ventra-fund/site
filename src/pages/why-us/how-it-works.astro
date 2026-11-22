@@ -5,23 +5,25 @@ import Section from "@/components/page/Section.astro";
 import NumberedGrid from "@/components/page/NumberedGrid.astro";
 import CheckList from "@/components/page/CheckList.astro";
 import Photo from "@/components/page/Photo.astro";
+import DealFlow from "@/components/DealFlow.astro";
 import { photos } from "@/data/photos";
 import CtaBand from "@/components/page/CtaBand.astro";
+import { dayList, isoProgram, underwriterAvailability } from "@/data/iso-program";
 ---
 
-<PageShell title="How it works">
-  <PageHero eyebrow="Why us" title="From application to funding in four steps" cta={{ href: "/apply", label: "Start your application" }} image={photos.deskLaptopNotes}>
-    <p>No business plans, no weeks of back-and-forth.</p>
+<PageShell title="How submissions work">
+  <PageHero eyebrow="For ISOs" title="From onboarding to your first commission run" cta={{ href: "/partner", label: "Onboard now" }} image={photos.deskLaptopNotes}>
+    <p>One short form to get set up, {isoProgram.stips.length} stips per deal, and an update at every step.</p>
   </PageHero>
 
   <Section>
     <NumberedGrid
       columns={4}
       items={[
-        { title: "Apply in minutes", text: "Tell us about your business and upload recent bank statements. There's no credit check to apply." },
-        { title: "Talk to an advisor", text: "A funding advisor reviews your application with you and answers questions." },
-        { title: "Review your offers", text: "See the amount, total cost and payment schedule for each option, in plain language." },
-        { title: "Get funded", text: "Sign electronically and receive funds as soon as the next business day." },
+        { title: "Onboard", text: "Fill in the onboarding form. Your relationship manager calls you, walks through our guidelines and sets you up to submit." },
+        { title: "Submit the file", text: "Send the merchant's file with the stips below. Automated checks on industry type and position stack give you a quick pre-approval." },
+        { title: "Underwriting", text: "A person underwrites every file. If it's a decline, you get the reason, the merchant stays yours, and you can push back if we got something wrong." },
+        { title: "Funded and paid", text: `Once the merchant signs, we fund. Commission runs every ${dayList(isoProgram.commissionDays)}.` },
       ]}
     />
   </Section>
@@ -29,23 +31,23 @@ import CtaBand from "@/components/page/CtaBand.astro";
   <Section tone="muted">
     <div class="grid items-center gap-10 lg:grid-cols-2">
       <div class="flex flex-col gap-6">
-        <h2 class="text-3xl font-bold text-accent sm:text-4xl">What you'll need</h2>
-        <CheckList
-          items={[
-            "Basic business details: legal name, address and tax ID",
-            "Three to six months of business bank statements (three to four recommended)",
-            "Owner details for anyone with 20% or more ownership",
-            "A business checking account for your deposit",
-          ]}
-        />
+        <h2 class="text-3xl font-bold tracking-[-0.02em] sm:text-4xl">What a submission needs</h2>
+        <CheckList items={isoProgram.stips} />
+        <p class="text-base text-muted-foreground">A clean file gets the fastest decision. Add owner details for anyone with 20% or more ownership, and note any open positions up front.</p>
       </div>
       <Photo photo={photos.ownerReviewingStatements} class="aspect-square" />
     </div>
   </Section>
 
-  <Section title="After you're funded">
+  <Section title="Track every step" intro="You hear from us as the deal moves, so you never have to chase a status.">
+    <DealFlow />
+  </Section>
+
+  <Section title="After you submit" tone="muted">
     <div class="flex max-w-3xl flex-col gap-4 text-lg text-muted-foreground">
-      <p>Your advisor stays your point of contact for your balance, an early payoff or more funding. Payments come out automatically on your agreed schedule, and customers in good standing can often renew with a shorter review.</p>
+      <p>Your merchant stays yours, funded or declined. Apart from the verification call made in your name, we never contact them on our own or market to them around you.</p>
+      <p>When the merchant reaches {isoProgram.renewAtPercent}% paid in, they can renew. The renewal is credited to you at the same commission as the first funding.</p>
+      <p>Questions on a file? Talk to an underwriter live, {underwriterAvailability}.</p>
     </div>
   </Section>
 

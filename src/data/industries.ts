@@ -1,5 +1,5 @@
-// Industry pages under /who-we-fund/<slug>. `products` are product slugs (product-pages.ts) shown as
-// the recommended options, in order.
+// Industry guidelines under /who-we-fund/<slug>, written for the ISO submitting the deal. `products`
+// are product slugs (product-pages.ts) shown as the products to submit, in order.
 import { photos, type Photo } from "@/data/photos";
 
 export interface Industry {
@@ -8,13 +8,16 @@ export interface Industry {
   /** Plural noun for the businesses, used mid-sentence in section headings ("How restaurants use…"). */
   audience: string;
   heading: string;
+  /** Also the card text on the Who We Fund hub. */
   intro: string;
   image: Photo;
-  /** Beside the "How … use our funding" list; should differ from the hero `image`. */
+  /** Beside the "How … use the funds" list; should differ from the hero `image`. */
   usesImage: Photo;
-  challenges: { title: string; text: string }[];
+  /** What we look at when underwriting files from this industry. */
+  underwriting: { title: string; text: string }[];
   uses: string[];
   products: string[];
+  /** A deal an ISO might place, told from the ISO's side. */
   example: string;
 }
 
@@ -23,86 +26,86 @@ export const industries: Industry[] = [
     slug: "restaurants",
     name: "Restaurants",
     audience: "restaurants",
-    heading: "Restaurant financing that keeps the kitchen running",
-    intro: "We fund restaurants, cafés, bars and food trucks based on the sales they're already doing.",
+    heading: "Submitting restaurant deals",
+    intro: "Restaurants, cafés, bars and food trucks, funded on the sales they're already doing.",
     image: photos.chefPlating,
     usesImage: photos.restaurantServer,
-    challenges: [
-      { title: "Seasonal traffic", text: "Patio season and holidays bring the rush; January and February don't." },
-      { title: "Equipment failures", text: "A walk-in cooler or range going down can't wait for a bank's timeline." },
-      { title: "Daily cash needs", text: "Food costs, payroll and rent come due before the weekend's receipts clear." },
+    underwriting: [
+      { title: "Seasonal traffic", text: "Patio season and holidays bring the rush; January and February don't. Steady deposits through the dips count for more than the peak." },
+      { title: "Daily card sales", text: "Card volume makes remittances easy to size, which is why advances suit most restaurant files." },
+      { title: "Urgent repairs", text: "A walk-in cooler or range going down can't wait for a bank's timeline. A decision within a day can." },
     ],
     uses: ["Kitchen equipment repair or replacement", "Renovations and patio build-outs", "Inventory ahead of busy seasons", "Payroll through slow months", "Opening a second location"],
     products: ["merchant-cash-advances", "term-financing", "lines-of-credit"],
-    example: "A neighborhood bistro whose walk-in fails in July can replace it within days, with remittances tied to daily card sales so a slow Tuesday doesn't strain the books.",
+    example: "A bistro you work with loses its walk-in in July. An advance replaces it within days, with remittances tied to daily card sales so a slow Tuesday doesn't strain the merchant.",
   },
   {
     slug: "retail",
     name: "Retail",
     audience: "retailers",
-    heading: "Retail financing for inventory, storefronts and growth",
-    intro: "From boutiques to hardware stores, we fund retailers with capital sized to their sales.",
+    heading: "Submitting retail deals",
+    intro: "Boutiques to hardware stores, funded on their sales history.",
     image: photos.retailShelves,
     usesImage: photos.boutiqueOwner,
-    challenges: [
-      { title: "Inventory timing", text: "You pay for holiday stock months before it sells." },
-      { title: "Supplier terms", text: "Bulk discounts reward paying upfront, if you have the cash." },
-      { title: "Uneven months", text: "Sales spike around holidays and dip after." },
+    underwriting: [
+      { title: "Inventory timing", text: "Retailers pay for holiday stock months before it sells. We size to the sales history, not one month's deposits." },
+      { title: "Uneven months", text: "Sales spike around holidays and dip after. We read the pattern across months." },
+      { title: "Supplier terms", text: "Bulk discounts reward paying upfront, a clear and common use of funds." },
     ],
     uses: ["Seasonal inventory", "Store remodels and fixtures", "Point-of-sale and e-commerce upgrades", "Marketing campaigns", "New locations"],
     products: ["merchant-cash-advances", "lines-of-credit", "cash-credit"],
-    example: "A toy store can stock up in September for the holidays, then repay from the November and December sales that stock produces.",
+    example: "A toy store you work with stocks up in September for the holidays, then repays from the November and December sales that stock produces.",
   },
   {
     slug: "construction",
     name: "Construction",
     audience: "contractors",
-    heading: "Construction financing that bridges the gap between jobs",
-    intro: "We help general contractors and trades keep crews working while they wait on invoices.",
+    heading: "Submitting construction deals",
+    intro: "General contractors and trades, funded to keep crews working while invoices clear.",
     image: photos.contractorsPlans,
     usesImage: photos.excavatorCrew,
-    challenges: [
-      { title: "Slow receivables", text: "Net-30 to net-90 terms leave you carrying the cost of every job." },
-      { title: "Upfront materials", text: "Lumber, steel and supplies are due before work starts." },
-      { title: "Equipment costs", text: "Machinery is expensive to buy, rent or repair." },
+    underwriting: [
+      { title: "Slow receivables", text: "Net-30 to net-90 terms make deposits lumpy. We look at the pattern across jobs, not a single quiet month." },
+      { title: "Upfront materials", text: "Lumber, steel and supplies are due before work starts, a clear and common use of funds." },
+      { title: "Equipment costs", text: "Machinery is expensive to buy, rent or repair. Larger, planned purchases suit term financing." },
     ],
     uses: ["Materials for new contracts", "Payroll while waiting on invoices", "Equipment purchases and repairs", "Bonding and mobilization costs", "Taking on larger projects"],
     products: ["lines-of-credit", "term-financing", "merchant-cash-advances"],
-    example: "A roofing contractor waiting 60 days on a commercial job can draw on a line of credit to start the next one, then repay when the first invoice clears.",
+    example: "A roofing contractor you work with is waiting 60 days on a commercial job. A line of credit lets them start the next one now and repay when the first invoice clears.",
   },
   {
     slug: "healthcare",
     name: "Healthcare",
     audience: "healthcare practices",
-    heading: "Financing for medical, dental and wellness practices",
-    intro: "We fund independent practices, clinics and wellness businesses based on their real cash flow.",
+    heading: "Submitting healthcare deals",
+    intro: "Independent practices, clinics and wellness businesses, funded on their real cash flow.",
     image: photos.clinicFrontDesk,
     usesImage: photos.practiceFrontOffice,
-    challenges: [
-      { title: "Reimbursement delays", text: "Insurance claims can take weeks to pay out." },
-      { title: "Costly equipment", text: "Imaging, chairs and diagnostic tools are major investments." },
-      { title: "Growth costs", text: "Adding a provider or a location needs capital upfront." },
+    underwriting: [
+      { title: "Reimbursement timing", text: "Insurance claims can take weeks to pay out. We read deposits with that lag in mind." },
+      { title: "Costly equipment", text: "Imaging, chairs and diagnostic tools are major purchases that suit a fixed payment." },
+      { title: "Growth costs", text: "Adding a provider or a location needs capital before the revenue it brings." },
     ],
     uses: ["Medical and dental equipment", "Practice expansion and build-outs", "Hiring providers and staff", "Covering reimbursement gaps", "Technology and software upgrades"],
     products: ["term-financing", "lines-of-credit", "cash-credit"],
-    example: "A dental practice adding a second operatory can finance the equipment with a fixed monthly payment it can plan around from day one.",
+    example: "A dental practice you work with is adding a second operatory. Term financing covers the equipment with a fixed monthly payment the practice can plan around from day one.",
   },
   {
     slug: "trucking",
     name: "Trucking & Transportation",
     audience: "trucking companies",
-    heading: "Trucking and transportation financing",
-    intro: "We fund owner-operators and fleets so their trucks stay on the road.",
+    heading: "Submitting trucking deals",
+    intro: "Owner-operators and fleets, funded to keep trucks on the road.",
     image: photos.truckFleet,
     usesImage: photos.semiTruckHighway,
-    challenges: [
-      { title: "Fuel and maintenance", text: "Costs hit every week, whether or not loads pay on time." },
-      { title: "Broker payment terms", text: "Waiting 30 to 60 days for payment strains cash flow." },
-      { title: "Unexpected downtime", text: "A truck in the shop earns nothing." },
+    underwriting: [
+      { title: "Fuel and maintenance", text: "Costs hit every week, whether or not loads pay on time. We look at how deposits cover them." },
+      { title: "Freight payment terms", text: "Shippers and freight brokers paying in 30 to 60 days make deposits uneven. We expect it." },
+      { title: "Stacked positions", text: "Trucking files often carry several advances. Pre-approval reads the stack, and a consolidation can replace it." },
     ],
     uses: ["Repairs and maintenance", "Fuel and insurance costs", "Adding trucks or trailers", "Covering slow-paying loads", "Consolidating existing advances"],
     products: ["merchant-cash-advances", "consolidations", "lines-of-credit"],
-    example: "An owner-operator facing a major engine repair can be back on the road within the week, rather than losing weeks of loads waiting on a bank.",
+    example: "An owner-operator you work with needs a major engine repair. An advance has the truck back on the road within the week, instead of weeks of lost loads waiting on a bank.",
   },
 ];
 
@@ -112,5 +115,5 @@ export const moreIndustries = [
   "Manufacturing", "Professional services", "Real estate services", "Staffing", "Wholesale & distribution", "E-commerce",
 ];
 
-/** Businesses we can't fund, shown so applicants don't waste their time. */
-export const notFunded = ["Startups under six months old", "Personal loans", "Non-profits", "Grants or government relief programs"];
+/** What we can't fund, shown so ISOs don't spend time submitting it. */
+export const notFunded = ["Startups under six months old", "Personal or consumer loans", "Non-profits", "Grants or government relief programs"];

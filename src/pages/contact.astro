@@ -14,8 +14,9 @@ const EMAIL_PATTERN = "[^@\\s]+@[^@\\s]+\\.[^@\\s]{2,}";
     <main class="w-full min-h-screen px-4 pt-30 pb-20">
         <div class="mx-auto flex max-w-2xl flex-col gap-8">
             <div class="flex flex-col gap-3">
-                <h1 class="text-3xl font-bold text-accent sm:text-5xl">Contact us</h1>
-                <p class="text-lg text-muted-foreground">Questions about financing with Ventra Fund? Send us a message and we'll get back to you.</p>
+                <h1 class="text-[clamp(2.5rem,5vw,4rem)] font-normal leading-[1.02] tracking-[-0.04em] text-balance">Contact us</h1>
+                <p class="text-lg text-muted-foreground">Questions about onboarding, a file or your commission? Send us a message and we'll get back to you. To become a partner, use the <a href="/partner" class="font-medium text-foreground underline underline-offset-4">onboarding form</a>.</p>
+                <p class="text-base text-muted-foreground">Business owner looking for funding? We fund only through ISOs, so ask your broker to send us your file.</p>
                 {/* The number sits behind the anti-scrape reveal (docs/contact-reveal.md): it is never in this page. */}
                 <p class="text-lg text-muted-foreground">Prefer to talk? Call us: <ContactReveal contact="phone" /></p>
                 <noscript><p class="text-sm text-muted-foreground">Turn on JavaScript to see our phone number, or send us a message below.</p></noscript>
@@ -41,7 +42,7 @@ const EMAIL_PATTERN = "[^@\\s]+@[^@\\s]+\\.[^@\\s]{2,}";
                 <Turnstile />
 
                 <p data-contact-error hidden role="alert" class="text-sm text-destructive"></p>
-                <p data-contact-success hidden role="status" class="text-sm font-medium text-accent">Thanks, your message was sent. We'll be in touch.</p>
+                <p data-contact-success hidden role="status" class="text-sm font-medium text-foreground">Thanks, your message was sent. We'll be in touch.</p>
 
                 <Button type="submit" size="lg" class="self-start" data-contact-submit data-label="Send message" disabled>Checking security…</Button>
                 {/* Notice, not a checkbox: sending is the agreement. */}

@@ -1,6 +1,7 @@
-// Site navigation. Every link has a page; most are scaffolds with placeholder copy (see
-// src/data/company.ts) to be filled in before launch.
+// Site map: the search page lists these, and the next site nav will be built from them. Every link
+// has a page. The site is written for ISOs and brokers; merchants come to us only through them.
 import { fundingProducts, productSlug } from "@/data/funding-products";
+import { industries } from "@/data/industries";
 
 export interface NavLink {
   href: string;
@@ -12,7 +13,7 @@ export interface NavMenu {
   links: NavLink[];
 }
 
-/** The thin bar above the main nav. The phone reveal sits at its right, after `utilityLinksEnd`. */
+/** Secondary pages, outside the menus below. */
 export const utilityLinks: NavLink[] = [
   { href: "/resources", label: "Resources" },
   { href: "/contact", label: "Contact Us" },
@@ -20,53 +21,41 @@ export const utilityLinks: NavLink[] = [
   { href: "/search", label: "Search" },
 ];
 
+/** Sign-in for existing partners. */
 export const utilityLinksEnd: NavLink[] = [{ href: "/partner/login", label: "Partner Login" }];
 
 export const navMenus: NavMenu[] = [
+  {
+    label: "For ISOs",
+    links: [
+      { href: "/why-us", label: "Why Ventra Fund" },
+      { href: "/why-us/how-it-works", label: "How Submissions Work" },
+      { href: "/why-us/transparent-pricing", label: "Commission" },
+      { href: "/partners/brokers", label: "ISO Partner Program" },
+      { href: "/why-us/faq", label: "FAQ" },
+      { href: "/partner", label: "Onboard Now" },
+    ],
+  },
+  {
+    label: "What We Fund",
+    links: [
+      { href: "/who-we-fund", label: "Deal Guidelines" },
+      ...industries.map((i) => ({ href: `/who-we-fund/${i.slug}`, label: i.name })),
+    ],
+  },
+  {
+    label: "Products",
+    links: [
+      { href: "/capital", label: "Compare Products" },
+      ...fundingProducts.map((p) => ({ href: `/capital/${productSlug(p)}`, label: p.title })),
+    ],
+  },
   {
     label: "About Us",
     links: [
       { href: "/about", label: "Our Story" },
       { href: "/about/leadership", label: "Leadership" },
-      { href: "/about/reviews", label: "Customer Reviews" },
-    ],
-  },
-  {
-    label: "Why Us",
-    links: [
-      { href: "/why-us", label: "Why Ventra Fund" },
-      { href: "/why-us/how-it-works", label: "How It Works" },
-      { href: "/why-us/transparent-pricing", label: "Transparent Pricing" },
-      { href: "/why-us/faq", label: "FAQ" },
-    ],
-  },
-  {
-    label: "Who We Fund",
-    links: [
-      { href: "/who-we-fund", label: "All Industries" },
-      { href: "/who-we-fund/restaurants", label: "Restaurants" },
-      { href: "/who-we-fund/retail", label: "Retail" },
-      { href: "/who-we-fund/construction", label: "Construction" },
-      { href: "/who-we-fund/healthcare", label: "Healthcare" },
-      { href: "/who-we-fund/trucking", label: "Trucking & Transportation" },
-    ],
-  },
-  {
-    label: "Financing Solutions",
-    links: [
-      { href: "/capital", label: "Compare All Options" },
-      ...fundingProducts.map((p) => ({ href: `/capital/${productSlug(p)}`, label: p.title })),
-      // A service rather than a funding product, so it has its own page outside /capital.
-      { href: "/debt-relief", label: "Business Debt Relief" },
-    ],
-  },
-  {
-    label: "Partners",
-    links: [
-      { href: "/partner", label: "Become a Partner" },
-      { href: "/partners/brokers", label: "Broker & ISO Partners" },
-      { href: "/partners/referral", label: "Referral Partners" },
-      { href: "/partner/login", label: "Partner Login" },
+      { href: "/careers", label: "Careers" },
     ],
   },
 ];

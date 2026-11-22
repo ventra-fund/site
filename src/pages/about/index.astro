@@ -6,22 +6,22 @@ import NumberedGrid from "@/components/page/NumberedGrid.astro";
 import Photo from "@/components/page/Photo.astro";
 import { photos } from "@/data/photos";
 import CtaBand from "@/components/page/CtaBand.astro";
-import { Button } from "@/ui/button";
+import PillLink from "@/components/page/PillLink.astro";
 import { companyFacts, values } from "@/data/company";
 import { fundingProducts } from "@/data/funding-products";
 ---
 
 <PageShell title="About us">
-  <PageHero eyebrow="About us" title={`${companyFacts.totalFunded} in working capital, and counting`} cta={{ href: "/apply", label: "Apply for Funding", rounded: true }} image={photos.teamMeeting} class="min-h-[calc(100vh-7.5rem)] content-center">
-    <p>Ventra Fund provides working capital to established small businesses across the United States, with fast answers from people who pick up the phone.</p>
+  <PageHero eyebrow="About us" title={`${companyFacts.totalFunded} in working capital, and counting`} cta={{ href: "/partner", label: "Onboard now" }} image={photos.teamMeeting} class="min-h-[calc(100vh-7.5rem)] content-center">
+    <p>Ventra Fund funds established small businesses across the United States, only through ISOs, with fast answers from people who pick up the phone.</p>
   </PageHero>
 
   <Section tone="muted">
     <div class="grid items-center gap-10 lg:grid-cols-2">
       <div class="flex flex-col gap-5">
-        <h2 class="text-3xl font-bold text-accent sm:text-4xl">Why we built Ventra Fund</h2>
-        <p class="text-lg text-muted-foreground">We've run businesses ourselves and waited on capital that came too late. So in 2019 we founded Ventra Fund to be the lender we wished we'd had: clear terms, real people and offers sized to what your business can carry.</p>
-        <Button as="a" href="/why-us" variant="outline" size="lg" class="self-start">Why choose Ventra Fund</Button>
+        <h2 class="text-3xl font-bold tracking-[-0.02em] sm:text-4xl">Why we built Ventra Fund</h2>
+        <p class="text-lg text-muted-foreground">We watched brokers lose deals to funders who went quiet on a file, declined without a reason, or called the merchant behind the broker's back. So in 2019 we founded Ventra Fund to be the funder we'd want to send deals to: ISO-only, clear on every decision, and paying commission on time.</p>
+        <PillLink href="/why-us" variant="outline" class="self-start">Why ISOs work with us</PillLink>
       </div>
       <Photo photo={photos.leadersConversation} class="aspect-square lg:order-first" />
     </div>
@@ -31,9 +31,9 @@ import { fundingProducts } from "@/data/funding-products";
     <div class="grid items-center gap-10 lg:grid-cols-2">
       <Photo photo={photos.ownerLaptopCelebrating} class="aspect-square lg:order-last" />
       <div class="flex flex-col gap-5">
-        <h2 class="text-3xl font-bold text-accent sm:text-4xl">What we do</h2>
-        <p class="text-lg text-muted-foreground">We offer {fundingProducts.map((p) => p.title.toLowerCase().replace(/ \(.*\)/, "")).join(", ").replace(/, ([^,]*)$/, " and $1")} to businesses in hundreds of industries, directly and through brokers and referral partners.</p>
-        <Button as="a" href="/who-we-fund" variant="outline" size="lg" class="self-start">Who we fund</Button>
+        <h2 class="text-3xl font-bold tracking-[-0.02em] sm:text-4xl">What we do</h2>
+        <p class="text-lg text-muted-foreground">We fund {fundingProducts.map((p) => p.title.toLowerCase().replace(/ \(.*\)/, "")).join(", ").replace(/, ([^,]*)$/, " and $1")} for businesses in hundreds of industries. Every one of those deals comes to us through an ISO: we have no sales floor and no direct-to-merchant channel.</p>
+        <PillLink href="/who-we-fund" variant="outline" class="self-start">Deal guidelines</PillLink>
       </div>
     </div>
   </Section>
@@ -45,14 +45,14 @@ import { fundingProducts } from "@/data/funding-products";
   <Section tone="muted">
     <div class="grid gap-12 md:grid-cols-2">
       <div class="flex flex-col gap-5">
-        <h2 class="text-3xl font-bold text-accent sm:text-4xl">Leadership</h2>
-        <p class="text-lg text-muted-foreground">The people responsible for how we lend, and how we treat the owners we work with.</p>
-        <Button as="a" href="/about/leadership" size="lg" class="mt-auto self-start">Meet our leadership</Button>
+        <h2 class="text-3xl font-bold tracking-[-0.02em] sm:text-4xl">Leadership</h2>
+        <p class="text-lg text-muted-foreground">The people responsible for how we underwrite, and how we treat the brokers and merchants we work with.</p>
+        <PillLink href="/about/leadership" class="mt-auto self-start">Meet our leadership</PillLink>
       </div>
       <div class="flex flex-col gap-5">
-        <h2 class="text-3xl font-bold text-accent sm:text-4xl">Come work with us</h2>
-        <p class="text-lg text-muted-foreground">We're building a team that's smart, owner-focused and ready to help American small businesses grow.</p>
-        <Button as="a" href="/careers" size="lg" class="mt-auto self-start">View careers</Button>
+        <h2 class="text-3xl font-bold tracking-[-0.02em] sm:text-4xl">Come work with us</h2>
+        <p class="text-lg text-muted-foreground">We're building a team that's smart, broker-focused and ready to help American small businesses grow.</p>
+        <PillLink href="/careers" class="mt-auto self-start">View careers</PillLink>
       </div>
     </div>
   </Section>

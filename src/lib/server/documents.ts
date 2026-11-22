@@ -1,6 +1,10 @@
 import { UUID_V4 } from '../draft-config';
 import { getBinding } from './bindings';
 
+// The upload endpoint described below (/api/apply/upload) has been removed along with the public
+// application form; the copies it stored are still served to the admin pages and purged with their
+// records.
+//
 // Server-side copies of uploaded statements in the DOCUMENTS R2 bucket, keyed `apply/<uuid>` with
 // the filename, sniffed type and extraction job id as object metadata. Written by
 // /api/apply/upload so a statement from an application that is never submitted still reaches the

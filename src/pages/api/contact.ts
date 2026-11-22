@@ -7,7 +7,7 @@ import { sendEmail } from '@/lib/server/email';
 import { verifyTurnstile } from '@/lib/server/turnstile';
 import { enforceRateLimit } from '@/lib/server/rate-limit';
 
-// One of the three on-demand routes (with /api/apply and /api/partner). Everything else on the
+// One of the on-demand routes (with /api/partner and the admin and signing routes). Everything else on the
 // site is prerendered.
 export const prerender = false;
 

@@ -1,5 +1,7 @@
 ---
 // Numbered cards: steps, values, or a run of facts. Numbers come from the order.
+import GlareCard from "@/components/GlareCard.astro";
+
 interface Props {
   items: { title: string; text: string }[];
   columns?: 2 | 3 | 4;
@@ -11,10 +13,12 @@ const cols = { 2: "md:grid-cols-2", 3: "md:grid-cols-2 lg:grid-cols-3", 4: "md:g
 
 <ol class:list={["grid list-none grid-cols-1 gap-4", cols]}>
   {items.map(({ title, text }, i) => (
-    <li class="flex flex-col gap-3 border border-border bg-card p-6">
-      <span class="self-start bg-secondary px-3 py-2 text-sm font-semibold text-primary">{String(i + 1).padStart(2, "0")}</span>
-      <h3 class="text-lg font-bold text-foreground">{title}</h3>
-      <p class="text-base text-muted-foreground">{text}</p>
+    <li class="flex">
+      <GlareCard class="flex w-full flex-col border border-border bg-card p-8">
+        <span class="text-sm text-muted-foreground tabular-nums">{String(i + 1).padStart(2, "0")}</span>
+        <h3 class="mt-10 text-xl font-medium tracking-[-0.02em]">{title}</h3>
+        <p class="mt-2 text-base text-muted-foreground">{text}</p>
+      </GlareCard>
     </li>
   ))}
 </ol>

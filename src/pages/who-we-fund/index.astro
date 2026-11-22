@@ -7,34 +7,52 @@ import CtaBand from "@/components/page/CtaBand.astro";
 import { industries, moreIndustries, notFunded } from "@/data/industries";
 import { photos } from "@/data/photos";
 import { minimumRequirements } from "@/data/funding-products";
+import { isoProgram, underwriterAvailability } from "@/data/iso-program";
+import CheckList from "@/components/page/CheckList.astro";
 import { CalendarCheck, CircleDollarSign, Gauge, Landmark, X } from "@lucide/astro";
 ---
 
-<PageShell title="Who we fund">
-  <PageHero eyebrow="Who we fund" title="Funding for established small businesses" cta={{ href: "/apply", label: "Check eligibility" }} image={[photos.mechanicWorkshop, photos.florist, photos.constructionSite, photos.barista]}>
-    <p>We fund businesses in hundreds of industries. If you have steady revenue and some history, there's a good chance we can help.</p>
+<PageShell title="Deal guidelines">
+  <PageHero eyebrow="Deal guidelines" title="What we fund" cta={{ href: "/partner", label: "Onboard now" }} secondary={{ href: "/why-us/how-it-works", label: "How submissions work" }} image={[photos.mechanicWorkshop, photos.florist, photos.constructionSite, photos.barista]}>
+    <p>B and C paper, in hundreds of industries. If your merchant has steady deposits and some history, send the file over.</p>
   </PageHero>
 
-  <Section title="Do you qualify?" tone="muted">
+  <Section title="Minimums" intro="The lowest across our products; each product's page lists its own." tone="muted">
     <FeatureTiles
       columns={4}
       items={[
         { icon: CalendarCheck, title: `In business ${minimumRequirements.timeInBusiness}`, text: "Long enough to show a track record." },
-        { icon: Gauge, title: `Credit score ${minimumRequirements.creditScore}+`, text: "Applies to every owner on the application." },
-        { icon: CircleDollarSign, title: `${minimumRequirements.monthlyRevenue} monthly revenue`, text: "Consistent deposits in your business account." },
-        { icon: Landmark, title: "Business checking", text: "To verify revenue and receive your funds." },
+        { icon: Gauge, title: `Credit score ${minimumRequirements.creditScore}+`, text: "For every owner on the file." },
+        { icon: CircleDollarSign, title: `${minimumRequirements.monthlyRevenue} monthly revenue`, text: "Consistent deposits in the business account." },
+        { icon: Landmark, title: "Business checking", text: "To verify revenue and receive the funds." },
       ]}
     />
   </Section>
 
-  <Section title="Industries we serve">
+  <Section title="Paper and positions">
+    <CheckList
+      columns={2}
+      items={[
+        { title: "B and C paper", text: "We underwrite on deposits and cash flow, so imperfect credit isn't an automatic decline." },
+        { title: "Open positions", text: "Files with existing advances are considered. If the stack is the problem, a consolidation can pay it off." },
+        { title: "Pre-approval first", text: "Automated checks of industry type and position stack come first, so you hear early if a file won't fit." },
+        { title: "Then a person", text: `A human underwriter makes the decision. You can reach one live, ${underwriterAvailability}.` },
+      ]}
+    />
+  </Section>
+
+  <Section title="What a submission needs" tone="muted">
+    <CheckList items={isoProgram.stips} columns={2} />
+  </Section>
+
+  <Section title="Industries we fund">
     <ul class="grid list-none grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
       {industries.map((ind) => (
         <li>
-          <a href={`/who-we-fund/${ind.slug}`} class="flex h-full flex-col gap-2 border border-border bg-card p-6 transition-colors hover:border-primary">
+          <a href={`/who-we-fund/${ind.slug}`} class="flex h-full flex-col gap-2 border border-border bg-card p-6 transition-colors hover:border-foreground">
             <span class="text-xl font-bold text-foreground">{ind.name}</span>
             <span class="text-base text-muted-foreground">{ind.intro}</span>
-            <span class="mt-auto pt-2 text-sm font-semibold text-primary">Learn more →</span>
+            <span class="mt-auto pt-2 text-sm font-medium text-foreground">Guidelines →</span>
           </a>
         </li>
       ))}

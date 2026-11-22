@@ -7,10 +7,10 @@ export const companyFacts = {
 };
 
 export const values: { title: string; text: string }[] = [
-  { title: "Say it plainly", text: "Every offer shows the full cost up front, in plain language, with no surprises at signing." },
-  { title: "Move fast, carefully", text: "Speed matters to owners, but never at the cost of getting the fit right." },
-  { title: "Own the outcome", text: "We act like the business is ours: accountable, practical and in it for the long run." },
-  { title: "Do right by owners", text: "If another product or another lender is a better fit, we'll tell you." },
+  { title: "The broker comes first", text: "Every deal we fund comes from an ISO, and the merchant stays theirs." },
+  { title: "Say it plainly", text: "Every decline comes with the reason, and every contract shows the full cost in dollars." },
+  { title: "Move fast, carefully", text: "Speed matters to brokers and merchants, but never at the cost of getting the fit right." },
+  { title: "Pick up the phone", text: "An underwriter you can talk to beats a status page you have to refresh." },
 ];
 
 export interface Leader {
@@ -22,12 +22,12 @@ export interface Leader {
 }
 
 export const leadership: Leader[] = [
-  { name: "Daniel Reyes", title: "Chief Executive Officer", photo: photos.headshot1, quote: "Owners shouldn't have to wait weeks for an answer on capital they need this week." },
-  { name: "James Okafor", title: "Chief Operating Officer", photo: photos.headshot2, quote: "Every process we build starts with one question: does this make it easier for the owner?" },
-  { name: "Katherine Boyle", title: "Head of Sales & Partnerships", photo: photos.woman1, quote: "Our partners trust us with their clients, and we treat every deal like it carries our own name." },
+  { name: "Daniel Reyes", title: "Chief Executive Officer", photo: photos.headshot1, quote: "We built a funder that only works through brokers, so we never have a reason to go around one." },
+  { name: "James Okafor", title: "Chief Operating Officer", photo: photos.headshot2, quote: "Every process we build starts with one question: does this get the broker an answer faster?" },
+  { name: "Katherine Boyle", title: "Head of Partnerships", photo: photos.woman1, quote: "ISOs trust us with their merchants, and we treat every deal like it carries their name, because it does." },
   { name: "Adrian Cho", title: "Chief Technology Officer", photo: photos.headshot4, quote: "Technology should clear away the paperwork, not the people you call." },
-  { name: "Tom Bridger", title: "Chief Financial Officer", photo: photos.headshot5, quote: "We size every offer to what the business can actually carry." },
-  { name: "Lena Vasquez", title: "Head of Risk", photo: photos.woman2, quote: "Clear numbers and honest terms protect the owner as much as they protect us." },
+  { name: "Tom Bridger", title: "Chief Financial Officer", photo: photos.headshot5, quote: "We size every deal to what the merchant can actually carry. That's what makes renewals possible." },
+  { name: "Lena Vasquez", title: "Head of Risk", photo: photos.woman2, quote: "A decline without a reason helps no one. Brokers get ours, every time." },
 ];
 
 export const careerBenefits: { title: string; text: string }[] = [

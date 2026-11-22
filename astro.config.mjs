@@ -81,8 +81,6 @@ export default defineConfig({
       RESEND_API_KEY: envField.string({ context: "server", access: "secret", optional: true }),
       CONTACT_TO_EMAIL: envField.string({ context: "server", access: "secret", optional: true }),
       CONTACT_FROM_EMAIL: envField.string({ context: "server", access: "secret", optional: true }),
-      // LlamaCloud, for reading uploaded bank statements (/api/apply/upload and parse-status).
-      LLAMA_CLOUD_API_KEY: envField.string({ context: "server", access: "secret", optional: true }),
       // Admin sign-in (src/lib/server/auth.ts). Emails go through RESEND_API_KEY / CONTACT_FROM_EMAIL.
       BETTER_AUTH_SECRET: envField.string({ context: "server", access: "secret", optional: true }),
       BETTER_AUTH_URL: envField.string({ context: "server", access: "secret", optional: true }),
@@ -97,9 +95,6 @@ export default defineConfig({
       // The address job applicants write to, shown on /careers. Secret for the same reason as the
       // phone number: only /api/contact/reveal reads it, behind Turnstile.
       CONTACT_CAREERS_EMAIL: envField.string({ context: "server", access: "secret", optional: true }),
-      // LocationIQ, for address suggestions on the apply form (/api/address/suggest). Called from
-      // the Worker only.
-      LOCATIONIQ_API_KEY: envField.string({ context: "server", access: "secret", optional: true }),
     },
   },
   integrations: [],

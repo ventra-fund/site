@@ -42,10 +42,6 @@ function loadScript(): Promise<void> {
   return scriptPromise;
 }
 
-export function preloadTurnstile(): void {
-  loadScript().catch(() => {});
-}
-
 export class TurnstileWidget extends HTMLElement {
   private _id?: string;
   /** The last token handed out by `consumeToken`; a token is single-use, so it is never handed out twice. */
@@ -100,7 +96,7 @@ export class TurnstileWidget extends HTMLElement {
 
   /**
    * Take the current token for a request. The same token is never returned again, so two
-   * requests on one page (the apply form's upload and its submit) can't both send it.
+   * requests on one page can't both send it.
    */
   consumeToken(): string | undefined {
     const token = this.getToken();
@@ -159,9 +155,6 @@ export function gateOnTurnstile(opts: GateOptions): void {
     if (done) return;
     done = true;
     stopTimers();
-    // A locked button (see lockButton) stays disabled with its locked label; unlockButton
-    // re-enables it later if a token is waiting by then.
-    if (button?.dataset.locked !== undefined) { setLabel(button.dataset.locked); return; }
     button?.removeAttribute('disabled');
     setLabel(label);
   };
@@ -200,37 +193,11 @@ export function gateOnTurnstile(opts: GateOptions): void {
 
 /**
  * After a request spent the widget's token: gate `button` on a fresh one, or with no widget just
- * re-enable it. Either way a locked button (see lockButton) stays locked.
+ * re-enable it.
  */
 export function releaseButton(button: HTMLElement, widget: TurnstileWidget | null, onError?: (message: string) => void): void {
   if (widget) gateOnTurnstile({ widget, button, onError });
-  else if (button.dataset.locked === undefined) button.removeAttribute('disabled');
-}
-
-/**
- * Keep `button` disabled, showing `label`, whatever the gate does, until `unlockButton`. For a
- * reason to hold submit that has nothing to do with the security check (the apply form, after
- * it has been sent, until something changes).
- */
-export function lockButton(button: HTMLElement, label: string): void {
-  button.dataset.locked = label;
-  button.setAttribute('disabled', '');
-  button.textContent = label;
-}
-
-/**
- * Lift `lockButton`. The button comes back enabled straight away if a token is waiting;
- * otherwise a fresh gate runs and enables it once verified.
- */
-export function unlockButton(button: HTMLElement, widget: TurnstileWidget | null, onError?: (message: string) => void): void {
-  if (button.dataset.locked === undefined) return;
-  delete button.dataset.locked;
-  if (!widget || widget.getToken()) {
-    button.removeAttribute('disabled');
-    button.textContent = button.dataset.label ?? '';
-  } else {
-    gateOnTurnstile({ widget, button, onError });
-  }
+  else button.removeAttribute('disabled');
 }
 
 /**
@@ -239,11 +206,8 @@ export function unlockButton(button: HTMLElement, widget: TurnstileWidget | null
  * `focusin` (keyboard, and clicks into inputs/contenteditables) and `pointerdown` (Safari doesn't
  * focus buttons on click) count as touching; `pointerdown` also fires before `click`, so a
  * submit-first user still sees the button disable before it could submit.
- *
- * Returns the starter, for interactions that touch the form without either event: dropping a
- * file onto it fires neither, and the upload behind it needs a token.
  */
-export function gateOnFirstInteraction(opts: GateOptions & { form: HTMLElement }): () => void {
+export function gateOnFirstInteraction(opts: GateOptions & { form: HTMLElement }): void {
   const { form, ...gate } = opts;
   let started = false;
   const start = () => {
@@ -255,28 +219,6 @@ export function gateOnFirstInteraction(opts: GateOptions & { form: HTMLElement }
   };
   form.addEventListener('focusin', start);
   form.addEventListener('pointerdown', start);
-  return start;
-}
-
-/**
- * Resolve with the widget's token once it has one, polling until `timeoutMs` passes (undefined
- * then). For work that starts on its own, like an upload kicked off by picking files, where
- * there is no submit button to keep disabled until the gate opens: the interaction-only
- * challenge usually resolves within a second or two, and the visible fallback takes over after
- * five, so the wait is generous enough to include a visitor completing that by hand. The token
- * is consumed: one spent by a request still in flight (a submit) is waited past, not reused.
- */
-export function waitForTurnstileToken(widget: TurnstileWidget, timeoutMs = 60_000): Promise<string | undefined> {
-  return new Promise((resolve) => {
-    const started = Date.now();
-    const tick = () => {
-      const token = widget.consumeToken();
-      if (token) return resolve(token);
-      if (Date.now() - started >= timeoutMs) return resolve(undefined);
-      setTimeout(tick, 250);
-    };
-    tick();
-  });
 }
 
 /**

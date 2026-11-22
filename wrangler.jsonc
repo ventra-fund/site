@@ -10,9 +10,9 @@
 		"directory": "./dist",
 		"binding": "ASSETS"
 	},
-	// Per-IP cap on form submissions (/api/apply, /api/contact, /api/partner), read in
+	// Per-IP cap on form submissions (/api/contact, /api/partner), read in
 	// src/lib/server/rate-limit.ts. Two per minute is enough for a visitor to send, say, a contact
-	// message and an application back to back; a third within the minute gets a 429. `period` can
+	// message and a partner inquiry back to back; a third within the minute gets a 429. `period` can
 	// only be 10 or 60. `namespace_id` is an arbitrary account-unique id for this counter.
 	"ratelimits": [
 		{
@@ -20,44 +20,6 @@
 			"namespace_id": "1001",
 			"simple": {
 				"limit": 2,
-				"period": 60
-			}
-		},
-		// Statement uploads (/api/apply/upload) get their own counter so re-picking files doesn't
-		// eat the submit budget. The unit is a REQUEST, not a file: the page sends up to 4 files
-		// per request (MAX_FILES_PER_UPLOAD), so a full pick of 6 is two requests and 4/min leaves
-		// room for a second full pick inside a minute. Each request can put up to 4 documents
-		// through the (paid) document provider, so this is also the per-IP spend cap: 4 × 4 files a
-		// minute at most.
-		{
-			"name": "UPLOAD_RATE_LIMIT",
-			"namespace_id": "1002",
-			"simple": {
-				"limit": 4,
-				"period": 60
-			}
-		},
-		// Status polls (/api/apply/parse-status) are free to call but each one asks the document
-		// provider about up to 6 jobs. The page polls every 6 s (10 a minute) while statements are
-		// being read, so 30 leaves room for a few applicants on one office IP and still stops a
-		// script from burning the provider's rate limit for everyone.
-		{
-			"name": "STATUS_RATE_LIMIT",
-			"namespace_id": "1003",
-			"simple": {
-				"limit": 30,
-				"period": 60
-			}
-		},
-		// Drop-off capture (/api/apply/session and /api/apply/draft). The page saves at most every
-		// 8 s (DRAFT_SAVE_DEBOUNCE_MS in src/lib/draft-config.ts) while someone types (about 6 a minute at a steady pace), plus a final beacon and the
-		// one session mint; 12 leaves room for two applicants on one office IP and still stops a
-		// script from writing freely.
-		{
-			"name": "DRAFT_RATE_LIMIT",
-			"namespace_id": "1004",
-			"simple": {
-				"limit": 12,
 				"period": 60
 			}
 		},
@@ -81,22 +43,10 @@
 				"limit": 12,
 				"period": 60
 			}
-		},
-		// Address suggestions (/api/address/suggest). The page asks at most once per 250 ms pause in
-		// typing (ADDRESS_DEBOUNCE_MS in src/lib/address-config.ts), so two addresses typed out are
-		// about 30 to 40 calls; 60 leaves room for corrections and still caps what one IP can take
-		// from the provider's daily quota.
-		{
-			"name": "ADDRESS_RATE_LIMIT",
-			"namespace_id": "1007",
-			"simple": {
-				"limit": 60,
-				"period": 60
-			}
 		}
 	],
-	// Stored copies of uploaded statements (src/lib/server/documents.ts), kept with the drop-off
-	// sessions in DRAFTS_DB and deleted by the same purge. One-time setup, see README: create the
+	// Stored copies of statements uploaded with past applications (src/lib/server/documents.ts),
+	// kept with the records in DRAFTS_DB and deleted by the same purge. One-time setup, see README: create the
 	// bucket. No lifecycle rule: it would delete statements of applications that must be kept.
 	"r2_buckets": [
 		{
@@ -119,8 +69,8 @@
 			"database_name": "ventra-fund-auth",
 			"migrations_dir": "migrations"
 		},
-		// Drop-off capture for /apply (src/lib/server/drafts.ts): unsubmitted sessions and the
-		// retention settings. Schema in migrations-drafts/.
+		// Applications from the old public form (/apply, since removed), their decisions and
+		// signatures, and the retention settings (src/lib/server/drafts.ts). Schema in migrations-drafts/.
 		{
 			"binding": "DRAFTS_DB",
 			"database_name": "ventra-fund-drafts",
@@ -132,7 +82,7 @@
 	},
 	// Worker Previews (`wrangler preview`, and Workers Builds on non-production branches). Previews
 	// inherit none of the bindings above, so each is redeclared here against staging copies: test
-	// applications, uploads and admin sign-ins never touch production data. Apply schema changes to
+	// test data and admin sign-ins never touch production data. Apply schema changes to
 	// the staging databases with `pnpm migrate:preview`. Secrets are separate too:
 	// `wrangler preview base-config secret put NAME`.
 	"previews": {
@@ -145,12 +95,8 @@
 		// Same limits as production, on their own counters (namespace ids 2xxx vs 1xxx).
 		"ratelimits": [
 			{ "name": "FORM_RATE_LIMIT", "namespace_id": "2001", "simple": { "limit": 2, "period": 60 } },
-			{ "name": "UPLOAD_RATE_LIMIT", "namespace_id": "2002", "simple": { "limit": 4, "period": 60 } },
-			{ "name": "STATUS_RATE_LIMIT", "namespace_id": "2003", "simple": { "limit": 30, "period": 60 } },
-			{ "name": "DRAFT_RATE_LIMIT", "namespace_id": "2004", "simple": { "limit": 12, "period": 60 } },
 			{ "name": "SIGN_RATE_LIMIT", "namespace_id": "2005", "simple": { "limit": 10, "period": 60 } },
-			{ "name": "CONTACT_RATE_LIMIT", "namespace_id": "2006", "simple": { "limit": 12, "period": 60 } },
-			{ "name": "ADDRESS_RATE_LIMIT", "namespace_id": "2007", "simple": { "limit": 60, "period": 60 } }
+			{ "name": "CONTACT_RATE_LIMIT", "namespace_id": "2006", "simple": { "limit": 12, "period": 60 } }
 		],
 		"r2_buckets": [
 			{ "binding": "DOCUMENTS", "bucket_name": "ventra-fund-documents-preview" },

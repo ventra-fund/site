@@ -20,7 +20,7 @@ const others = partnerPrograms.filter((p) => p.slug !== program.slug);
 ---
 
 <PageShell title={program.name}>
-  <PageHero eyebrow={`Partners · ${program.name}`} title={program.heading} cta={{ href: "/partner", label: "Become a partner" }} secondary={{ href: "/partner/login", label: "Partner login" }} image={program.image}>
+  <PageHero eyebrow="For ISOs" title={program.heading} cta={{ href: "/partner", label: "Onboard now" }} secondary={{ href: "/partner/login", label: "Partner login" }} image={program.image}>
     <p>{program.intro}</p>
   </PageHero>
 
@@ -28,7 +28,7 @@ const others = partnerPrograms.filter((p) => p.slug !== program.slug);
     <CheckList items={program.whoFor} columns={2} />
   </Section>
 
-  <Section title="Why partner with Ventra Fund">
+  <Section title="What you get">
     <CheckList items={program.benefits} columns={2} />
   </Section>
 
@@ -41,7 +41,7 @@ const others = partnerPrograms.filter((p) => p.slug !== program.slug);
       <ul class="grid list-none grid-cols-1 gap-4 md:grid-cols-2">
         {others.map((o) => (
           <li>
-            <a href={`/partners/${o.slug}`} class="flex h-full flex-col gap-2 border border-border bg-card p-6 transition-colors hover:border-primary">
+            <a href={`/partners/${o.slug}`} class="flex h-full flex-col gap-2 border border-border bg-card p-6 transition-colors hover:border-foreground">
               <span class="text-xl font-bold text-foreground">{o.name}</span>
               <span class="text-base text-muted-foreground">{o.intro}</span>
             </a>
@@ -51,5 +51,5 @@ const others = partnerPrograms.filter((p) => p.slug !== program.slug);
     </Section>
   )}
 
-  <CtaBand title="Want to become a partner?" text="Tell us about your business and the clients you serve. We'll be in touch within one business day." href="/partner" label="Get started" />
+  <CtaBand />
 </PageShell>

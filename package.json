@@ -22,7 +22,6 @@
     "@data-slot/hover-card": "^1.0.2",
     "@data-slot/popover": "^0.2.167",
     "@data-slot/select": "^0.2.167",
-    "@llamaindex/llama-cloud": "^2.16.0",
     "@lucide/astro": "^1.47.0",
     "@tailwindcss/vite": "^4.3.3",
     "astro": "^7.3.3",

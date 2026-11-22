@@ -27,8 +27,8 @@ export type PartnerRole = (typeof PARTNER_ROLES)[number];
  *  drift apart. */
 export const PARTNER_INTERESTS: Record<PartnerRole, { value: string; label: string }[]> = {
   broker: [
-    { value: 'consistent_lender', label: "I'm looking for a consistent lender to fund my deals" },
-    { value: 'see_terms', label: 'I want to see your terms' },
+    { value: 'consistent_lender', label: "I'm looking for a consistent funder for my deals" },
+    { value: 'see_terms', label: 'I want to see your commission terms' },
   ],
   lender: [
     { value: 'deal_flow', label: "I'm looking for deal flow from you" },

@@ -1,8 +1,8 @@
-// Shapes for the apply form's drop-off capture (src/lib/apply-draft.ts in the browser,
-// /api/apply/session and /api/apply/draft on the server). Read by both, so the captured fields
-// can't drift between them. Keep this module dependency-free: it is shipped to the browser.
+// Shapes for the drop-off records the old public application form (/apply, since removed: the
+// site is ISO-only) captured, read by the admin pages and the signing flow for the applications
+// already stored. Keep this module dependency-free: it is shipped to the browser.
 
-/** The /apply inputs a draft snapshot records, by `name`. */
+/** The application fields a draft snapshot records, by input `name`. */
 export const DRAFT_FIELDS = [
   'legalBusinessName',
   'dba',
@@ -36,18 +36,6 @@ export const DRAFT_FIELD_LABELS: Record<DraftField, string> = {
   ficoScore: 'Estimated FICO score',
   fundingAmount: 'Requested funding amount',
 };
-
-/**
- * How long the page waits after the visitor's last change before saving a draft. Lowering it
- * means more saves per visitor: keep DRAFT_RATE_LIMIT in wrangler.jsonc above 60 s / this value.
- */
-export const DRAFT_SAVE_DEBOUNCE_MS = 8_000;
-
-/** Longest a change waits to be saved while the visitor keeps typing without a pause. */
-export const DRAFT_SAVE_MAX_WAIT_MS = 30_000;
-
-/** Per-value cap for a snapshot; above every input's own maxlength on the page. */
-export const MAX_DRAFT_VALUE = 400;
 
 /** Draft ids and document ids (documents.ts) are both server-minted v4 UUIDs. */
 export const UUID_V4 = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/;

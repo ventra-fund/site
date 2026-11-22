@@ -1,9 +1,16 @@
 ---
 import Layout from "@/layouts/Layout.astro";
 import Footer from "@/components/Footer.astro";
-import { Button } from "@/ui/button";
+import GlareCard from "@/components/GlareCard.astro";
+import CtaBand from "@/components/page/CtaBand.astro";
 import { fundingProducts, minimumRequirements, productSlug, type FundingProduct } from "@/data/funding-products";
-import { Gauge, CircleDollarSign, Calendar } from "@lucide/astro";
+import { isoProgram } from "@/data/iso-program";
+
+const minimums = [
+  { label: "Credit score", value: minimumRequirements.creditScore },
+  { label: "Monthly revenue", value: minimumRequirements.monthlyRevenue },
+  { label: "Time in business", value: minimumRequirements.timeInBusiness },
+];
 
 const tableRows = [
   { label: "Best For", value: (p: FundingProduct) => p.bestFor },
@@ -11,18 +18,18 @@ const tableRows = [
   { label: "Time to Fund", value: (p: FundingProduct) => p.timeToFund },
   { label: "Term Length", value: (p: FundingProduct) => p.termLength },
   { label: "Repayment", value: (p: FundingProduct) => p.repayment },
-  { label: "Buy Rate / Cost", value: (p: FundingProduct) => p.rateCost },
   { label: "Min. Credit Score", value: (p: FundingProduct) => p.requirements.creditScore },
   { label: "Min. Monthly Revenue", value: (p: FundingProduct) => p.requirements.monthlyRevenue },
   { label: "Min. Time in Business", value: (p: FundingProduct) => p.requirements.timeInBusiness },
 ];
 ---
 
-<Layout title="Business financing options">
-  <main class="mx-auto w-[calc(100%-2rem)] max-w-6xl px-0 pt-30 pb-20 md:w-[calc(100%-8rem)]">
+<Layout title="Products you can submit">
+  <main class="pt-30">
+    <div class="mx-auto w-[calc(100%-2rem)] max-w-6xl md:w-[calc(100%-8rem)]">
     <div class="flex flex-col gap-3">
-      <h1 class="text-3xl font-bold text-accent sm:text-5xl">Business financing options</h1>
-      <p class="max-w-2xl text-lg text-muted-foreground">Every path to capital we offer, side by side, so you can find the fit for your business.</p>
+      <h1 class="text-[clamp(2.5rem,5vw,4rem)] font-normal leading-[1.02] tracking-[-0.04em] text-balance">Products you can submit</h1>
+      <p class="max-w-2xl text-lg text-muted-foreground">Every product we fund, side by side, so you can match each merchant to the right one. You can add up to {isoProgram.maxPoints} points on any of them.</p>
     </div>
 
     <div class="hidden sm:block mt-16 overflow-x-auto">
@@ -54,9 +61,9 @@ const tableRows = [
     {/* The table covers wider screens; on mobile each product is a card linking to its page. */}
     <div class="mt-10 flex flex-col gap-4 sm:hidden">
       {fundingProducts.map((product, i) => (
-        <a href={`/capital/${productSlug(product)}`} class="rounded-xl border border-border bg-card p-6 flex flex-col gap-4 transition-colors hover:border-primary">
+        <a href={`/capital/${productSlug(product)}`} class="border border-border bg-card p-6 flex flex-col gap-4 transition-colors hover:border-foreground">
           <div class="grid grid-cols-[auto_1fr] gap-4">
-            <span class="text-sm font-semibold text-primary bg-secondary rounded-lg self-stretch aspect-square flex items-center justify-center">{String(i + 1).padStart(2, "0")}</span>
+            <span class="text-sm text-muted-foreground tabular-nums">{String(i + 1).padStart(2, "0")}</span>
             <div class="flex flex-col gap-2">
               <span class="text-sm text-muted-foreground">{product.category}</span>
               <h2 class="text-[clamp(1rem,4.5vw,1.25rem)] font-bold text-foreground">{product.title}</h2>
@@ -77,53 +84,28 @@ const tableRows = [
               <span class="block text-xs font-semibold uppercase tracking-widest text-muted-foreground mb-1">Term Length</span>
               <span class="text-sm font-semibold text-foreground">{product.termLength}</span>
             </div>
-            <div>
-              <span class="block text-xs font-semibold uppercase tracking-widest text-muted-foreground mb-1">Buy Rate / Cost</span>
-              <span class="text-sm font-semibold text-foreground">{product.rateCost}</span>
-            </div>
           </div>
-          <span class="text-sm font-semibold text-primary">Learn more →</span>
+          <span class="text-sm font-medium text-foreground">Learn more →</span>
         </a>
       ))}
     </div>
 
-    <section class="mt-20 bg-secondary w-full py-16 px-6 md:px-10 rounded-xl">
+    <section class="mt-24">
       {/* The loosest requirement across every product above, derived in funding-products.ts so this can't drift from the table. */}
-      <h2 class="mb-12 text-3xl sm:text-4xl font-bold text-accent text-center">Minimum requirements</h2>
-      <div class="max-w-4xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-8">
-        <div class="flex items-center gap-4">
-          <div class="shrink-0 bg-accent/10 rounded-full p-4 w-16 h-16 flex items-center justify-center">
-            <Gauge class="size-7 text-accent" stroke-width={1.5} />
-          </div>
-          <div>
-            <p class="text-xs font-semibold uppercase tracking-widest text-muted-foreground">Credit Score</p>
-            <p class="text-2xl font-bold text-foreground">{minimumRequirements.creditScore}</p>
-          </div>
-        </div>
-        <div class="flex items-center gap-4">
-          <div class="shrink-0 bg-accent/10 rounded-full p-4 w-16 h-16 flex items-center justify-center">
-            <CircleDollarSign class="size-7 text-accent" stroke-width={1.5} />
-          </div>
-          <div>
-            <p class="text-xs font-semibold uppercase tracking-widest text-muted-foreground">Monthly Revenue</p>
-            <p class="text-2xl font-bold text-foreground">{minimumRequirements.monthlyRevenue}</p>
-          </div>
-        </div>
-        <div class="flex items-center gap-4">
-          <div class="shrink-0 bg-accent/10 rounded-full p-4 w-16 h-16 flex items-center justify-center">
-            <Calendar class="size-7 text-accent" stroke-width={1.5} />
-          </div>
-          <div>
-            <p class="text-xs font-semibold uppercase tracking-widest text-muted-foreground">Time in Business</p>
-            <p class="text-2xl font-bold text-foreground">{minimumRequirements.timeInBusiness}</p>
-          </div>
-        </div>
+      <h2 class="text-3xl font-bold tracking-[-0.02em] sm:text-4xl">Minimum requirements</h2>
+      <p class="mt-3 max-w-2xl text-lg text-muted-foreground">The lowest across every product; each product's page lists its own.</p>
+      <div class="mt-10 grid grid-cols-1 gap-4 md:grid-cols-3">
+        {minimums.map(({ label, value }) => (
+          <GlareCard class="@container flex min-h-56 flex-col justify-between border border-border bg-card p-8">
+            <p class="text-sm text-muted-foreground">{label}</p>
+            <p class="text-[clamp(2.5rem,20cqi,4rem)] font-medium leading-none tracking-[-0.04em]">{value}</p>
+          </GlareCard>
+        ))}
       </div>
     </section>
-
-    <div class="mt-16 flex justify-center">
-      <Button as="a" href="/apply" size="lg" class="rounded-full px-6">Apply now</Button>
     </div>
+
+    <CtaBand class="mt-12" />
   </main>
 
   <Footer />

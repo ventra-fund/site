@@ -1,0 +1,259 @@
+---
+// A bordered card with Main Capital's hover: a grainy spotlight follows the pointer across the card
+// (a tiny WebGL shader, started on first hover) and the stretch of border nearest it lights up. Both
+// are in the hero's aqua (--glare-color, --glare-edge-color). Without WebGL, a plain CSS glare stands
+// in. Content goes in the slot; layout classes (padding, flex) come from the caller.
+interface Props {
+  class?: string;
+}
+
+const { class: className } = Astro.props;
+---
+
+<div class:list={["glare-card", className]} data-glare-card>
+  <slot />
+</div>
+
+<style>
+  .glare-card {
+    /* The hero's palette (src/lib/hero-scene): the cyan glow beside the logo for the light, and the
+       deeper teal of the logo's face for the border. */
+    --glare-color: #1ac8eb;
+    --glare-edge-color: #2b97ba;
+    --glare: color-mix(in oklab, var(--glare-color) 22%, transparent);
+    --glare-edge: color-mix(in oklab, var(--glare-edge-color) 85%, transparent);
+    position: relative;
+    isolation: isolate;
+  }
+
+  .glare-card > :global(.glare-canvas) {
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+  }
+
+  /* With the shader running, the plain CSS glare (the fallback) stands down. */
+  .glare-card[data-glare-gl]::before {
+    display: none;
+  }
+
+  .glare-card::before,
+  .glare-card::after {
+    content: "";
+    position: absolute;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 350ms ease;
+  }
+
+  /* The glare, painted above the card background but beneath its text. */
+  .glare-card::before {
+    inset: 0;
+    z-index: -1;
+    background: radial-gradient(circle 420px at var(--x, 50%) var(--y, 50%), var(--glare), transparent 70%);
+  }
+
+  /* The edge: the same spotlight, masked down to a 1px ring over the border. */
+  .glare-card::after {
+    inset: -1px;
+    padding: 1px;
+    background: radial-gradient(circle 260px at var(--x, 50%) var(--y, 50%), var(--glare-edge), transparent 70%);
+    -webkit-mask:
+      linear-gradient(#000 0 0) content-box,
+      linear-gradient(#000 0 0);
+    -webkit-mask-composite: xor;
+    mask:
+      linear-gradient(#000 0 0) content-box exclude,
+      linear-gradient(#000 0 0);
+  }
+
+  @media (hover: hover) {
+    .glare-card:hover::before,
+    .glare-card:hover::after {
+      opacity: 1;
+    }
+  }
+</style>
+
+<script>
+  // Glare cards: a grainy spotlight drawn by a tiny WebGL shader that follows
+  // the pointer. The CSS border edge (and, without WebGL, the CSS glare) read
+  // the pointer from --x/--y instead.
+  const STRENGTH = 0.3; // peak opacity of the glare before grain (a light aqua needs more than black did)
+  const RADIUS = 320; // CSS px where the glare has all but faded out
+  const reducedMotion = matchMedia("(prefers-reduced-motion: reduce)");
+
+  const VERTEX = `
+    attribute vec2 a_pos;
+    void main() { gl_Position = vec4(a_pos, 0.0, 1.0); }
+  `;
+
+  const FRAGMENT = `
+    #ifdef GL_FRAGMENT_PRECISION_HIGH
+    precision highp float;
+    #else
+    precision mediump float;
+    #endif
+
+    uniform vec2 u_res;      // canvas size, device px
+    uniform vec2 u_pointer;  // CSS px from the top-left
+    uniform float u_dpr;
+    uniform float u_strength;
+    uniform vec3 u_color;
+
+    float hash(vec2 p) {
+      vec3 p3 = fract(vec3(p.xyx) * 0.1031);
+      p3 += dot(p3, p3.yzx + 33.33);
+      return fract((p3.x + p3.y) * p3.z);
+    }
+
+    void main() {
+      vec2 px = vec2(gl_FragCoord.x, u_res.y - gl_FragCoord.y) / u_dpr;
+      float d = distance(px, u_pointer) / ${RADIUS.toFixed(1)};
+      float glow = exp(-3.0 * d * d);
+      // Grain is fixed to the card, one cell per CSS px; the glare moving over
+      // it lights different grains, like light raking across paper.
+      float grain = hash(floor(px));
+      float a = u_strength * glow * (0.3 + 1.4 * grain);
+      gl_FragColor = vec4(u_color * a, a);
+    }
+  `;
+
+  // Resolve any CSS color (oklch included) to 0..1 sRGB by painting it on a 2D canvas.
+  const swatch = document.createElement("canvas").getContext("2d", { willReadFrequently: true });
+  const toRgb = (color: string): [number, number, number] => {
+    if (!swatch) return [0, 0, 0];
+    swatch.fillStyle = "#000";
+    swatch.fillStyle = color;
+    swatch.fillRect(0, 0, 1, 1);
+    const [r, g, b] = swatch.getImageData(0, 0, 1, 1).data;
+    return [r / 255, g / 255, b / 255];
+  };
+
+  const mountShader = (card: HTMLElement) => {
+    const canvas = document.createElement("canvas");
+    canvas.className = "glare-canvas";
+    canvas.setAttribute("aria-hidden", "true");
+    const gl = canvas.getContext("webgl", { antialias: false, depth: false });
+    if (!gl) return null;
+
+    const compile = (type: number, source: string) => {
+      const shader = gl.createShader(type)!;
+      gl.shaderSource(shader, source);
+      gl.compileShader(shader);
+      return shader;
+    };
+    const program = gl.createProgram()!;
+    gl.attachShader(program, compile(gl.VERTEX_SHADER, VERTEX));
+    gl.attachShader(program, compile(gl.FRAGMENT_SHADER, FRAGMENT));
+    gl.linkProgram(program);
+    if (!gl.getProgramParameter(program, gl.LINK_STATUS)) return null;
+    gl.useProgram(program);
+
+    // One oversized triangle covers the whole canvas.
+    gl.bindBuffer(gl.ARRAY_BUFFER, gl.createBuffer());
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 3, -1, -1, 3]), gl.STATIC_DRAW);
+    const aPos = gl.getAttribLocation(program, "a_pos");
+    gl.enableVertexAttribArray(aPos);
+    gl.vertexAttribPointer(aPos, 2, gl.FLOAT, false, 0, 0);
+
+    const uRes = gl.getUniformLocation(program, "u_res");
+    const uPointer = gl.getUniformLocation(program, "u_pointer");
+    const uDpr = gl.getUniformLocation(program, "u_dpr");
+    const uStrength = gl.getUniformLocation(program, "u_strength");
+    const uColor = gl.getUniformLocation(program, "u_color");
+
+    let dpr = 1;
+    let hovering = false;
+    let strength = 0; // eased 0..1 fade
+    let frame = 0;
+    let last = 0;
+    let lost = false;
+    const pointer = { x: 0, y: 0 };
+
+    new ResizeObserver(([entry]) => {
+      dpr = Math.min(devicePixelRatio, 2);
+      canvas.width = Math.round(entry.contentRect.width * dpr);
+      canvas.height = Math.round(entry.contentRect.height * dpr);
+      gl.viewport(0, 0, canvas.width, canvas.height);
+    }).observe(canvas);
+
+    const tick = (now: number) => {
+      if (lost) return;
+      const dt = Math.min(now - last, 64);
+      last = now;
+      strength += ((hovering ? 1 : 0) - strength) * (1 - Math.exp(-dt / 120));
+
+      // Faded out: blank the canvas and go idle until the next hover.
+      if (!hovering && strength < 0.005) {
+        strength = 0;
+        gl.clear(gl.COLOR_BUFFER_BIT);
+        frame = 0;
+        return;
+      }
+
+      gl.uniform2f(uRes, canvas.width, canvas.height);
+      gl.uniform2f(uPointer, pointer.x, pointer.y);
+      gl.uniform1f(uDpr, dpr);
+      gl.uniform1f(uStrength, STRENGTH * strength);
+      gl.drawArrays(gl.TRIANGLES, 0, 3);
+      frame = requestAnimationFrame(tick);
+    };
+
+    canvas.addEventListener("webglcontextlost", () => {
+      lost = true;
+      cancelAnimationFrame(frame);
+      canvas.remove();
+      delete card.dataset.glareGl;
+    });
+
+    card.prepend(canvas);
+    card.dataset.glareGl = "";
+
+    return {
+      move(x: number, y: number) {
+        pointer.x = x;
+        pointer.y = y;
+      },
+      show(on: boolean) {
+        if (lost) return;
+        hovering = on;
+        if (on) gl.uniform3f(uColor, ...toRgb(getComputedStyle(card).getPropertyValue("--glare-color")));
+        if (!frame) {
+          last = performance.now();
+          frame = requestAnimationFrame(tick);
+        }
+      },
+    };
+  };
+
+  for (const card of document.querySelectorAll<HTMLElement>("[data-glare-card]")) {
+    // The shader (a WebGL context per card) starts on the first hover, not at page load: until then
+    // the card costs nothing, and the CSS glare covers that first moment.
+    let shader: ReturnType<typeof mountShader> | undefined;
+
+    const track = (e: PointerEvent) => {
+      const rect = card.getBoundingClientRect();
+      const x = e.clientX - rect.left;
+      const y = e.clientY - rect.top;
+      card.style.setProperty("--x", `${x}px`);
+      card.style.setProperty("--y", `${y}px`);
+      // The canvas sits inside the border, so shift into its coordinates.
+      shader?.move(x - card.clientLeft, y - card.clientTop);
+    };
+
+    card.addEventListener("pointerenter", (e) => {
+      if (e.pointerType === "touch") return;
+      if (shader === undefined && !reducedMotion.matches) shader = mountShader(card);
+      track(e);
+      shader?.show(true);
+    });
+    card.addEventListener("pointermove", (e) => {
+      if (e.pointerType !== "touch") track(e);
+    });
+    card.addEventListener("pointerleave", () => shader?.show(false));
+  }
+</script>

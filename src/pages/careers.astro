@@ -7,15 +7,15 @@ import CheckList from "@/components/page/CheckList.astro";
 import ContactReveal from "@/components/ContactReveal.astro";
 import { photos } from "@/data/photos";
 import ChevronDown from "@lucide/astro/icons/chevron-down";
-import { Button } from "@/ui/button";
+import PillLink from "@/components/page/PillLink.astro";
 import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from "@/ui/accordion";
 import { careerBenefits, values } from "@/data/company";
 import { openings } from "@/data/careers";
 ---
 
 <PageShell title="Careers">
-  <PageHero eyebrow="Careers" title="Help small businesses grow" cta={{ href: "#openings", label: "View open positions" }} image={photos.teamWhiteboard}>
-    <p>We're building a team of smart, owner-focused people who want their work to matter to real businesses and real communities.</p>
+  <PageHero eyebrow="Careers" title="Build the funder brokers want to work with" cta={{ href: "#openings", label: "View open positions" }} image={photos.teamWhiteboard}>
+    <p>We're building a team of smart, broker-focused people who want their work to matter to real businesses and real communities.</p>
   </PageHero>
 
   <Section title="Why work at Ventra Fund" tone="muted">
@@ -58,7 +58,7 @@ import { openings } from "@/data/careers";
     ) : (
       <div class="flex flex-col gap-4">
         <p class="text-lg text-muted-foreground">We don't have any openings right now, but we're always glad to hear from great people.</p>
-        <Button as="a" href="/contact" variant="outline" size="lg" class="self-start">Get in touch</Button>
+        <PillLink href="/contact" variant="outline" class="self-start">Get in touch</PillLink>
       </div>
     )}
   </Section>

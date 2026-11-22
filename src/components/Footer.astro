@@ -3,6 +3,7 @@ import { LinkGroup, LinkGroupTitle, LinkGroupList, LinkGroupItem } from '@/ui/li
 import Instagram from "@/components/Instagram.astro";
 import Facebook from "@/components/Facebook.astro";
 import LinkedIn from "@/components/LinkedIn.astro";
+import { isoProgram, shortDays } from "@/data/iso-program";
 ---
 
 <footer class="pb-15">
@@ -33,21 +34,31 @@ import LinkedIn from "@/components/LinkedIn.astro";
       </div>
       <div class="relative flex flex-col gap-16 sm:flex-row sm:flex-wrap lg:flex-nowrap lg:pl-[calc(var(--mark-h)*1192/713_+_2rem)] lg:pt-[calc(var(--mark-h)*61/713_+_1.5rem)]">
         <LinkGroup>
+          <LinkGroupTitle>For ISOs</LinkGroupTitle>
+          <LinkGroupList>
+            <LinkGroupItem><a href="/partner">Onboard now</a></LinkGroupItem>
+            <LinkGroupItem><a href="/who-we-fund">Deal guidelines</a></LinkGroupItem>
+            <LinkGroupItem><a href="/capital">Products</a></LinkGroupItem>
+            <LinkGroupItem><a href="/why-us/transparent-pricing">Commission</a></LinkGroupItem>
+            <LinkGroupItem><a href="/why-us/faq">FAQ</a></LinkGroupItem>
+            <LinkGroupItem><a href="/partner/login">Partner login</a></LinkGroupItem>
+          </LinkGroupList>
+        </LinkGroup>
+        <LinkGroup>
           <LinkGroupTitle>Company</LinkGroupTitle>
           <LinkGroupList>
-            <LinkGroupItem><a href="/">Home</a></LinkGroupItem>
-            <LinkGroupItem><a href="/contact">Contact</a></LinkGroupItem>
-            <LinkGroupItem><a href="/partner">Partner</a></LinkGroupItem>
+            <LinkGroupItem><a href="/about">About us</a></LinkGroupItem>
+            <LinkGroupItem><a href="/careers">Careers</a></LinkGroupItem>
+            <LinkGroupItem><a href="/resources">Resources</a></LinkGroupItem>
             <LinkGroupItem><a href="/privacy">Privacy</a></LinkGroupItem>
             <LinkGroupItem><a href="/terms">Terms</a></LinkGroupItem>
           </LinkGroupList>
         </LinkGroup>
         <LinkGroup>
-          <LinkGroupTitle>Capital</LinkGroupTitle>
+          <LinkGroupTitle>Talk to us</LinkGroupTitle>
           <LinkGroupList>
-            <LinkGroupItem><a href="/apply">Apply</a></LinkGroupItem>
-            <LinkGroupItem><a href="/capital">Overview</a></LinkGroupItem>
-            <LinkGroupItem><a href="/debt-relief">Debt Relief</a></LinkGroupItem>
+            <LinkGroupItem><a href="/contact">Contact</a></LinkGroupItem>
+            <LinkGroupItem class="text-muted-foreground">Underwriters live {shortDays(isoProgram.underwriterDays)}, {isoProgram.underwriterHours.short}</LinkGroupItem>
           </LinkGroupList>
         </LinkGroup>
         <LinkGroup>

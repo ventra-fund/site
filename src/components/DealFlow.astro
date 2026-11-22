@@ -1,0 +1,125 @@
+---
+// The statuses a deal moves through, as boxes joined by arrows: stacked with downward arrows below lg,
+// one row from lg up. (After the same strip on Main Capital's site.)
+import { isoProgram } from "@/data/iso-program";
+
+interface Props {
+  steps?: string[];
+  class?: string;
+}
+
+const { steps = isoProgram.dealSteps, class: className } = Astro.props;
+---
+
+<ol class:list={["deal-flow list-none", className]} aria-label="Deal status steps">
+  {steps.map((step) => (
+    <li class="deal-flow-step border border-border bg-card">
+      <span class="deal-flow-line" aria-hidden="true"></span>
+      <span class="deal-flow-label">{step}</span>
+      <span class="deal-flow-line" aria-hidden="true"></span>
+    </li>
+  ))}
+</ol>
+
+<style>
+  /* Arrows run label to label, over the box borders and the gap. Each label has a line on either
+     side: a step's outgoing line and the next step's incoming one each reach halfway across the gap,
+     so together they read as one arrow, with the head on the incoming half. The unused lines at the
+     two ends stay hidden but keep their space, so every label stays centred.
+     Each line is a band wider than the stroke: its top background layer draws the stroke, and the
+     layer beneath lays a short background-coloured fade over the box border where the arrow crosses
+     it, so the border dissolves around the arrow instead of meeting it. --border-at places that fade. */
+  .deal-flow {
+    --gap: 1rem;
+    --reach: calc(var(--gap) / 2 + 1px); /* half the gap, plus the border */
+    --stroke: 1.5px;
+    --cover: 4rem; /* length of border faded out around each arrow */
+    display: flex;
+    flex-direction: column;
+    gap: var(--gap);
+  }
+  .deal-flow-step {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+  .deal-flow-label {
+    padding: 0.5rem 1rem;
+    text-align: center;
+  }
+  .deal-flow-line {
+    --stripe: linear-gradient(currentColor, currentColor);
+    --fade: linear-gradient(to right, transparent, var(--background) 40% 60%, transparent);
+    position: relative;
+    flex: none;
+    width: var(--cover);
+    height: calc(1rem + var(--reach));
+    color: var(--muted-foreground);
+    background:
+      var(--stripe) center / var(--stroke) 100% no-repeat,
+      var(--fade) var(--border-at) / 100% 3px no-repeat;
+  }
+  .deal-flow-line:first-child {
+    --border-at: left 0 top calc(var(--gap) / 2 - 1px);
+    margin-top: calc(-1 * var(--reach));
+  }
+  .deal-flow-line:last-child {
+    --border-at: left 0 bottom calc(var(--gap) / 2 - 1px);
+    margin-bottom: calc(-1 * var(--reach));
+  }
+  .deal-flow-step:first-child .deal-flow-line:first-child,
+  .deal-flow-step:last-child .deal-flow-line:last-child {
+    visibility: hidden;
+  }
+  /* Arrowhead: two borders of a small square, turned to point along the line. */
+  .deal-flow-line:first-child::after {
+    content: "";
+    position: absolute;
+    bottom: 1px;
+    left: 50%;
+    width: 8px;
+    height: 8px;
+    border-right: var(--stroke) solid;
+    border-bottom: var(--stroke) solid;
+    translate: -50% 0;
+    rotate: 45deg;
+  }
+  @media (min-width: 64rem) {
+    .deal-flow,
+    .deal-flow-step {
+      flex-direction: row;
+    }
+    .deal-flow-step {
+      flex: 1;
+    }
+    .deal-flow-label {
+      padding: 1.5rem 0.75rem;
+    }
+    .deal-flow-line {
+      --fade: linear-gradient(transparent, var(--background) 40% 60%, transparent);
+      flex: 1;
+      width: auto;
+      height: var(--cover);
+      background:
+        var(--stripe) center / 100% var(--stroke) no-repeat,
+        var(--fade) var(--border-at) / 3px 100% no-repeat;
+    }
+    .deal-flow-line:first-child {
+      --border-at: left calc(var(--gap) / 2 - 1px) top 0;
+      margin: 0 0 0 calc(-1 * var(--reach));
+    }
+    .deal-flow-line:last-child {
+      --border-at: right calc(var(--gap) / 2 - 1px) top 0;
+      margin: 0 calc(-1 * var(--reach)) 0 0;
+    }
+    .deal-flow-line:first-child::after {
+      top: 50%;
+      right: 1px;
+      bottom: auto;
+      left: auto;
+      border-top: var(--stroke) solid;
+      border-bottom: 0;
+      translate: 0 -50%;
+    }
+  }
+</style>

@@ -16,17 +16,16 @@ import { partnerPrograms } from "@/data/partner-programs";
 interface Entry { title: string; href: string; section: string; text: string }
 
 const entries: Entry[] = [
-  { title: "Home", href: "/", section: "Pages", text: "Working capital built for small businesses." },
-  { title: "Apply for funding", href: "/apply", section: "Pages", text: "Start your application. No credit check, decisions in about a day." },
-  { title: "Compare financing options", href: "/capital", section: "Pages", text: "Every product side by side: amounts, terms, costs and requirements." },
-  ...productPages.map((p) => ({ title: p.product.title, href: `/capital/${p.slug}`, section: "Financing", text: `${p.product.description} ${p.howItWorks}` })),
-  { title: "Business debt relief", href: "/debt-relief", section: "Debt relief", text: "Merchant cash advance (MCA) defense, creditor settlements and debt consolidation: an affordable payment plan for business debt." },
-  ...industries.map((i) => ({ title: `${i.name} financing`, href: `/who-we-fund/${i.slug}`, section: "Who we fund", text: `${i.intro} ${i.uses.join(", ")}` })),
+  { title: "Home", href: "/", section: "Pages", text: "ISO-only small business funding. We never go direct to your merchants." },
+  { title: "Onboard with Ventra Fund", href: "/partner", section: "Pages", text: "Become an ISO partner: one short form and a call. No volume minimum." },
+  { title: "Compare products", href: "/capital", section: "Pages", text: "Every product you can submit, side by side: amounts, terms and minimums." },
+  ...productPages.map((p) => ({ title: p.product.title, href: `/capital/${p.slug}`, section: "Products", text: `${p.product.description} ${p.howItWorks}` })),
+  ...industries.map((i) => ({ title: `${i.name} deals`, href: `/who-we-fund/${i.slug}`, section: "What we fund", text: `${i.intro} ${i.uses.join(", ")}` })),
   ...partnerPrograms.map((p) => ({ title: p.name, href: `/partners/${p.slug}`, section: "Partners", text: p.intro })),
   ...articles.map((a) => ({ title: a.title, href: `/resources/${a.slug}`, section: a.category, text: a.excerpt })),
   ...faqGroups.flatMap((g) => g.items.map((f) => ({ title: f.q, href: `/why-us/faq#${g.id}`, section: "FAQ", text: [...f.a, ...(f.list ?? [])].join(" ") }))),
 ];
-// Nav links not already covered above (About, Why Us, Careers, …).
+// Site map links not already covered above (About, Why Us, Careers, …).
 const seen = new Set(entries.map((e) => e.href));
 for (const { href, label } of [...utilityLinks, ...navMenus.flatMap((m) => m.links)]) {
   if (!seen.has(href) && href !== "/search") {
@@ -85,9 +84,9 @@ for (const { href, label } of [...utilityLinks, ...navMenus.flatMap((m) => m.lin
       li.className = "border-b border-border";
       const a = document.createElement("a");
       a.href = e.href;
-      a.className = "flex flex-col gap-1 py-5 hover:text-accent";
+      a.className = "flex flex-col gap-1 py-5 hover:text-foreground";
       const section = document.createElement("span");
-      section.className = "text-xs font-semibold uppercase tracking-widest text-primary";
+      section.className = "text-sm text-muted-foreground";
       section.textContent = e.section;
       const title = document.createElement("span");
       title.className = "text-lg font-semibold";

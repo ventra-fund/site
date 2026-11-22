@@ -1,8 +1,8 @@
 ---
-// Minimal partner inquiry page: lenders, brokers, and service providers can send us a message.
-// There's no account to create and nothing to approve here, this is a contact form with a role
-// attached, not a signup flow. A business owner isn't a partner lead at all, so picking that
-// option hands off to /apply immediately instead of posting anything.
+// Onboarding inquiry: ISOs and brokers (and the odd lender or service provider) send us a message,
+// and a relationship manager follows up. There's no account to create and nothing to approve here,
+// this is a contact form with a role attached, not a signup flow. Business owners aren't leads at
+// all (we only fund through ISOs), so the page tells them to go through their broker.
 import Layout from "@/layouts/Layout.astro";
 import Footer from "@/components/Footer.astro";
 import QuillEditor from "@/components/QuillEditor.astro";
@@ -16,12 +16,13 @@ import { PARTNER_INTERESTS } from "@/lib/partner-schema";
 // Mirrors the server's z.email(): the browser's own type="email" check would pass "me@localhost".
 const EMAIL_PATTERN = "[^@\\s]+@[^@\\s]+\\.[^@\\s]{2,}";
 ---
-<Layout title="Partner with us">
+<Layout title="Onboard with us">
     <main class="w-full min-h-screen px-4 pt-30 pb-20">
         <div class="mx-auto flex max-w-2xl flex-col gap-8">
             <div class="flex flex-col gap-3">
-                <h1 class="text-3xl font-bold text-accent sm:text-5xl">Partner with us</h1>
-                <p class="text-lg text-muted-foreground">Lenders, brokers, and service providers: tell us a bit about yourselves and what you're looking for.</p>
+                <h1 class="text-[clamp(2.5rem,5vw,4rem)] font-normal leading-[1.02] tracking-[-0.04em] text-balance">Onboard with Ventra Fund</h1>
+                <p class="text-lg text-muted-foreground">ISOs and brokers: tell us about your shop and the deals you place. Your relationship manager will call you within one business day. No volume minimum.</p>
+                <p class="text-base text-muted-foreground">Business owner looking for funding? We fund only through ISOs, so ask your broker to send us your file.</p>
             </div>
 
             <form data-partner-form novalidate class="flex flex-col gap-5">
@@ -37,10 +38,9 @@ const EMAIL_PATTERN = "[^@\\s]+@[^@\\s]+\\.[^@\\s]{2,}";
                             <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
-                            <SelectItem value="broker" class="text-base">Broker</SelectItem>
-                            <SelectItem value="lender" class="text-base">Lender</SelectItem>
+                            <SelectItem value="broker" class="text-base">ISO or broker</SelectItem>
+                            <SelectItem value="lender" class="text-base">Lender or syndicator</SelectItem>
                             <SelectItem value="service_provider" class="text-base">Service provider</SelectItem>
-                            <SelectItem value="owner" class="text-base">Business owner looking for funding</SelectItem>
                         </SelectContent>
                     </Select>
                 </div>
@@ -79,13 +79,13 @@ const EMAIL_PATTERN = "[^@\\s]+@[^@\\s]+\\.[^@\\s]{2,}";
 
                 <div class="flex flex-col gap-1.5">
                     <span id="pt-message-label" class="text-sm font-medium">Message</span>
-                    <QuillEditor placeholder="Tell us about your company and what you're looking for." labelledby="pt-message-label" toolbar="open" />
+                    <QuillEditor placeholder="Tell us about your shop: the paper you place, your monthly volume and the funders you use today." labelledby="pt-message-label" toolbar="open" />
                 </div>
 
                 <Turnstile action="partner" />
 
                 <p data-partner-error hidden role="alert" class="text-sm text-destructive"></p>
-                <p data-partner-success hidden role="status" class="text-sm font-medium text-accent">Thanks, your message was sent. We'll be in touch.</p>
+                <p data-partner-success hidden role="status" class="text-sm font-medium text-foreground">Thanks, your message was sent. We'll be in touch.</p>
 
                 <Button type="submit" size="lg" class="self-start" data-partner-submit data-label="Send message" disabled>Checking security…</Button>
                 {/* Notice, not a checkbox: sending is the agreement. */}
@@ -117,9 +117,6 @@ const EMAIL_PATTERN = "[^@\\s]+@[^@\\s]+\\.[^@\\s]{2,}";
         // until it verifies (invisible first, visible fallback after 5s).
         if (widget) gateOnFirstInteraction({ form, widget, button: submitBtn, onError: showError });
 
-        // A business owner isn't a partner lead: send them straight to the application, the same
-        // hand-off the home page's capital CTA makes, instead of letting this form collect a message
-        // that would just need to be redirected by hand later.
         const interestGroups = form.querySelectorAll<HTMLElement>('[data-interest-group]');
         // Matches the Select's defaultValue (see the markup above) and the interest group that
         // starts visible: select:change only fires on an actual change, never for the preset value.
@@ -138,7 +135,6 @@ const EMAIL_PATTERN = "[^@\\s]+@[^@\\s]+\\.[^@\\s]{2,}";
         };
         roleSelect.addEventListener('select:change', (e) => {
             role = (e as CustomEvent<{ value: string }>).detail?.value ?? '';
-            if (role === 'owner') window.location.href = '/apply';
             showGroupFor(role);
         });
 

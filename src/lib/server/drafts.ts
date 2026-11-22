@@ -2,6 +2,11 @@ import { getBinding } from './bindings';
 import { deleteDocuments, getDocumentBucket, listDocuments, type R2Bucket } from './documents';
 import { DRAFT_FIELDS, type DraftField } from '@/lib/draft-config';
 
+// The public application form (/apply) and its endpoints have been removed (the site is ISO-only),
+// so nothing calls the write functions here any more (createDraft, saveDraft, recordSubmission and
+// the submission guard); the admin pages and the signing flow still read and purge the records it
+// left. What follows describes how they were captured.
+//
 // Drop-off capture for /apply: what a visitor typed before (or without) submitting, kept in the
 // DRAFTS_DB D1 database (schema in migrations-drafts/). A row is created only by
 // /api/apply/session, after a Turnstile check, and its id (a server-minted v4 UUID, 122 random
@@ -9,8 +14,8 @@ import { DRAFT_FIELDS, type DraftField } from '@/lib/draft-config';
 //
 // Retention is decided at purge time, not stored per row: `purgeExpired` reads the settings in
 // app_setting and deletes whatever is past them, so changing a setting re-scopes every existing
-// row on the next pass. There is no cron; the purge piggybacks on session mints and admin page
-// loads and throttles itself to one pass an hour.
+// row on the next pass. There is no cron; the purge piggybacks on admin page loads and throttles
+// itself to one pass an hour.
 //
 // Outside the Worker (`pnpm dev`) there is no binding: `getDraftDb` resolves undefined and every
 // caller treats that as "capture off". Capture must never cost an applicant their submission.

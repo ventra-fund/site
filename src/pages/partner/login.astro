@@ -4,18 +4,18 @@
 import PageShell from "@/components/page/PageShell.astro";
 import PageHero from "@/components/page/PageHero.astro";
 import Section from "@/components/page/Section.astro";
-import { Button } from "@/ui/button";
+import PillLink from "@/components/page/PillLink.astro";
 ---
 
 <PageShell title="Partner login">
-  <PageHero eyebrow="Partners" title="Partner portal">
-    <p>Our online partner portal is on its way. Until it launches, your relationship manager can submit deals, share status updates and answer commission questions.</p>
+  <PageHero eyebrow="For ISOs" title="Partner portal">
+    <p>Our online partner portal is on its way. Until it launches, send deals to your relationship manager, who will update you at every step and answer commission questions.</p>
   </PageHero>
 
   <Section tone="muted">
     <div class="flex flex-wrap gap-3">
-      <Button as="a" href="/contact" size="lg">Contact us</Button>
-      <Button as="a" href="/partner" size="lg" variant="outline">Become a partner</Button>
+      <PillLink href="/contact">Contact us</PillLink>
+      <PillLink href="/partner" variant="outline">Onboard now</PillLink>
     </div>
   </Section>
 </PageShell>

@@ -3,59 +3,31 @@ import PageShell from "@/components/page/PageShell.astro";
 import PageHero from "@/components/page/PageHero.astro";
 import Section from "@/components/page/Section.astro";
 import FeatureTiles from "@/components/page/FeatureTiles.astro";
-import CheckList from "@/components/page/CheckList.astro";
 import CtaBand from "@/components/page/CtaBand.astro";
-import { fundingProducts, productSlug } from "@/data/funding-products";
-import { BadgePercent, FileText, PiggyBank } from "@lucide/astro";
+import { dayList, isoProgram, shortDays } from "@/data/iso-program";
+import { BadgePercent, CalendarCheck, RefreshCw } from "@lucide/astro";
 ---
 
-<PageShell title="Transparent pricing">
-  <PageHero eyebrow="Why us" title="Know your full cost before you sign" cta={{ href: "/apply", label: "See your offers" }}>
-    <p>Every offer shows the total amount you'll repay, how often you'll pay and what each payment is. No hidden fees, no surprises at signing.</p>
+<PageShell title="Commission">
+  <PageHero eyebrow="For ISOs" title="Points, commission and when you get paid" cta={{ href: "/partner", label: "Onboard now" }}>
+    <p>You set your points on every deal, commission runs twice a week, and renewals pay you again. Your merchant sees the full cost in dollars before they sign.</p>
   </PageHero>
 
   <Section>
     <FeatureTiles
       items={[
-        { icon: FileText, title: "One clear total", text: "Your offer states the total repayment amount in dollars, not just a buy rate." },
-        { icon: BadgePercent, title: "Comparable rates", text: "We show an estimated APR alongside buy rates so you can compare offers." },
-        { icon: PiggyBank, title: "Pay early, pay less", text: "Eligible products include prepayment discounts that lower your total cost." },
+        { icon: BadgePercent, title: `Up to ${isoProgram.maxPoints} points`, text: "Each point earns you 1% of the funded amount. Your commission is built into the deal, not taken out of it." },
+        { icon: CalendarCheck, title: `Paid ${shortDays(isoProgram.commissionDays)}`, text: `Commission runs every ${dayList(isoProgram.commissionDays)} on funded deals.` },
+        { icon: RefreshCw, title: "Paid again on renewals", text: `Merchants can renew at ${isoProgram.renewAtPercent}% paid in, and you earn the same commission as the first funding.` },
       ]}
     />
   </Section>
 
-  <Section title="Starting buy rates by product" intro="Your actual pricing depends on your business's revenue, history and credit, and is set during review." tone="muted">
-    <div class="overflow-x-auto border border-border bg-card">
-      <table class="w-full border-collapse text-left text-base">
-        <thead class="bg-secondary text-xs font-semibold uppercase tracking-widest text-muted-foreground">
-          <tr><th scope="col" class="p-4">Product</th><th scope="col" class="p-4">Starting cost</th><th scope="col" class="p-4">Repayment</th><th scope="col" class="p-4">Term</th></tr>
-        </thead>
-        <tbody>
-          {fundingProducts.map((p) => (
-            <tr class="border-t border-border">
-              <th scope="row" class="p-4 font-semibold"><a href={`/capital/${productSlug(p)}`} class="text-foreground underline-offset-4 hover:underline">{p.title}</a></th>
-              <td class="p-4 text-muted-foreground">{p.rateCost}</td>
-              <td class="p-4 text-muted-foreground">{p.repayment}</td>
-              <td class="p-4 text-muted-foreground">{p.termLength}</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+  <Section title="Honest numbers for your merchant" tone="muted">
+    <div class="flex max-w-3xl flex-col gap-4 text-lg text-muted-foreground">
+      <p>Every contract states the total repayment amount in dollars, how often the merchant pays and what each payment is, with an estimated APR alongside. Nothing changes at signing, so the quote you give holds up.</p>
+      <p>No volume minimum to stay on the program, and a bonus once you reach {isoProgram.bonusAt} funded.</p>
     </div>
-  </Section>
-
-  <Section title="What affects your price">
-    <CheckList
-      columns={2}
-      items={[
-        { title: "Revenue and cash flow", text: "Higher, steadier deposits generally mean better pricing." },
-        { title: "Time in business", text: "A longer track record lowers risk." },
-        { title: "Credit history", text: "Considered alongside revenue, never on its own." },
-        { title: "Existing debt", text: "Open advances or financing positions affect what you can carry." },
-        { title: "Industry", text: "Some industries carry more seasonal or market risk." },
-        { title: "Product and term", text: "Shorter, more flexible products typically cost more." },
-      ]}
-    />
   </Section>
 
   <CtaBand />

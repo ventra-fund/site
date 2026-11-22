@@ -1,12 +1,12 @@
 import { z } from 'astro/zod';
-import { applyRequest } from './apply-schema';
+import { applicationFields } from './application-schema';
 import { singleLine } from './message-schema';
 
-// The signing page's rules, enforced by /api/sign/[token]. Server-only, like apply-schema.ts: the
+// The signing page's rules, enforced by /api/sign/[token]. Server-only, like application-schema.ts: the
 // page mirrors the patterns (src/lib/signing-config.ts) for friendly errors before submitting.
 
 /** The application fields the signer confirms, with the same rules as the application itself. */
-export const confirmedFields = applyRequest.pick({
+export const confirmedFields = applicationFields.pick({
   legalBusinessName: true,
   dba: true,
   firstName: true,

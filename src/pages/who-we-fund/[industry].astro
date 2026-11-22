@@ -26,31 +26,31 @@ const recommended = industry.products.map((slug) => {
 });
 ---
 
-<PageShell title={`${industry.name} financing`}>
-  <PageHero eyebrow={`Who we fund · ${industry.name}`} title={industry.heading} cta={{ href: "/apply", label: "Apply for Funding", rounded: true }} secondary={{ href: "/who-we-fund", label: "All industries" }} image={industry.image}>
-    <p>{industry.intro}</p>
+<PageShell title={`${industry.name} deals`}>
+  <PageHero eyebrow={`Deal guidelines · ${industry.name}`} title={industry.heading} cta={{ href: "/partner", label: "Onboard now" }} secondary={{ href: "/who-we-fund", label: "All industries" }} image={industry.image}>
+    <p>{industry.intro} Here's what we look at, and what to submit.</p>
   </PageHero>
 
-  <Section title={`Challenges we help ${industry.audience} solve`}>
-    <NumberedGrid items={industry.challenges} />
+  <Section title={`What we look at when underwriting ${industry.audience}`}>
+    <NumberedGrid items={industry.underwriting} />
   </Section>
 
   <Section tone="muted">
     <div class="grid items-center gap-10 lg:grid-cols-2">
       <Photo photo={industry.usesImage} class="aspect-square" />
       <div class="flex flex-col gap-6">
-        <h2 class="text-3xl font-bold text-accent sm:text-4xl">How {industry.audience} use our funding</h2>
+        <h2 class="text-3xl font-bold tracking-[-0.02em] sm:text-4xl">How {industry.audience} use the funds</h2>
         <CheckList items={industry.uses} />
         <p class="border-l-4 border-primary pl-5 text-lg text-muted-foreground">{industry.example}</p>
       </div>
     </div>
   </Section>
 
-  <Section title="Recommended options" intro="An advisor will help you compare these and anything else you qualify for.">
+  <Section title="Products to submit" intro="The products that usually fit. An underwriter can tell you which suits your merchant best.">
     <ul class="grid list-none grid-cols-1 gap-4 md:grid-cols-3">
       {recommended.map((p) => (
         <li>
-          <a href={`/capital/${p.slug}`} class="flex h-full flex-col gap-3 border border-border bg-card p-6 transition-colors hover:border-primary">
+          <a href={`/capital/${p.slug}`} class="flex h-full flex-col gap-3 border border-border bg-card p-6 transition-colors hover:border-foreground">
             <span class="text-sm text-muted-foreground">{p.product.category}</span>
             <span class="text-xl font-bold text-foreground">{p.product.title}</span>
             <span class="text-base text-muted-foreground">Best for {p.product.bestFor.toLowerCase()}.</span>

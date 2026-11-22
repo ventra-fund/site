@@ -121,7 +121,7 @@
 }
 
 @layer components {
-  /* Grain tile shared by the stepped-bar backdrops (StepsBackground, StepsAccent). A fixed bitmap
+  /* Grain tile shared by the stepped-bar backdrop (StepsBackground). A fixed bitmap
      sized in CSS px so it looks the same at any zoom; overlay blending leaves white untouched. */
   .grain {
     background-image: url("/textures/grain.png");

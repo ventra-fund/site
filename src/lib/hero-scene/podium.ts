@@ -1,4 +1,4 @@
-import { Group, LatheGeometry, Mesh, ShaderMaterial, Vector2 } from "three";
+import { Group, LatheGeometry, Mesh, ShaderMaterial, Vector2, Vector3 } from "three";
 import { glsl, GRAIN, GRAIN_AMOUNT, type SharedUniforms } from "./shared";
 
 // The stepped podium under the logo: three rounded discs, each wider and lower than the one above,
@@ -20,6 +20,10 @@ const TIERS: Tier[] = [
   { radius: 1.8, height: 0.3, top: -0.34, bevel: 0.065 },
   { radius: 2.08, height: 0.3, top: -0.66, bevel: 0.065 },
 ];
+
+const BASE_TIER = TIERS[TIERS.length - 1];
+/** The front of the podium's base, where the lowest tier meets the fog. scene.ts sets the fog bank's top from it. */
+export const PODIUM_BASE = new Vector3(0, BASE_TIER.top - BASE_TIER.height, BASE_TIER.radius);
 
 /** Lathe segments: enough that the widest rim stays round at full-screen size. */
 const SEGMENTS = 128;

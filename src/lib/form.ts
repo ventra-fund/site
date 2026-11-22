@@ -1,4 +1,4 @@
-// Client-side helpers shared by the apply, contact and partner forms: validation feedback that
+// Client-side helpers shared by the contact, partner and signing forms: validation feedback that
 // works without the browser's tooltip, and the submit choreography around a Turnstile-gated
 // JSON POST. Page scripts keep only what's specific to them (which fields go in the body, what
 // happens on success).
@@ -122,23 +122,18 @@ export interface SubmitOptions {
   url: string;
   /** Everything but the Turnstile token, which is added here. */
   body: () => Record<string, unknown>;
-  /**
-   * Files to send with the body. When given, the request is multipart: the JSON goes in a
-   * `payload` field and each file in `files`, which is how /api/apply takes bank statements.
-   */
-  files?: () => File[];
   /** Copy for error codes only this endpoint returns, checked before the shared ones. */
   errorMessages?: Record<string, string>;
   onSuccess?: () => void;
 }
 
 /**
- * POST the form behind the Turnstile gate: take the token, disable the button, send (JSON, or
- * multipart when there are files), show the outcome, then re-gate for the next attempt (a token
- * is single-use). Server-side validation failures are mapped back onto the fields they name.
+ * POST the form behind the Turnstile gate: take the token, disable the button, send the JSON, show
+ * the outcome, then re-gate for the next attempt (a token is single-use). Server-side validation
+ * failures are mapped back onto the fields they name.
  */
 export async function submitJson(opts: SubmitOptions): Promise<void> {
-  const { form, widget, button, errorEl, successEl, url, body, files, errorMessages, onSuccess } = opts;
+  const { form, widget, button, errorEl, successEl, url, body, errorMessages, onSuccess } = opts;
   const showError = (msg: string) => showMessage(errorEl, msg);
 
   const token = widget ? takeTurnstileToken(widget) : undefined;
@@ -146,17 +141,11 @@ export async function submitJson(opts: SubmitOptions): Promise<void> {
 
   button.disabled = true;
   try {
-    const payload = JSON.stringify({ ...body(), token });
-    let init: RequestInit;
-    if (files) {
-      const data = new FormData();
-      data.append('payload', payload);
-      for (const file of files()) data.append('files', file, file.name);
-      init = { method: 'POST', body: data };
-    } else {
-      init = { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: payload };
-    }
-    const res = await fetch(url, init);
+    const res = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ...body(), token }),
+    });
     if (res.ok) {
       onSuccess?.();
       successEl.hidden = false;

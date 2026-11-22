@@ -4,29 +4,44 @@
 // `relative isolate` section; the hero copy must carry `data-hero-copy` so the stage can be framed
 // in the space it leaves free.
 //
+// The backdrop runs --hero-bleed past the bottom of the hero, over the top of the next section, where
+// the scene's fog bank thins out into the page's white (src/lib/hero-scene/fog.ts). So the hero must
+// not clip vertically, and the next section must be positioned to paint over it.
+//
 // Data Saver, browsers without WebGL 2 and any failure keep the CSS sky. Reduced motion gets the
 // scene as a still frame.
 ---
 
-<div class="hero-scene pointer-events-none absolute inset-0 -z-10" data-hero-scene aria-hidden="true">
+<div class="hero-scene pointer-events-none absolute inset-x-0 top-0 -z-10" data-hero-scene aria-hidden="true">
   <div class="wash wash-top"></div>
   <div class="wash wash-left"></div>
   <div class="wash wash-bottom"></div>
 </div>
 
 <style>
-  /* Stand-in for the 3D sky until it fades in (and for good where it never does). */
   .hero-scene {
+    --hero-bleed: clamp(7rem, 22svh, 13rem);
+    bottom: calc(-1 * var(--hero-bleed));
+    overflow: hidden; /* see the canvas */
+    /* Stand-in for the 3D sky until it fades in (and for good where it never does): the sky, then a
+       few white puffs along the hero's bottom edge over a fade to the page's white. */
     background:
-      linear-gradient(to top, rgb(209 234 243 / 0.95), rgb(209 234 243 / 0) 42%),
+      radial-gradient(36% calc(var(--hero-bleed) * 0.8) at 12% calc(100% - var(--hero-bleed) * 0.8), #fff 25%, rgb(255 255 255 / 0)),
+      radial-gradient(30% calc(var(--hero-bleed) * 0.65) at 50% calc(100% - var(--hero-bleed) * 0.9), #fff 25%, rgb(255 255 255 / 0)),
+      radial-gradient(40% calc(var(--hero-bleed) * 0.85) at 90% calc(100% - var(--hero-bleed) * 0.75), #fff 25%, rgb(255 255 255 / 0)),
+      linear-gradient(to top, #fff calc(var(--hero-bleed) * 0.5), rgb(255 255 255 / 0) calc(var(--hero-bleed) * 1.5)),
+      linear-gradient(to top, rgb(209 234 243 / 0.95) var(--hero-bleed), rgb(209 234 243 / 0) calc(var(--hero-bleed) + 36%)),
       linear-gradient(to right, #d0e8f1, #a1d5e8 40%, #7ccbe6);
   }
+  /* A few px taller than the backdrop, which clips them: browsers can blend a faint grey into the last
+     row of an upscaled canvas, and that row would draw a line across the white below the hero. */
   .hero-scene :global(canvas) {
     position: absolute;
-    inset: 0;
+    top: 0;
+    left: 0;
     display: block;
     width: 100%;
-    height: 100%;
+    height: calc(100% + 4px);
     opacity: 0;
     transition: opacity 0.9s ease-out;
   }
@@ -45,10 +60,14 @@
     background: linear-gradient(rgb(212 234 242 / 0.6), rgb(212 234 242 / 0));
   }
   .wash-left {
-    inset-block: 0;
+    top: 0;
+    bottom: var(--hero-bleed);
     left: 0;
     width: 55%;
     background: linear-gradient(to right, #d4eaf2, rgb(212 234 242 / 0.85) 35%, rgb(212 234 242 / 0));
+    /* giving way to the fog bank toward the bottom of the hero */
+    -webkit-mask-image: linear-gradient(#000 55%, transparent 95%);
+    mask-image: linear-gradient(#000 55%, transparent 95%);
   }
   .wash-bottom {
     display: none;
@@ -62,12 +81,18 @@
       display: block;
       inset-inline: 0;
       bottom: 0;
-      height: 60%;
-      background: linear-gradient(rgb(212 234 242 / 0), rgb(212 234 242 / 0.82) 30%, #d4eaf2);
+      height: calc(60% + 0.4 * var(--hero-bleed)); /* 60% of the hero, plus the overreach */
+      background: linear-gradient(rgb(212 234 242 / 0), rgb(212 234 242 / 0.82) 30%, #d4eaf2 calc(100% - var(--hero-bleed)), #fff);
+      transition: opacity 0.9s ease-out;
+    }
+    /* Once the scene is up, the copy sits in its fog bank instead. */
+    .hero-scene[data-ready] .wash-bottom {
+      opacity: 0;
     }
   }
   @media (prefers-reduced-motion: reduce) {
-    .hero-scene :global(canvas) {
+    .hero-scene :global(canvas),
+    .wash-bottom {
       transition: none;
     }
   }

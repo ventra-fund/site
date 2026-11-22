@@ -10,6 +10,10 @@ export interface SharedUniforms {
   uPointer: { value: Vector2 };
   /** Where the logo floats; smoke and the podium tops are lit from here. */
   uStage: { value: Vector3 };
+  /** Drawing-buffer size, px. */
+  uResolution: { value: Vector2 };
+  /** Drawing-buffer px of canvas below the hero's bottom edge: the fog's overreach into the next section. */
+  uBleed: { value: number };
 }
 
 /**

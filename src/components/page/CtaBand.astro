@@ -1,28 +1,42 @@
 ---
-// Closing call to action, the same on every content page unless the copy is overridden.
-import { Button } from "@/ui/button";
-import HandCoins from "@lucide/astro/icons/hand-coins";
+// Closing call to action, the same on every page unless the copy is overridden: a big centred line
+// and two pill buttons (after the footer call to action on Main Capital's site). Pass `text=""` for
+// the headline alone.
+import PillLink from "./PillLink.astro";
+import { dayList, isoProgram } from "@/data/iso-program";
+
+interface Link {
+  href: string;
+  label: string;
+}
 
 interface Props {
   title?: string;
   text?: string;
   href?: string;
   label?: string;
+  /** The outlined second button; pass `null` to drop it. */
+  secondary?: Link | null;
+  class?: string;
 }
 
 const {
-  title = "Ready to see your options?",
-  text = "Applying takes a few minutes, with no credit check and no obligation to accept.",
-  href = "/apply",
-  label = "Apply for Funding",
+  title = "Ready to send us a deal?",
+  text = `Onboarding is one short form and a call. No volume minimum, and commission runs every ${dayList(isoProgram.commissionDays)}.`,
+  href = "/partner",
+  label = "Onboard now",
+  secondary = { href: "/who-we-fund", label: "View guidelines" },
+  class: className,
 } = Astro.props;
 ---
 
-<section class="mx-auto w-[calc(100%-2rem)] max-w-6xl md:w-[calc(100%-8rem)]">
-  <div class="flex flex-col items-center gap-6 bg-accent px-6 py-16 text-center text-accent-foreground md:px-16">
-    <HandCoins class="size-12" stroke-width={1.5} aria-hidden="true" />
-    <h2 class="text-3xl font-bold sm:text-4xl">{title}</h2>
-    <p class="max-w-2xl text-lg opacity-90">{text}</p>
-    <Button as="a" href={href} size="lg" variant="secondary" class="rounded-full px-6 font-semibold">{label}</Button>
+<section class:list={["w-full", className]}>
+  <div class="mx-auto flex max-w-4xl flex-col items-center px-6 py-24 text-center lg:py-32">
+    <h2 class="text-[clamp(2.5rem,6vw,5.5rem)] font-medium leading-[1.02] tracking-[-0.04em] text-balance">{title}</h2>
+    {text && <p class="mt-6 max-w-2xl text-lg text-foreground/70 text-pretty">{text}</p>}
+    <div class="mt-10 flex flex-wrap justify-center gap-3">
+      <PillLink href={href}>{label}</PillLink>
+      {secondary && <PillLink href={secondary.href} variant="outline">{secondary.label}</PillLink>}
+    </div>
   </div>
 </section>

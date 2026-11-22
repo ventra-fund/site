@@ -19,8 +19,8 @@ const { title, eyebrow, intro, tone = "plain", align = "start", wide = false, id
   <div class="mx-auto flex w-[calc(100%-2rem)] max-w-6xl flex-col gap-10 md:w-[calc(100%-8rem)]">
     {(title || eyebrow || intro) && (
       <div class:list={["flex flex-col gap-3", align === "center" && "items-center text-center"]}>
-        {eyebrow && <p class="text-sm font-semibold uppercase tracking-widest text-primary">{eyebrow}</p>}
-        {title && <h2 class:list={["text-3xl font-bold text-accent sm:text-4xl", !wide && "max-w-3xl"]}>{title}</h2>}
+        {eyebrow && <p class="text-sm font-medium text-muted-foreground">{eyebrow}</p>}
+        {title && <h2 class:list={["text-3xl font-bold tracking-[-0.02em] sm:text-4xl", !wide && "max-w-3xl"]}>{title}</h2>}
         {intro && <p class:list={["text-lg text-muted-foreground", !wide && "max-w-2xl"]}>{intro}</p>}
       </div>
     )}

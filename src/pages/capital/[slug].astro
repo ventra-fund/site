@@ -1,6 +1,6 @@
 ---
-// One page per funding product, in the order a product page reads on comparable lender sites: what
-// it is, three headline facts, advantages, a comparison, who it suits, FAQs.
+// One page per product an ISO can submit: what it is, three headline facts, how the ISO gets paid on
+// it, why it places well, a comparison to share with the merchant, when to submit it, FAQs.
 import PageShell from "@/components/page/PageShell.astro";
 import PageHero from "@/components/page/PageHero.astro";
 import Section from "@/components/page/Section.astro";
@@ -9,10 +9,11 @@ import CheckList from "@/components/page/CheckList.astro";
 import CompareTable from "@/components/page/CompareTable.astro";
 import FaqList from "@/components/page/FaqList.astro";
 import CtaBand from "@/components/page/CtaBand.astro";
-import { Button } from "@/ui/button";
+import PillLink from "@/components/page/PillLink.astro";
 import { productPages, type ProductPage } from "@/data/product-pages";
 import { faqGroup } from "@/data/faqs";
-import { CalendarSync, ChartNoAxesCombined, Timer } from "@lucide/astro";
+import { dayList, isoProgram, shortDays } from "@/data/iso-program";
+import { BadgePercent, CalendarCheck, CalendarSync, ChartNoAxesCombined, ShieldCheck, Timer } from "@lucide/astro";
 
 export function getStaticPaths() {
   return productPages.map((page) => ({ params: { slug: page.slug }, props: { page } }));
@@ -29,7 +30,7 @@ const others = productPages.filter((p) => p.slug !== page.slug);
 ---
 
 <PageShell title={product.title}>
-  <PageHero eyebrow={product.category} title={page.heading} cta={{ href: "/apply", label: "Apply for Funding", rounded: true }} secondary={{ href: "/capital", label: "Compare options" }} image={page.image}>
+  <PageHero eyebrow={product.category} title={page.heading} cta={{ href: "/partner", label: "Onboard now" }} secondary={{ href: "/capital", label: "Compare products" }} image={page.image}>
     <p>{product.description}</p>
   </PageHero>
 
@@ -44,15 +45,25 @@ const others = productPages.filter((p) => p.slug !== page.slug);
     />
   </Section>
 
-  <Section title="Advantages" tone="muted">
+  <Section title="How you get paid" tone="muted">
+    <FeatureTiles
+      items={[
+        { icon: BadgePercent, title: `Up to ${isoProgram.maxPoints} points`, text: "Built into the merchant's total cost, which they see in dollars before signing." },
+        { icon: CalendarCheck, title: `Paid ${shortDays(isoProgram.commissionDays)}`, text: `Commission runs every ${dayList(isoProgram.commissionDays)}.` },
+        { icon: ShieldCheck, title: "Your merchant stays yours", text: "Funded or declined, we never contact your merchant on our own. The only call they get is the verification call, made in your name." },
+      ]}
+    />
+  </Section>
+
+  <Section title="Why it's easy to place">
     <CheckList items={page.advantages} columns={2} />
   </Section>
 
-  <Section title={page.comparison.title}>
+  <Section title={page.comparison.title} intro="What to tell your merchant when they're weighing up their options." tone="muted">
     <CompareTable them={page.comparison.them} rows={page.comparison.rows} />
   </Section>
 
-  <Section title="Is it right for you?" tone="muted">
+  <Section title="When to submit it">
     <div class="grid gap-10 md:grid-cols-2 lg:grid-cols-3">
       <div class="flex flex-col gap-4">
         <h3 class="text-xl font-bold text-foreground">A good fit if</h3>
@@ -73,23 +84,23 @@ const others = productPages.filter((p) => p.slug !== page.slug);
           ]}
         />
         <p class="text-sm text-muted-foreground italic">Additional underwriting criteria apply.</p>
-        <Button as="a" href="/who-we-fund" variant="outline" size="lg" class="self-start">View eligibility</Button>
+        <PillLink href="/who-we-fund" variant="outline" class="self-start">Deal guidelines</PillLink>
       </div>
     </div>
     <p class="max-w-3xl border-l-4 border-primary pl-5 text-lg text-muted-foreground">{page.example}</p>
   </Section>
 
-  <Section title="FAQs">
+  <Section title="FAQs" tone="muted">
     <div class="max-w-3xl">
       <FaqList items={faqs} />
     </div>
   </Section>
 
-  <Section title="Other ways to fund your business" tone="muted">
+  <Section title="Other products you can submit">
     <ul class="grid list-none grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
       {others.map((o) => (
         <li>
-          <a href={`/capital/${o.slug}`} class="flex h-full flex-col gap-2 border border-border bg-card p-6 transition-colors hover:border-primary">
+          <a href={`/capital/${o.slug}`} class="flex h-full flex-col gap-2 border border-border bg-card p-6 transition-colors hover:border-foreground">
             <span class="text-sm text-muted-foreground">{o.product.category}</span>
             <span class="text-lg font-bold text-foreground">{o.product.title}</span>
             <span class="text-sm text-muted-foreground">{o.product.amount}</span>

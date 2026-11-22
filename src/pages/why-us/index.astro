@@ -4,57 +4,55 @@ import PageHero from "@/components/page/PageHero.astro";
 import Section from "@/components/page/Section.astro";
 import FeatureTiles from "@/components/page/FeatureTiles.astro";
 import Photo from "@/components/page/Photo.astro";
+import DealFlow from "@/components/DealFlow.astro";
 import { photos } from "@/data/photos";
-import ReviewGrid from "@/components/page/ReviewGrid.astro";
 import CtaBand from "@/components/page/CtaBand.astro";
-import { Button } from "@/ui/button";
-import { companyFacts } from "@/data/company";
-import { fundingProducts, minimumRequirements } from "@/data/funding-products";
-import { Headset, Layers, PiggyBank, Timer } from "@lucide/astro";
+import PillLink from "@/components/page/PillLink.astro";
+import { dayList, isoProgram, shortDays, underwriterAvailability } from "@/data/iso-program";
+import { CalendarCheck, MessageSquareText, RefreshCw, Timer } from "@lucide/astro";
 ---
 
 <PageShell title="Why Ventra Fund">
-  <PageHero eyebrow="Why us" title="Why small business owners choose Ventra Fund" cta={{ href: "/who-we-fund", label: "See if you qualify", rounded: true }} secondary={{ href: "/apply", label: "Apply now", rounded: true }}>
-    <p>Straightforward, transparent financing for established businesses, from a team that's funded {companyFacts.businessesFunded} of them.</p>
+  <PageHero eyebrow="For ISOs" title="Why ISOs send us their deals" cta={{ href: "/partner", label: "Onboard now" }} secondary={{ href: "/why-us/how-it-works", label: "How submissions work" }}>
+    <p>We're a funder that works only through brokers. That changes how we treat your file, your merchant and your commission.</p>
   </PageHero>
 
   <Section>
     <div class="grid items-center gap-10 lg:grid-cols-2">
       <div class="flex flex-col gap-5">
-        <h2 class="text-3xl font-bold text-accent sm:text-4xl">We look at your business, not just your credit</h2>
-        <p class="text-lg text-muted-foreground">Banks lead with your credit history. We lead with your revenue and cash flow, so a strong business with imperfect credit gets a fair look. We consider scores from {minimumRequirements.creditScore}, and applying doesn't involve a credit check.</p>
-        <Button as="a" href="/capital" variant="outline" size="lg" class="self-start">Financing solutions</Button>
+        <h2 class="text-3xl font-bold tracking-[-0.02em] sm:text-4xl">We don't compete with you</h2>
+        <p class="text-lg text-muted-foreground">We have no sales floor and no direct-to-merchant channel. Every merchant you submit stays yours, funded or declined: we never market to them or contact them on our own, and the verification call is made in your name. We don't shop your file to other funders.</p>
+        <PillLink href="/who-we-fund" variant="outline" class="self-start">Deal guidelines</PillLink>
       </div>
-      <Photo photo={photos.advisorMeeting} class="aspect-square" />
+      <Photo photo={photos.brokerCall} class="aspect-square" />
     </div>
   </Section>
 
-  <Section title="Funding built around your cash flow" tone="muted">
+  <Section title="Built around how brokers work" tone="muted">
     <FeatureTiles
       columns={4}
       items={[
-        { icon: Headset, title: "One advisor throughout", text: "The same person from application to funding." },
-        { icon: Timer, title: "Decisions in a day", text: "Most applicants hear back within 24 hours." },
-        { icon: Layers, title: `${fundingProducts.length} ways to borrow`, text: "Each sized to what your business can carry." },
-        { icon: PiggyBank, title: "Pay early, pay less", text: "Prepayment discounts on eligible products." },
+        { icon: MessageSquareText, title: "Every decline explained", text: "The reason comes with the decision. If we got something wrong, push back and we'll take another look." },
+        { icon: Timer, title: "Decisions in a day", text: "Automated pre-approval checks on industry and position stack, then a person underwrites the file." },
+        { icon: CalendarCheck, title: `Commission ${shortDays(isoProgram.commissionDays)}`, text: `Commission runs every ${dayList(isoProgram.commissionDays)}, with up to ${isoProgram.maxPoints} points on every deal.` },
+        { icon: RefreshCw, title: "Renewals credited to you", text: `Merchants can renew at ${isoProgram.renewAtPercent}% paid in, at the same commission as the first funding.` },
       ]}
     />
   </Section>
 
-  <Section title="What owners say about Ventra Fund">
-    <ReviewGrid limit={3} />
-    <a href="/about/reviews" class="self-start text-base font-semibold text-primary underline-offset-4 hover:underline">Read all reviews →</a>
+  <Section title="Know where every deal stands" intro={`You hear from us at each step. And when you'd rather talk, an underwriter is on the phone ${underwriterAvailability}.`}>
+    <DealFlow />
   </Section>
 
   <Section title="Learn more" tone="muted">
     <ul class="grid list-none grid-cols-1 gap-4 md:grid-cols-3">
       {[
-        { href: "/why-us/how-it-works", title: "How it works", text: "From application to funding in four steps." },
-        { href: "/why-us/transparent-pricing", title: "Transparent pricing", text: "How we price offers and what you'll pay." },
-        { href: "/why-us/faq", title: "FAQ", text: "Answers to the questions owners ask most." },
+        { href: "/why-us/how-it-works", title: "How submissions work", text: "From onboarding to your first commission run." },
+        { href: "/why-us/transparent-pricing", title: "Commission", text: "Points, renewals and when you get paid." },
+        { href: "/why-us/faq", title: "FAQ", text: "Answers to the questions brokers ask most." },
       ].map((card) => (
         <li>
-          <a href={card.href} class="flex h-full flex-col gap-2 border border-border bg-card p-6 transition-colors hover:border-primary">
+          <a href={card.href} class="flex h-full flex-col gap-2 border border-border bg-card p-6 transition-colors hover:border-foreground">
             <span class="text-xl font-bold text-foreground">{card.title}</span>
             <span class="text-base text-muted-foreground">{card.text}</span>
           </a>

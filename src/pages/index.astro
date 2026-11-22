@@ -1,220 +1,145 @@
 ---
 import Layout from "@/layouts/Layout.astro";
-import StepsAccent from "@/components/StepsAccent.astro";
-import Star from "@/components/Star.astro";
 import Footer from "@/components/Footer.astro";
 import HeroScene from "@/components/HeroScene.astro";
 import GlassButton from "@/components/GlassButton.astro";
-import { Button } from "@/ui/button";
-import { Image } from "astro:assets";
-import { reviews } from "@/data/reviews";
-// Photos live in src/assets so Astro resizes/re-encodes them at build time (see astro.config.mjs
-// `imageService: "compile"`): the outputs in dist/_astro are plain static files, no runtime work.
-// `widths` caps the candidates at the source width; `sizes` mirrors each slot's CSS width.
-import growthSteps from "@/assets/media/growth-steps.jpg";
-import handshake from "@/assets/media/business-handshake.jpeg";
-import hvac from "@/assets/media/hvac.jpeg";
-import { BadgeDollarSign, ChevronLeft, ChevronRight, CircleCheck, CircleDollarSign, ClipboardCheck, Quote, Sheet, ShieldCheck, ToolCase, Timer, TrendingUp, UsersRound, Wallet } from "@lucide/astro";
+import HeroPoints from "@/components/HeroPoints.astro";
+import GlareCard from "@/components/GlareCard.astro";
+import DealFlow from "@/components/DealFlow.astro";
+import WeekStrip from "@/components/WeekStrip.astro";
+import CtaBand from "@/components/page/CtaBand.astro";
+import { dayList, isoProgram, shortDays, underwriterAvailability } from "@/data/iso-program";
+import { fundingProducts, productSlug } from "@/data/funding-products";
 
+const { commissionDays, underwriterDays, underwriterHours, renewAtPercent, bonusAt, stips } = isoProgram;
+
+// The hero's tag lines, the same as Main Capital's: the lead shows, the rest unfolds on hover or tap.
+const heroPoints = [
+  { lead: "For brokers", rest: "with B/C-paper MCA deals" },
+  { lead: "Sick of declined deals", rest: "even when they match funder guidelines" },
+  { lead: "And inconsistent funders", rest: "with unclear communication" },
+];
+
+// Below the hero: Main Capital's ISO pitch, card by card, in its style. Each card is a size container,
+// so its stat scales with the card (cqi) rather than the longest word forcing the column wider on
+// narrow phones.
+const card = "@container flex min-h-80 flex-col justify-end border border-border bg-card p-8 sm:p-10 lg:p-14";
+const stat = "text-[clamp(2.25rem,22cqi,3.75rem)] font-medium leading-[1.02] tracking-[-0.04em] lg:text-7xl";
+const note = "mt-4 text-xl text-muted-foreground";
 ---
 
 <Layout>
 <main>
   <!-- Full-bleed hero filling the first screen. The 3D stage (HeroScene) frames itself in the space right of the copy,
-       or above it once the screen is taller than wide (the max-aspect-ratio variants, same breakpoint as the scene). -->
-  <section class="relative isolate flex min-h-svh flex-col overflow-hidden text-[#000305]">
+       or above it once the screen is taller than wide (the max-aspect-ratio variants, same breakpoint as the scene).
+       Its fog runs on past the bottom into the next section, so the hero clips only sideways. -->
+  <section class="relative isolate flex min-h-svh flex-col overflow-x-clip text-[#000305]">
     <HeroScene />
     <div class="mx-auto my-auto w-[calc(100%-2rem)] max-w-[1300px] py-16 md:w-[calc(100%-8rem)] [@media(max-aspect-ratio:9/10)]:mb-0 [@media(max-aspect-ratio:9/10)]:mt-auto [@media(max-aspect-ratio:9/10)]:pb-10">
       <div class="w-fit max-w-2xl" data-hero-copy>
-        <h1 class="text-4xl font-semibold leading-[0.98] tracking-[-0.03em] sm:text-5xl lg:text-6xl xl:text-7xl">Working <span class="text-[#0b7a9a]">capital.</span><br>Built for <span class="text-[#0b7a9a]">growth.</span></h1>
-        <p class="mt-6 max-w-md text-lg text-black/70">Fast, flexible funding for cash flow, inventory, payroll, and more. Apply in minutes and get a decision in as fast as 24 hours.</p>
-        <GlassButton href="/apply" arrow class="mt-10 max-sm:[@media(max-aspect-ratio:9/10)]:w-full">Apply for funding</GlassButton>
+        <h1 class="text-4xl font-semibold leading-[0.98] tracking-[-0.03em] sm:text-5xl lg:text-6xl xl:text-7xl">ISO-only <br class="hidden md:inline" /><span class="text-[#0b7a9a]">funding</span></h1>
+        <HeroPoints points={heroPoints} class="mt-6 max-w-md" />
+        <GlassButton href="/partner" arrow class="mt-8 max-sm:[@media(max-aspect-ratio:9/10)]:w-full">Onboard now</GlassButton>
       </div>
     </div>
   </section>
 
-  <section class="mx-auto grid w-[calc(100%-2rem)] max-w-[1300px] my-[4rem] grid-cols-1 md:min-h-176 md:grid-cols-[1fr_2fr] md:w-[calc(100%-8rem)]">
-    <Image class="h-80 w-full bg-muted object-cover md:h-0 md:min-h-full" src={growthSteps} alt="Staircase rising diagonally up the face of a teal glass building" widths={[400, 600, 900]} sizes="(min-width: 768px) calc((100vw - 8rem) / 3), calc(100vw - 2rem)" format="webp" quality={75} loading="lazy" decoding="async" />
-    <div class="flex flex-col gap-8 bg-secondary px-6 py-12 md:px-16 md:py-20">
-      <h2 class="text-4xl font-bold text-accent md:text-5xl">Business financing to fuel your growth.</h2>
-      <p class="max-w-xl text-lg text-secondary-foreground">Apply for working capital with Ventra Fund to cover inventory, payroll, marketing, and more, all from one simple application.</p>
-      <ul class="flex flex-col gap-8">
-        <li class="flex items-center gap-6 text-lg font-semibold text-accent">
-          <BadgeDollarSign class="size-12 shrink-0" stroke-width={1.5} />
-          <span>Access competitive pricing and repayment terms</span>
-        </li>
-        <li class="flex items-center gap-6 text-lg font-semibold text-accent">
-          <ClipboardCheck class="size-12 shrink-0" stroke-width={1.5} />
-          <span>Apply in minutes without impacting your credit score</span>
-        </li>
-        <li class="flex items-center gap-6 text-lg font-semibold text-accent">
-          <Timer class="size-12 shrink-0" stroke-width={1.5} />
-          <span>Get a decision in as fast as 24 hours</span>
-        </li>
-      </ul>
-      <Button as="a" href="/capital" size="lg" class="mt-auto self-start">Explore business financing</Button>
+  <!-- relative: paints over the hero's fog, which reaches into the top of this section -->
+  <section class="relative mx-4 pt-16 sm:mx-8 sm:pt-24">
+    <h2 class="text-4xl font-bold">It's simple,<br />we don't go direct-to-merchant.</h2>
+    <div class="mt-8 grid gap-4 md:grid-cols-2">
+      <GlareCard class={card}>
+        <h3 class={stat}>Always yours</h3>
+        <p class={note}>Every merchant you submit stays yours, even the ones we decline. We never market to them or contact them on our own.</p>
+      </GlareCard>
+      <GlareCard class={card}>
+        <h3 class={stat}>100% ISO</h3>
+        <p class={note}>We have no sales floor. Every deal we fund comes from a broker.</p>
+      </GlareCard>
     </div>
-  </section>
-
-  <section class="mx-auto grid w-[calc(100%-2rem)] max-w-[1300px] my-[4rem] grid-cols-1 md:min-h-176 md:grid-cols-[2fr_1fr] md:w-[calc(100%-8rem)]">
-    <Image class="h-80 w-full bg-muted object-cover md:order-last md:h-0 md:min-h-full" src={handshake} alt="Business owners shaking hands" widths={[400, 736]} sizes="(min-width: 768px) calc((100vw - 8rem) / 3), calc(100vw - 2rem)" format="webp" quality={75} loading="lazy" decoding="async" />
-    <div class="flex flex-col gap-8 bg-secondary px-6 py-12 md:px-16 md:py-20">
-      <h2 class="text-4xl font-bold text-accent md:text-5xl">Unlock funding that doesn’t hold you back.</h2>
-      <p class="max-w-xl text-lg text-secondary-foreground">Flexible working capital on terms that put your business first, with no strings attached.</p>
-      <ul class="flex flex-col gap-8">
-        <li class="flex items-center gap-6 text-lg font-semibold text-accent">
-          <Wallet class="size-12 shrink-0" stroke-width={1.5} />
-          <span>Use funds for anything your business needs - we trust you to know what’s best.</span>
-        </li>
-        <li class="flex items-center gap-6 text-lg font-semibold text-accent">
-          <ShieldCheck class="size-12 shrink-0" stroke-width={1.5} />
-          <span>No personal guarantee, so your personal assets aren’t on the line.</span>
-        </li>
-        <li class="flex items-center gap-6 text-lg font-semibold text-accent">
-          <TrendingUp class="size-12 shrink-0" stroke-width={1.5} />
-          <span>No prepayment fees because we don’t think you should be penalized for growth.</span>
-        </li>
-      </ul>
-      <Button as="a" href="/apply" size="lg" class="mt-auto self-start">Check eligibility</Button>
-    </div>
-  </section>
-
-  <section class="mx-auto grid w-[calc(100%-2rem)] max-w-[1300px] my-[4rem] grid-cols-1 gap-10 bg-secondary px-6 py-12 md:w-[calc(100%-8rem)] md:gap-8 md:px-16 md:py-20 lg:grid-cols-3">
-      <div class="mx-auto flex max-w-sm flex-col items-center text-center">
-        <CircleDollarSign class="mb-3 size-8 text-foreground" stroke-width={1.5} />
-        <h3 class="text-lg font-extrabold text-foreground">Flat-fee pricing and competitive rates</h3>
-        <p class="mt-1 text-lg text-muted-foreground">Easy-to-understand terms so you know your true cost of capital.</p>
-      </div>
-      <div class="mx-auto flex max-w-sm flex-col items-center text-center">
-        <Sheet class="mb-3 size-8 text-foreground" stroke-width={1.5} />
-        <h3 class="text-lg font-extrabold text-foreground">Fixed weekly repayment schedule</h3>
-        <p class="mt-1 text-lg text-muted-foreground">Forecast your finances without the unpredictability of revenue-based payback.</p>
-      </div>
-      <div class="mx-auto flex max-w-sm flex-col items-center text-center">
-        <UsersRound class="mb-3 size-8 text-foreground" stroke-width={1.5} />
-        <h3 class="text-lg font-extrabold text-foreground">Long-term partnership</h3>
-        <p class="mt-1 text-lg text-muted-foreground">Consultation on how payments impact the business in various forecast cases.</p>
-      </div>
-  </section>
-
-  <section class="mx-auto w-[calc(100%-2rem)] max-w-[1300px] my-[4rem] md:w-[calc(100%-8rem)]">
-    <h2 class="max-w-3xl text-4xl font-bold text-accent md:text-6xl mt-24">See why our customers love Ventra Fund.</h2>
-    <p class="mt-6 text-lg text-secondary-foreground">And why you will, too.</p>
-    <div class="mt-10 grid grid-cols-1 items-end gap-10 md:mt-6 md:grid-cols-[3fr_2fr]">
-      <figure class="relative isolate flex flex-col justify-end gap-10 self-stretch">
-        <StepsAccent class="absolute inset-0 -z-10 opacity-30" />
-        <Quote class="size-14 fill-primary text-primary" stroke-width={0} />
-        <blockquote class="max-w-2xl text-2xl text-accent md:text-3xl">
-          “I applied on a Tuesday night and the money was in my account by Friday. We stocked up for summer before our suppliers raised their prices, and I didn't have to touch our cash reserves.”
-        </blockquote>
-        <figcaption class="flex items-center gap-8 text-accent">
-          <div class="border-r border-border pr-8">
-            <p class="font-bold">Josh N.</p>
-            <p>Polar Bear Mechanical</p>
+    <DealFlow class="my-4" />
+    <div class="grid gap-4 md:grid-cols-2">
+      <GlareCard class={card}>
+        <h3 class={stat}>Your deal</h3>
+        <p class={note}>We use your name on the merchant call. We don't shop your file to other funders, and it never leaves our team.</p>
+      </GlareCard>
+      <GlareCard class={card}>
+        <h3 class={stat}>Push back</h3>
+        <p class={note}>Every decline comes with the reason. If we got something wrong, tell us and we'll take another look.</p>
+      </GlareCard>
+      <GlareCard class={card}>
+        <WeekStrip active={commissionDays} class="mb-auto pb-10" />
+        <h3 class={stat}>{shortDays(commissionDays)}</h3>
+        <p class={note}>Commission runs twice a week, every {dayList(commissionDays)}.</p>
+      </GlareCard>
+      <GlareCard class={card}>
+        <WeekStrip active={underwriterDays} class="mb-auto pb-10" />
+        <h3 class={stat}>{underwriterHours.short}</h3>
+        <p class={note}>Speak with an underwriter live, {underwriterAvailability}.</p>
+      </GlareCard>
+      <GlareCard class={card}>
+        <div class="mb-auto pb-10" aria-hidden="true">
+          <div class="relative h-2 bg-muted">
+            <div class="absolute inset-y-0 left-0 bg-foreground" style={`width: ${renewAtPercent}%`}></div>
           </div>
-          <div class="flex items-center gap-4">
-            <ToolCase class="size-10 shrink-0" stroke-width={1.5} />
-            <span>HVAC &amp; Refrigeration</span>
+          <div class="relative mt-3 h-5 text-sm text-muted-foreground">
+            <span class="absolute left-0">0%</span>
+            <span class="absolute -translate-x-1/2 text-foreground" style={`left: ${renewAtPercent}%`}>Renew</span>
+            <span class="absolute right-0">100% paid in</span>
           </div>
-        </figcaption>
-      </figure>
-      <Image class="h-auto w-full bg-muted" src={hvac} alt="HVAC business owner" widths={[400, 735]} sizes="(min-width: 768px) calc((100vw - 8rem) * 0.4), calc(100vw - 2rem)" format="webp" quality={75} loading="lazy" decoding="async" />
-    </div>
-  </section>
-
-  <section class="py-24 md:py-40">
-    <div class="mx-auto w-[calc(100%-2rem)] max-w-[1020px]">
-      <h2 class="text-center text-4xl font-semibold tracking-tight text-accent md:text-6xl">Why Our Customers <span class="text-primary">Love Us</span></h2>
-      <div class="relative isolate mt-16 flex flex-col items-center gap-8 md:mt-24 lg:flex-row lg:gap-7">
-        <!-- Glow centred on the review row, spanning 80% of the viewport width; isolate keeps the -z-10 glow behind the row's content -->
-        <div class="reviews-glow pointer-events-none absolute top-1/2 left-1/2 -z-10 h-[28rem] w-[80vw] -translate-x-1/2 -translate-y-1/2 md:h-[32rem]" aria-hidden="true"></div>
-        <div class="flex w-[10.5rem] shrink-0 flex-col items-center text-center text-[#191919]">
-          <p class="text-[1.4rem] leading-tight">Excellent</p>
-          <div class="mt-1.5 flex gap-[3px]" role="img" aria-label="Rated 4.9 out of 5">
-            {Array.from({ length: 5 }, (_, i) => (
-              <span class:list={["grid size-[30px] place-items-center text-white", i < 4 ? "bg-[#00b67a]" : "bg-[linear-gradient(90deg,#00b67a_50%,#dcdce6_50%)]"]}><Star class="size-5" aria-hidden="true" /></span>
-            ))}
-          </div>
-          <p class="mt-1.5 text-[13px]">Based on <span class="underline">128 reviews</span></p>
-          <img class="mt-2 h-6 w-auto" src="/media/trustpilot-dark.svg" alt="Trustpilot" width="140" height="34" loading="lazy" />
         </div>
-        <div class="flex w-full min-w-0 items-center gap-4 lg:gap-7" data-reviews>
-          <button type="button" class="grid size-6 shrink-0 cursor-pointer place-items-center rounded-full border-[1.5px] border-[#191919] bg-white text-[#191919] transition-colors disabled:cursor-default disabled:border-[#191919]/25 disabled:text-[#191919]/25" aria-label="Previous reviews" data-reviews-prev>
-            <ChevronLeft class="size-3.5" stroke-width={2.5} />
-          </button>
-          <div class="flex min-w-0 flex-1 snap-x snap-mandatory gap-11 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden" data-reviews-track>
-            {reviews.map((r) => (
-              <article class="flex shrink-0 basis-full snap-start flex-col text-[#191919] sm:basis-[calc((100%-2.75rem)/2)] xl:basis-[calc((100%-5.5rem)/3)]">
-                <div class="flex items-center gap-2">
-                  <div class="flex gap-[2px]" role="img" aria-label={`Rated ${r.rating} out of 5`}>
-                    {Array.from({ length: 5 }, (_, i) => (
-                      <span class:list={["grid size-[18px] place-items-center text-white", i < r.rating ? "bg-[#00b67a]" : "bg-[#dcdce6]"]}><Star class="size-3" aria-hidden="true" /></span>
-                    ))}
-                  </div>
-                  <span class="flex items-center gap-1 text-sm text-[#6c6c85]"><CircleCheck class="size-4 fill-[#6c6c85] text-white" aria-hidden="true" /><span class="underline">Verified</span></span>
-                </div>
-                <p class="mt-2.5 text-xs text-[#6c6c85]"><strong class="font-semibold">{r.name},</strong> {r.when}</p>
-                <h3 class="mt-2 truncate text-sm font-semibold">{r.title}</h3>
-                <p class="mt-1 line-clamp-2 text-[13px] leading-snug">{r.body}</p>
-              </article>
-            ))}
+        <h3 class={stat}>Renewals at {renewAtPercent}%</h3>
+        <p class={note}>Merchants can renew at {renewAtPercent}% paid in. Every renewal is credited to you, at the same commission as the first funding.</p>
+      </GlareCard>
+      <GlareCard class={card}>
+        <div class="mb-auto pb-10" aria-hidden="true">
+          <div class="h-2 bg-linear-to-r from-muted to-foreground"></div>
+          <div class="mt-3 flex justify-between text-sm">
+            <span class="text-muted-foreground">$0 to start</span>
+            <span>{bonusAt} funded: bonus</span>
           </div>
-          <button type="button" class="grid size-6 shrink-0 cursor-pointer place-items-center rounded-full border-[1.5px] border-[#191919] bg-white text-[#191919] transition-colors disabled:cursor-default disabled:border-[#191919]/25 disabled:text-[#191919]/25" aria-label="Next reviews" data-reviews-next>
-            <ChevronRight class="size-3.5" stroke-width={2.5} />
-          </button>
         </div>
-      </div>
+        <h3 class={stat}>No minimum</h3>
+        <p class={note}>No volume minimum. A bonus once you reach {bonusAt} funded.</p>
+      </GlareCard>
+      <GlareCard class={`${card} justify-start`}>
+        <h3 class={stat}>Pre-approvals</h3>
+        <p class={note}>Automated checks of the industry type and the position stack, with the actual underwriting done by a person.</p>
+      </GlareCard>
+      <GlareCard class={`${card} justify-start`}>
+        <h3 class={stat}>{stips.length} stips</h3>
+        <ol class="mt-10 list-none border-t border-border text-lg">
+          {stips.map((stip, i) => (
+            <li class="flex gap-4 border-b border-border py-3">
+              <span class="text-muted-foreground tabular-nums">{String(i + 1).padStart(2, "0")}</span>
+              {stip}
+            </li>
+          ))}
+        </ol>
+      </GlareCard>
     </div>
   </section>
 
+  <section class="mx-4 mt-24 sm:mx-8 lg:mt-32">
+    <div class="flex flex-wrap items-end justify-between gap-x-8 gap-y-4 border-b border-border pb-8">
+      <h2 class="text-4xl font-bold">What you can submit</h2>
+      <a href="/capital" class="text-base font-medium underline-offset-4 hover:underline">Compare products</a>
+    </div>
+    <ul class="list-none">
+      {fundingProducts.map((p) => (
+        <li>
+          <a href={`/capital/${productSlug(p)}`} class="group grid grid-cols-[1fr_auto] items-baseline gap-x-8 gap-y-1 border-b border-border py-6 md:grid-cols-[minmax(0,2fr)_minmax(0,1fr)_minmax(0,1fr)_auto]">
+            <span class="text-2xl font-medium tracking-[-0.02em] md:text-3xl">{p.title}</span>
+            <span class="hidden text-muted-foreground md:inline">{p.category}</span>
+            <span class="order-last col-span-2 text-muted-foreground md:order-none md:col-span-1">{p.amount}</span>
+            <span class="text-xl transition-transform group-hover:translate-x-1" aria-hidden="true">→</span>
+          </a>
+        </li>
+      ))}
+    </ul>
+  </section>
+
+  <CtaBand title="Stop chasing your funder." text="" class="mt-8 lg:mt-12" />
 </main>
   <Footer />
-
 </Layout>
-
-<script>
-  // Review carousel: arrows scroll by one card and disable at either end
-  document.querySelectorAll<HTMLElement>("[data-reviews]").forEach((root) => {
-    const track = root.querySelector<HTMLElement>("[data-reviews-track]")!;
-    const prev = root.querySelector<HTMLButtonElement>("[data-reviews-prev]")!;
-    const next = root.querySelector<HTMLButtonElement>("[data-reviews-next]")!;
-
-    const update = () => {
-      const max = track.scrollWidth - track.clientWidth;
-      prev.disabled = track.scrollLeft <= 1;
-      next.disabled = track.scrollLeft >= max - 1;
-    };
-
-    const step = (dir: number) => {
-      const card = track.firstElementChild as HTMLElement;
-      const gap = parseFloat(getComputedStyle(track).columnGap) || 0;
-      track.scrollBy({ left: dir * (card.offsetWidth + gap), behavior: "smooth" });
-    };
-
-    prev.addEventListener("click", () => step(-1));
-    next.addEventListener("click", () => step(1));
-    track.addEventListener("scroll", update, { passive: true });
-    new ResizeObserver(update).observe(track);
-    update();
-  });
-</script>
-
-<style>
-  /* Review glow: a 50px horizontal bar at full strength through the middle, fading up and down (background)
-     and out towards both ends (mask). */
-  .reviews-glow {
-    --core: color-mix(in oklch, var(--chart-1) 27.5%, transparent);
-    --mid: color-mix(in oklch, var(--chart-1) 12.5%, transparent);
-    background: linear-gradient(to bottom, transparent, var(--mid) 27.5%, var(--core) calc(50% - 25px), var(--core) calc(50% + 25px), var(--mid) 72.5%, transparent);
-    --glow-ends: linear-gradient(to right, transparent, rgb(0 0 0 / 0.45) 10%, black 25%, black 75%, rgb(0 0 0 / 0.45) 90%, transparent);
-    -webkit-mask-image: var(--glow-ends);
-    mask-image: var(--glow-ends);
-  }
-
-  /* Darker core where relative colour syntax is supported (a duplicate declaration can't act as the fallback: anything using var() always parses) */
-  @supports (color: oklch(from red l c h)) {
-    .reviews-glow {
-      --core: oklch(from var(--chart-1) calc(l * 0.7) c h / 0.275);
-    }
-  }
-</style>

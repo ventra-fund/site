@@ -1,11 +1,15 @@
-// Resource articles shown at /resources and /resources/<slug>. Swap for a content collection
-// when editorial wants CMS-style authoring; the shape here (blocks + FAQ) matches what the
-// article template renders.
-// NOTE: titles double as search targets; bodies use buy rate for our pricing and
-// financing/factoring (not "loan") when describing what we offer.
+// Resource articles for ISOs, shown at /resources and /resources/<slug>. Swap for a content
+// collection when editorial wants CMS-style authoring; the shape here (blocks + FAQ) matches what
+// the article template renders.
+// NOTE: written for brokers. "You" is the ISO; merchants are "your merchant". We don't publish buy
+// rates: talk about points, total cost, advance and financing, never "loan" for what we offer. Program terms (stips,
+// commission days, renewal threshold, points cap) come from iso-program.ts and product figures from
+// funding-products.ts, so an article can't drift from the rest of the site.
 import { photos, type Photo } from "@/data/photos";
+import { fundingProducts, minimumRequirements, productSlug } from "@/data/funding-products";
+import { dayList, isoProgram, underwriterAvailability } from "@/data/iso-program";
 
-export type ArticleCategory = "Financing Tips" | "Guides";
+export type ArticleCategory = "Submitting Deals" | "Underwriting";
 
 export type ArticleBlock =
   | { type: "p"; text: string }
@@ -24,142 +28,192 @@ export interface Article {
   category: ArticleCategory;
   date: string;
   image: Photo;
-  /** Article body, rendered top to bottom. Paragraph text may contain inline <a> tags. */
+  /** Article body, rendered top to bottom. Paragraph and list text may contain inline <a> and <strong>. */
   body: ArticleBlock[];
-  /** FAQ section rendered under the body; good for search result richness. */
+  /** FAQ section rendered under the body, as plain text; good for search result richness. */
   faq: ArticleFaq[];
 }
 
-export const articleCategories: ArticleCategory[] = ["Financing Tips", "Guides"];
+export const articleCategories: ArticleCategory[] = ["Submitting Deals", "Underwriting"];
+
+// ---- figures the articles quote ----
+
+const { commissionDays, renewAtPercent, bonusAt, maxPoints, stips, dealSteps } = isoProgram;
+
+const consolidation = fundingProducts.find((p) => productSlug(p) === "consolidations");
+if (!consolidation) throw new Error("articles.ts: no Consolidations product in funding-products.ts");
+
+const statementStip = stips.find((s) => /statement/i.test(s));
+if (!statementStip) throw new Error("articles.ts: no bank statement stip in iso-program.ts");
+
+const lowerFirst = (s: string) => s.charAt(0).toLowerCase() + s.slice(1);
+const joinAnd = (items: string[]) =>
+  items.length <= 2 ? items.join(" and ") : `${items.slice(0, -1).join(", ")} and ${items[items.length - 1]}`;
+const dollars = (n: number) => `$${n.toLocaleString("en-US")}`;
+
+// Worked examples (illustrative, not quoted pricing): points on a $50,000 advance, and the
+// paid-in threshold on a $60,000 total repayment.
+const exampleFunded = 50_000;
+const examplePoints = Math.min(10, maxPoints);
+const exampleRepayment = 60_000;
 
 export const articles: Article[] = [
   {
-    slug: "merchant-cash-advance-vs-term-loan",
-    title: "Merchant cash advance vs. term loan: which fits your business?",
-    excerpt: "How the two most common working capital products differ in cost, speed and repayment, and how to choose.",
-    category: "Financing Tips",
-    date: "2026-09-30",
-    image: photos.signingAtDesk,
+    slug: "packaging-a-deal",
+    title: "How to package a deal for a fast decision",
+    excerpt: "What a clean submission looks like, the stips we ask for, and the small gaps that slow a file down.",
+    category: "Submitting Deals",
+    date: "2026-11-18",
+    image: photos.requirementsChecklist,
     body: [
-      { type: "p", text: "If you need capital in days rather than weeks, you are usually choosing between a merchant cash advance and term financing. Both fund established businesses quickly, but they are priced differently, repaid differently and suit different moments. Here is how to tell which one fits yours." },
-      { type: "h2", text: "What a merchant cash advance does" },
-      { type: "p", text: "An advance is a purchase against your future sales. You receive a lump sum, then repay it as a small, fixed share of each day's or week's deposits. Because the share is fixed, payments rise in busy weeks and shrink in slow ones, so the product flexes with your revenue instead of fighting it." },
-      { type: "p", text: "Pricing is expressed as a <strong>buy rate</strong>: a multiplier on what you receive. A buy rate of 1.15 on a $20,000 advance means $23,000 total, and that figure is the number that matters. You know your full cost in dollars before you sign, and we show the estimated APR alongside it so you can compare offers honestly." },
-      { type: "h2", text: "What term financing does" },
-      { type: "p", text: "Term financing pays out once, in a lump sum, and you repay it in equal monthly installments over a set number of months. The payment never changes, which makes it easy to build into a budget, and the cost is fixed the day you sign. It is the cleaner fit for planned investments: equipment, a build-out, a vehicle, hiring ahead of a known busy season." },
-      { type: "p", text: "Buy rates on term financing start lower than advances because the payments are predictable and the requirements are a little stricter. You can also usually <a href=\"/why-us/transparent-pricing\">pay term financing off early with a prepayment discount</a>, which lowers the total." },
-      { type: "h2", text: "Side-by-side: the differences that matter" },
+      { type: "p", text: "Most delays on a deal have nothing to do with the merchant's numbers. They come from a file that arrives in pieces: a missing month, a license that doesn't match the application, a statement with half its pages. Send a complete file once and an underwriter can work it straight through." },
+      { type: "h2", text: "What a complete submission includes" },
+      { type: "p", text: "Every deal needs the same short list:" },
+      { type: "list", items: stips },
+      { type: "p", text: "Send everything together, in one email. A file that comes in over three messages gets reviewed three times." },
+      { type: "h2", text: "Check the file before you send it" },
       { type: "list", items: [
-        "<strong>Repayment:</strong> an advance takes a share of daily or weekly deposits; term financing takes the same fixed payment every month.",
-        "<strong>Speed:</strong> advances can fund in as little as 24 hours; term financing typically funds in one to three days.",
-        "<strong>Cost:</strong> advances carry a higher buy rate in exchange for flexibility; term financing starts lower but expects steadier revenue.",
-        "<strong>Credit:</strong> both weigh revenue first, but advances are more forgiving on credit history than term financing.",
-        "<strong>Best moment:</strong> use an advance when revenue is uneven or speed is critical; use term financing when you know what the money is for and can plan the payment.",
+        "<strong>Names match.</strong> The legal business name on the application should match the bank statements and the voided check. If the merchant operates under a DBA, say so.",
+        "<strong>Statements are complete.</strong> Every page of every month, downloaded from the bank as PDFs. Screenshots and spreadsheet exports can't be verified.",
+        "<strong>Months are current.</strong> The latest full month plus month-to-date. A file missing last month is the most common reason we come back with a question.",
+        "<strong>Every owner is listed.</strong> Include a license for each owner on the application, not just the one you spoke with.",
+        "<strong>Open positions are disclosed.</strong> If the merchant already has an advance, tell us the funder, the balance and the payment. We'll see it on the statements anyway; hearing it from you first saves a round trip.",
       ] },
-      { type: "h2", text: "How to choose" },
-      { type: "p", text: "Ask yourself two questions. First, does my revenue swing week to week? If yes, the advance's remittances will protect you in slow periods, and the higher buy rate buys real flexibility. Second, is this a planned, one-time investment? If yes, fixed payments at a lower buy rate usually cost less over the life of the facility." },
-      { type: "p", text: "And you do not have to guess alone. <a href=\"/apply\">Apply in minutes</a> with no credit check, and a funding advisor will walk you through the amount, the buy rate and the payment schedule for every option you qualify for, in plain language, before you commit to anything." },
+      { type: "h2", text: "Tell us what you know" },
+      { type: "p", text: "A two-line note with the submission goes a long way: what the merchant needs, how much, how soon and anything unusual on the statements. A one-time large deposit, a seasonal dip or a recent change of bank is easy to explain up front and slow to explain later." },
+      { type: "h2", text: "What happens next" },
+      { type: "p", text: `Once the file is in, you can follow the deal through ${dealSteps.length} statuses: ${joinAnd(dealSteps.map((s) => s.toLowerCase()))}. See <a href="/why-us/how-it-works">how a deal moves from submission to funding</a>.` },
+      { type: "p", text: `Questions about a file are faster on the phone. An underwriter is available ${underwriterAvailability}.` },
     ],
     faq: [
-      { q: "Is a merchant cash advance more expensive than term financing?", a: "Usually, yes. An advance carries a higher buy rate because it is priced for speed and for revenue that swings. If your revenue is steady and you can commit to fixed payments, term financing typically costs less overall." },
-      { q: "Which option funds faster?", a: "Merchant cash advances can fund in as fast as 24 hours. Term financing usually funds in one to three days after approval. Both are far faster than a bank's timeline." },
-      { q: "Can I get both?", a: "Many businesses carry an advance for seasonal gaps and term financing for a planned investment at the same time. What you can carry is decided during review, based on your revenue and existing positions." },
+      { q: "Do I need to send everything before you start?", a: "A complete file gets the fastest answer. If something is missing, send what you have and tell us what's coming; we'll flag anything else we need." },
+      { q: "Who talks to the merchant?", a: "You do. We never contact your merchant on our own, funded or declined; the only call they get is a verification call made in your name." },
+      { q: "What are your minimums?", a: `Our lowest minimums are ${minimumRequirements.timeInBusiness} in business, ${minimumRequirements.monthlyRevenue} in monthly revenue and a credit score of ${minimumRequirements.creditScore}. They vary by product; the Who we fund page lists industries and requirements.` },
     ],
   },
   {
-    slug: "preparing-bank-statements",
-    title: "What lenders look for in your bank statements",
-    excerpt: "The deposits, balances and patterns underwriters notice first, and how to present your business at its best.",
-    category: "Guides",
-    date: "2026-09-18",
+    slug: "reading-bank-statements",
+    title: "Reading bank statements like an underwriter",
+    excerpt: "What we look for in a merchant's statements, and how to spot the issues before you submit.",
+    category: "Underwriting",
+    date: "2026-11-04",
     image: photos.receiptsCalculator,
     body: [
-      { type: "p", text: "Bank statements are the fastest way for an underwriter to see how your business really runs. Revenue on a tax return tells you what happened last year; deposits tell you what is happening now. Here is what we read when we open your statements, and how to present your business at its best." },
-      { type: "h2", text: "Deposits: consistency beats size" },
-      { type: "p", text: "We are looking for steady, recurring deposits that clearly come from your business: customer payments, card settlements, invoice transfers. Consistent deposits from ordinary activity are the strongest evidence a business can show, because they prove demand is ongoing rather than a single lucky month. A few large deposits with no visible source raise questions we will have to resolve with extra documentation." },
-      { type: "h2", text: "Trends: flat, growing, or declining" },
-      { type: "p", text: "Underwriters compare month to month and look at direction. Flat or growing deposits make for an easy read. A visible decline does not automatically sink an application, but expect questions: seasonality, a lost client, a one-time event, or a shift from cash to another account all have reasonable answers. The explanation matters more than the dip." },
-      { type: "h2", text: "Balances and red flags" },
-      { type: "p", text: "Ending balances show how much cushion your business keeps. Frequent overdrafts, negative balances, returned payments or constant movement between personal and business accounts all raise questions about stability. None of these are automatic noes, but cleaning them up before you apply makes the review shorter." },
-      { type: "h2", text: "What to have ready" },
+      { type: "p", text: "Bank statements decide most deals. The application tells us what the merchant says; the statements show what the business does. Read them the way an underwriter will and you'll know which deals are worth sending, and how to set your merchant's expectations." },
+      { type: "h2", text: "Start with true revenue" },
+      { type: "p", text: "Total deposits are not revenue. Before we size a deal, we take out money that didn't come from customers:" },
       { type: "list", items: [
-        "Your last three to four months of business bank statements. The <a href=\"/apply\">application</a> accepts three to six.",
-        "One account, used consistently. If revenue lands in two accounts, tell us upfront so nothing looks like it is being hidden.",
-        "A short explanation for anything unusual: a seasonal dip, a big one-time expense, a recently opened account.",
-        "Clear ownership. Statements should be in the business's name for anyone with 20% or more ownership.",
+        "Transfers between the merchant's own accounts",
+        "Proceeds from loans, advances or other financing",
+        "Owner injections and personal deposits",
+        "Refunds, reversals and other one-time credits",
       ] },
-      { type: "h2", text: "How we use them" },
-      { type: "p", text: "Deposits drive our underwriting more than any single number. We size an offer to what your cash flow can actually carry, which is why <a href=\"/who-we-fund\">owners across hundreds of industries</a> with imperfect credit still qualify. Clean statements do not just speed up a decision; they often improve the terms you are offered." },
+      { type: "p", text: "What's left, averaged across the months, is the revenue a deal is sized on. A merchant with $60,000 in monthly deposits and $15,000 of transfers is a $45,000-a-month business." },
+      { type: "h2", text: "Look at the balance, not just the deposits" },
+      { type: "p", text: "Daily balances show how the business actually handles cash. We look at:" },
+      { type: "list", items: [
+        "<strong>NSFs and returned items.</strong> A few over several months can be explained. Several in the last few weeks usually can't.",
+        "<strong>Negative days.</strong> How often the account dips below zero, and how long it stays there.",
+        "<strong>Average daily balance.</strong> A business that runs near zero every day has little room for another payment.",
+        "<strong>The trend.</strong> Steady or rising deposits read very differently from a business that was stronger six months ago.",
+      ] },
+      { type: "h2", text: "Find the existing positions" },
+      { type: "p", text: "Open advances show up as recurring debits, usually daily or weekly, often under the funder's name. Total them up: the combined payments against true revenue is the first thing we check before adding another position. More on that in <a href=\"/resources/positions-and-stacking\">second and third positions</a>." },
+      { type: "h2", text: "Explain the outliers up front" },
+      { type: "p", text: "Some things look bad on paper but have a simple explanation: a large one-time job, a seasonal slow month, an insurance payout, a recent change of bank. Put it in your submission note. An explanation that arrives with the file is part of the first review, which is faster than a second look." },
     ],
     faq: [
-      { q: "How many months of bank statements do I need?", a: "You can apply with three to six months. Your last three full months plus month-to-date is optimal, and some larger facilities call for six." },
-      { q: "Do you need statements from every account?", a: "We need the account your revenue lands in. If you use more than one, share both and explain the split; consistency matters more than which one you pick." },
-      { q: "Will a low ending balance hurt my application?", a: "Not on its own. We care most about deposits and how they trend. A thin balance alongside steady revenue usually matters less than you would expect." },
+      { q: "Do you need the statements as PDFs?", a: "Yes: complete PDFs downloaded from the bank, every page. Screenshots, spreadsheets and edited files can't be verified." },
+      { q: "How many months do you look at?", a: `Our stips ask for: ${lowerFirst(statementStip)}. That's enough to see the trend and the current month.` },
+      { q: "Does a low credit score sink a deal?", a: `Not on its own. We lead with revenue and cash flow, and some products consider scores from ${minimumRequirements.creditScore}.` },
     ],
   },
   {
-    slug: "seasonal-cash-flow",
-    title: "Planning cash flow for a seasonal business",
-    excerpt: "A practical approach to stocking up, staffing and staying solvent through the slow months.",
-    category: "Financing Tips",
-    date: "2026-09-04",
-    image: photos.florist,
+    slug: "positions-and-stacking",
+    title: "Second and third positions: what we look at before we fund",
+    excerpt: "A merchant with open advances isn't an automatic decline. Here's how we decide, and when a consolidation is the better deal.",
+    category: "Underwriting",
+    date: "2026-10-21",
+    image: photos.consolidation,
     body: [
-      { type: "p", text: "Payroll does not care that January is slow. Rent does not care that your busiest quarter is still six weeks away. Seasonal businesses live with revenue that arrives in waves while costs arrive on schedule, and the businesses that thrive are the ones that plan for the trough while they are still riding the crest." },
-      { type: "h2", text: "Map your cycle before you manage it" },
-      { type: "p", text: "Start with the basics: in which months does revenue peak, and in which months does it sag? Pull twelve months of deposits and mark them. Once you can see the shape of your year, every other decision (when to buy inventory, when to hire, when to schedule big expenses) has a right answer built in." },
-      { type: "h2", text: "Bank the peak, budget the trough" },
-      { type: "p", text: "The single most valuable habit a seasonal owner can build is paying the slow season out of the busy one. Set a reserve target that covers your fixed costs for one slow month, then two, then three, and treat funding that reserve as a non-negotiable line item before discretionary spending in peak months." },
-      { type: "h2", text: "Time your buying and hiring" },
+      { type: "p", text: "Plenty of good merchants already carry an advance or two. A second or third position is not an automatic decline. The question is simple: can the business carry one more payment without running out of cash?" },
+      { type: "h2", text: "What we check first" },
       { type: "list", items: [
-        "Buy inventory ahead of the rush, but only as far as your reserve comfortably allows; dead stock in a slow month is cash you cannot recover.",
-        "Hire and train before the season starts. Payroll committed early costs less than overtime and turnover mid-rush.",
-        "Move big discretionary spend (equipment, renovations, marketing pushes) into the shoulder months when crews and cash are both free.",
-        "Negotiate payment terms with suppliers so due dates land after your receivables, not before.",
+        "<strong>Total payments against true revenue.</strong> Add up every daily and weekly debit from existing funders and compare it to revenue after transfers and financing proceeds come out. This number decides more stacked deals than anything else.",
+        "<strong>How recently the merchant was funded.</strong> A position funded last week and a new request this week raises the question of where the money went.",
+        "<strong>Balances remaining.</strong> A position that's nearly paid off weighs less than one that just funded.",
+        "<strong>Payment history since funding.</strong> Returned payments to an existing funder tell us how the next payment will go.",
+        "<strong>Disputes with current funders.</strong> A merchant in default or in a dispute with an existing funder is very hard to fund.",
       ] },
-      { type: "h2", text: "Line up capital before you need it" },
-      { type: "p", text: "The worst time to look for capital is the week payroll comes up short. Businesses that plan arrange a facility in the shoulder season, when their records look calm and there is no pressure. A <a href=\"/capital/lines-of-credit\">line of credit</a> works well as a seasonal buffer: it sits unused, costs little to keep open, and is there when deposits dip. An <a href=\"/capital/merchant-cash-advances\">advance</a> fits owners who need the money now and prefer payments that shrink along with a slow month." },
-      { type: "h2", text: "Watch the signals weekly" },
-      { type: "p", text: "Compare deposits against the same week last year, not just last week. A soft week against a soft season is normal; a soft week against a strong one is a signal worth acting on early. Owners who check weekly while the season is good tend to arrive at the slow months with options instead of urgency." },
+      { type: "h2", text: "Disclose every position" },
+      { type: "p", text: "List every open advance in the submission: funder, balance, payment and frequency. We'll find them on the statements regardless, and a file that lists them up front reads as a broker who knows the deal." },
+      { type: "h2", text: "When a consolidation fits better" },
+      { type: "p", text: `If the merchant's payments are already heavy, one more position can make things worse. A <a href="/capital/${productSlug(consolidation)}">consolidation</a> pays off the existing positions and replaces them with a single payment, often at a lower combined cost. It suits merchants with two or more open positions and at least ${consolidation.requirements.timeInBusiness.replace("+", "")} in business.` },
+      { type: "p", text: "For you, a consolidation keeps the merchant in business and paying, which is what makes a <a href=\"/resources/renewals\">renewal</a> possible later." },
+      { type: "h2", text: "Ask before you shop it" },
+      { type: "p", text: `Not sure a stacked deal works? Call before you submit. An underwriter is available ${underwriterAvailability}, and a two-minute conversation can save you a decline.` },
     ],
     faq: [
-      { q: "When should a seasonal business apply for financing?", a: "In the shoulder season, before the dip. Your statements look steadier, there is no deadline pressure, and a facility arranged early is ready the day deposits slow down." },
-      { q: "How much reserve should I aim for?", a: "Start with one month of fixed costs (rent, payroll, insurance), then build toward two or three depending on how long your slow season runs." },
-      { q: "Can payments flex with a slow month?", a: "Yes. Advances repay as a share of deposits, so remittances naturally shrink when sales slow. Fixed-payment products suit businesses whose trough is still predictable enough to budget around." },
+      { q: "Do I need to list positions the merchant plans to pay off?", a: "Yes. List every open position, including any the merchant plans to pay off with the new funds, and tell us which ones." },
+      { q: "Can a consolidation cover positions from several funders?", a: "Yes, that's the usual case: one new facility pays off the existing advances and the merchant makes one payment." },
     ],
   },
   {
-    slug: "understanding-factor-rates",
-    title: "Factor rates, APR and total cost: reading a funding offer",
-    excerpt: "What each number on an offer means, and how to compare offers that are priced differently.",
-    category: "Guides",
-    date: "2026-08-21",
+    slug: "renewals",
+    title: "Renewals: when your merchant qualifies, and how you're credited",
+    excerpt: `Your merchant can renew at ${renewAtPercent}% paid in, and every renewal is credited to you at the same commission.`,
+    category: "Submitting Deals",
+    date: "2026-10-07",
+    image: photos.ownerLaptopCelebrating,
+    body: [
+      { type: "p", text: "The first funding is the hardest deal to close. A merchant who pays well and needs capital again is the easiest. Renewals are where a book of business starts to compound, so here's exactly how they work with us." },
+      { type: "h2", text: "When a merchant can renew" },
+      { type: "p", text: `A merchant can renew once ${renewAtPercent}% of the current advance has been paid in.` },
+      { type: "p", text: `Paid in means the share of the total repayment already delivered. If a merchant's total repayment is ${dollars(exampleRepayment)}, they reach ${renewAtPercent}% at ${dollars(Math.round((exampleRepayment * renewAtPercent) / 100))} delivered.` },
+      { type: "p", text: "A renewal typically pays off the remaining balance from the new funding, so the merchant still has one position with us." },
+      { type: "h2", text: "Renewals are credited to you" },
+      { type: "p", text: `Every renewal on a merchant you brought us is credited to you, at the same commission as the first funding. We never contact your merchant on our own, so when it's time to renew, the call comes from you.` },
+      { type: "h2", text: "Watch for the right moment" },
+      { type: "list", items: [
+        `<strong>Track the paid-in balance.</strong> Ask us where any funded merchant stands and we'll tell you how far they are from ${renewAtPercent}%.`,
+        "<strong>Check the payment history.</strong> A merchant with returned payments on the current advance is a harder renewal.",
+        "<strong>Send fresh statements.</strong> A renewal is reviewed on current numbers, so include the latest months with the request.",
+      ] },
+      { type: "p", text: "Then submit it like any other deal. See <a href=\"/resources/packaging-a-deal\">how to package a deal</a>." },
+    ],
+    faq: [
+      { q: "Who gets credit if my merchant calls you directly to renew?", a: "You do. Every renewal on a merchant you submitted is credited to you, at the same commission as the first funding." },
+      { q: "Is a renewal underwritten from scratch?", a: "It's reviewed on fresh statements, but a merchant in good standing with us often gets a shorter review the second time." },
+    ],
+  },
+  {
+    slug: "points-and-commission",
+    title: "Points and your commission",
+    excerpt: "How points become your commission, when you get paid, and how to walk a merchant through the total cost.",
+    category: "Submitting Deals",
+    date: "2026-09-23",
     image: photos.formsAndLaptop,
     body: [
-      { type: "p", text: "Two offers can look completely different on paper and cost the same, or look similar and differ by thousands of dollars. Understanding the three numbers on an offer (the buy rate, the total repayment and the APR) is the difference between comparing prices and guessing. Here is how to read each one." },
-      { type: "h2", text: "The buy rate: cost in one multiplier" },
-      { type: "p", text: "Short-term products, including merchant cash advances, are priced with a buy rate: a multiplier applied to the amount you receive. A buy rate of 1.15 on $20,000 means you repay $23,000. That is the whole calculation. The industry also calls this a factor rate; Ventra Fund quotes it as a buy rate, and either way the meaning is identical: total cost expressed as one number, fixed the day you sign." },
-      { type: "p", text: "The buy rate does not account for time. Two advances with the same buy rate cost the same in dollars whether they are repaid in six months or twelve, which means the faster one costs you more per month. That is why it is not the only number to read." },
-      { type: "h2", text: "The APR: cost adjusted for time" },
-      { type: "p", text: "An APR expresses the cost of borrowing over a year, including fees and the effect of how quickly you repay. It exists so that products priced differently (a buy rate here, an interest rate there) can finally be compared on the same scale. A modest total cost spread over two years can be a far lower APR than the same dollars paid back over six months." },
-      { type: "p", text: "We show an estimated APR alongside the buy rate on every offer precisely so you are never comparing apples to oranges. If a funder will not give you both numbers, that is a reason to keep looking." },
-      { type: "h2", text: "The total repayment: the number you actually pay" },
-      { type: "p", text: "Under every formula sits one figure: the total dollars leaving your account between today and payoff. Ask for it in writing, in dollars, before you sign. Ours appears on the first page of every offer, because a total you cannot see is a total you cannot compare." },
-      { type: "h2", text: "How to compare two offers" },
+      { type: "p", text: "Your commission comes from the points you add to a deal. Here's how the pieces fit." },
+      { type: "h2", text: "Points" },
+      { type: "p", text: `You can add up to ${maxPoints} points on any deal. Each point earns you 1% of the funded amount, and it's built into the merchant's total cost.` },
+      { type: "p", text: `Say you add ${examplePoints} points to a ${dollars(exampleFunded)} advance. Your commission is ${dollars((exampleFunded * examplePoints) / 100)}, and the merchant sees the full cost, points included, in dollars before signing.` },
+      { type: "h2", text: "When you get paid" },
+      { type: "p", text: `Commission runs every ${dayList(commissionDays)} on funded deals. There's no volume minimum to work with us, and funded volume earns a bonus at ${bonusAt}.` },
+      { type: "p", text: "Renewals pay too: every renewal on your merchant is credited to you at the same commission. See <a href=\"/resources/renewals\">how renewals work</a>." },
+      { type: "h2", text: "Explaining the cost to your merchant" },
+      { type: "p", text: "Merchants who understand what they're paying come back for a renewal; merchants who feel surprised don't. Walk your merchant through three numbers before they sign:" },
       { type: "list", items: [
-        "Put the total repayment of both offers side by side, in dollars, over the same period.",
-        "Check the payment schedule: does it match how your revenue actually arrives?",
-        "Read the buy rate for short-term products and the estimated APR for anything longer; never compare one against the other.",
-        "Ask about prepayment: on eligible products, paying early lowers your total cost.",
-        "Confirm there are no fees outside the quoted cost, and get the answer in writing.",
+        "<strong>The funded amount</strong>, and anything paid off from it, such as an existing balance.",
+        "<strong>The total repayment</strong> in dollars.",
+        "<strong>The payment</strong>: how much, how often and roughly for how long.",
       ] },
-      { type: "h2", text: "What good transparency looks like" },
-      { type: "p", text: "A trustworthy offer is boring to read: one total, one schedule, one buy rate, no surprises at signing. That is the standard we hold ourselves to on <a href=\"/why-us/transparent-pricing\">every offer we make</a>, and it is a fair standard to hold any funder to. If any number on the page cannot be explained in a sentence, ask until it can." },
+      { type: "p", text: "Points are part of the merchant's rate, so they're part of that total. Price the deal so it still works for the business: a merchant who can carry the payment is one who renews." },
     ],
     faq: [
-      { q: "Is a buy rate the same as a factor rate?", a: "Yes. They are two names for the same multiplier applied to your advance. Ventra Fund uses 'buy rate'; you will see 'factor rate' used across the industry." },
-      { q: "Why do short-term products show an APR as well?", a: "A buy rate shows total cost but ignores time. The APR adjusts for time so you can compare a six-month advance against a two-year facility on equal footing." },
-      { q: "Does paying off early lower my cost?", a: "On eligible products, yes. Prepayment discounts reduce your total when you settle early. Your offer spells out exactly how before you sign." },
+      { q: "Is there a cap on points?", a: `Yes: up to ${maxPoints} points on a deal.` },
+      { q: "When is commission paid?", a: `Commission runs every ${dayList(commissionDays)} on funded deals.` },
+      { q: "Is there a minimum volume to work with you?", a: `No. There's no volume minimum, and funded volume earns a bonus at ${bonusAt}.` },
     ],
   },
 ];

@@ -1,0 +1,20 @@
+---
+// A pill-shaped link button, after Main Capital's: solid black for the main action, outlined for the
+// second one. For links only; forms keep the site's Button.
+interface Props {
+  href: string;
+  variant?: "solid" | "outline";
+  class?: string;
+}
+
+const { href, variant = "solid", class: className } = Astro.props;
+---
+
+<a
+  href={href}
+  class:list={[
+    "inline-flex h-12 items-center justify-center rounded-3xl px-7 text-[0.9375rem] font-medium whitespace-nowrap transition-colors outline-none focus-visible:ring-3 focus-visible:ring-ring/30",
+    variant === "solid" ? "bg-foreground text-background hover:bg-foreground/90" : "border border-border bg-background text-foreground hover:bg-muted",
+    className,
+  ]}
+><slot /></a>
