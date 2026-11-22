@@ -42,7 +42,7 @@ const btn = 'inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-sm tex
   </span>
   <span data-cr-note role="status" class="ml-2 text-sm text-muted-foreground" hidden></span>
   <!-- Native popover, not @/ui/popover: that one moves its panel to <body> on open, and moving the
-       Turnstile iframe reloads it, losing its token. The top layer also clears the fixed site nav.
+       Turnstile iframe reloads it, losing its token. The top layer also clears anything fixed on the page.
        Positioned by the script below; `display` only while open, so the UA's closed display:none wins. -->
   <span data-cr-popover popover="auto"
     class="inset-auto m-0 w-max max-w-[min(22rem,calc(100vw-1rem))] flex-col gap-3 rounded-lg bg-popover p-4 text-left text-sm font-normal leading-normal text-popover-foreground shadow-md ring-1 ring-foreground/10 [&:popover-open]:flex">

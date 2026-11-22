@@ -1,7 +1,6 @@
 ---
 import "@/styles/globals.css";
 import { Font } from "astro:assets";
-import SiteNav from "@/components/SiteNav.astro";
 
 interface Props {
   /** Page-specific part of the <title>; the site name is appended. Omit on the home page. */
@@ -16,11 +15,6 @@ const pageTitle = title ? `${title} | ${SITE_NAME}` : SITE_NAME;
 // Every page shares one link-preview image; scripts/og-image.html is its source. Scrapers need an absolute
 // URL, which comes from `site` in astro.config.mjs.
 const ogImage = new URL("/og-image.jpg", Astro.site ?? Astro.url).href;
-
-// Trailing-slash-insensitive, like the nav's own current-page check.
-const currentPath = Astro.url.pathname.replace(/\/+$/, "") || "/";
-// The admin pages and the signing page stand apart from the public site: no nav.
-const showNav = !/^\/(admin|sign)(\/|$)/.test(currentPath);
 ---
 
 <!doctype html>
@@ -44,7 +38,6 @@ const showNav = !/^\/(admin|sign)(\/|$)/.test(currentPath);
     <slot name="head" />
   </head>
   <body>
-    {showNav && <SiteNav />}
     <slot />
   </body>
 </html>

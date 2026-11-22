@@ -1,0 +1,96 @@
+---
+// A glass tile link, after the buttons in the Fintar hero reference: a translucent face over whatever
+// is behind it, a bright lip along the top and a pale cyan side showing at the right and bottom, as if
+// it were a thick slab lit from the upper left. Hover lifts it and slides the arrow.
+//
+// Plain CSS, so it is there before the hero's 3D scene loads and works like any other link. Meant for
+// light, busy backgrounds (the hero sky); on a flat white section the glass has nothing to show.
+// Width and margins are left to the caller.
+import type { HTMLAttributes } from "astro/types";
+import ArrowRight from "@lucide/astro/icons/arrow-right";
+
+interface Props extends HTMLAttributes<"a"> {
+  /** A trailing arrow that slides on hover. */
+  arrow?: boolean;
+}
+
+const { arrow = false, class: className, ...rest } = Astro.props;
+---
+
+<a class:list={["glass-button", className]} {...rest}>
+  <slot />
+  {arrow && <span class="arrow" aria-hidden="true"><ArrowRight stroke-width={1.75} /></span>}
+</a>
+
+<style>
+  .glass-button {
+    --ease: cubic-bezier(0.2, 0.8, 0.2, 1);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.6em;
+    height: clamp(3.125rem, 4vw, 3.5rem);
+    padding-inline: clamp(1.625rem, 2.3vw, 2rem);
+    border-radius: 0.875rem;
+    font-size: clamp(0.9375rem, 1.2vw, 1.0625rem);
+    font-weight: 500;
+    letter-spacing: 0.01em;
+    white-space: nowrap;
+    color: #000305;
+    text-decoration: none;
+    background: linear-gradient(rgb(255 255 255 / 0.32), rgb(235 250 255 / 0.2));
+    -webkit-backdrop-filter: blur(12px) saturate(1.15);
+    backdrop-filter: blur(12px) saturate(1.15);
+    box-shadow:
+      /* the rounded lip along the top edge, catching the light */
+      inset 0 3px 2px -1px rgb(255 255 255 / 0.7),
+      0 -1px 2px rgb(255 255 255 / 0.45),
+      /* the left edge, faintly lit */
+      inset 3px 0 1px -1px rgb(255 255 255 / 0.3),
+      /* the slab's right side and underside, seen in perspective */
+      inset -5px 0 2px -1px rgb(186 250 255 / 0.95),
+      inset 0 -3px 1px -1px rgb(255 255 255 / 0.35),
+      /* the shade it casts down and to the right */
+      2px 2px 5px rgb(0 80 110 / 0.1),
+      0 12px 24px -12px rgb(0 70 100 / 0.22);
+    transition: transform 0.5s var(--ease);
+  }
+  .glass-button:hover,
+  .glass-button:focus-visible {
+    transform: translateY(-2px) scale(1.035);
+  }
+  .glass-button:active {
+    transform: scale(0.98);
+    transition-duration: 0.12s;
+  }
+  .glass-button:focus-visible {
+    outline: 2px solid oklch(52% 0.105 223 / 0.7);
+    outline-offset: 3px;
+  }
+
+  .arrow {
+    display: inline-flex;
+    transition: transform 0.5s var(--ease);
+  }
+  .arrow :global(svg) {
+    width: 1.05em;
+    height: 1.05em;
+  }
+  .glass-button:hover .arrow,
+  .glass-button:focus-visible .arrow {
+    transform: translateX(4px);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .glass-button,
+    .arrow {
+      transition: none;
+    }
+    .glass-button:hover,
+    .glass-button:focus-visible,
+    .glass-button:hover .arrow,
+    .glass-button:focus-visible .arrow {
+      transform: none;
+    }
+  }
+</style>

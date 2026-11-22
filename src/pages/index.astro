@@ -3,6 +3,8 @@ import Layout from "@/layouts/Layout.astro";
 import StepsAccent from "@/components/StepsAccent.astro";
 import Star from "@/components/Star.astro";
 import Footer from "@/components/Footer.astro";
+import HeroScene from "@/components/HeroScene.astro";
+import GlassButton from "@/components/GlassButton.astro";
 import { Button } from "@/ui/button";
 import { Image } from "astro:assets";
 import { reviews } from "@/data/reviews";
@@ -18,12 +20,17 @@ import { BadgeDollarSign, ChevronLeft, ChevronRight, CircleCheck, CircleDollarSi
 
 <Layout>
 <main>
-  <!-- Full-bleed black hero that starts under the fixed nav (h-18, plus the h-10 utility bar from xl up) and fills
-       the rest of the first screen. -->
-  <section class="relative isolate mt-18 flex min-h-[calc(100svh-4.5rem)] flex-col items-center justify-center bg-black px-6 py-24 text-center text-white xl:mt-28 xl:min-h-[calc(100svh-7rem)]">
-    <h1 class="text-4xl font-bold tracking-tight sm:text-6xl lg:text-7xl">Working <span class="text-chart-1">capital.</span><br>Built for <span class="text-chart-1">growth.</span></h1>
-    <p class="mt-6 max-w-xl text-lg text-white/80">Fast, flexible funding for cash flow, inventory, payroll, and more. Apply in minutes and get a decision in as fast as 24 hours.</p>
-    <Button as="a" href="/apply" size="lg" variant="outline" class="mt-10 h-12 rounded-full border-2 border-white bg-transparent px-8 text-base font-semibold text-white hover:border-white hover:bg-white hover:text-black">Apply for funding</Button>
+  <!-- Full-bleed hero filling the first screen. The 3D stage (HeroScene) frames itself in the space right of the copy,
+       or above it once the screen is taller than wide (the max-aspect-ratio variants, same breakpoint as the scene). -->
+  <section class="relative isolate flex min-h-svh flex-col overflow-hidden text-[#000305]">
+    <HeroScene />
+    <div class="mx-auto my-auto w-[calc(100%-2rem)] max-w-[1300px] py-16 md:w-[calc(100%-8rem)] [@media(max-aspect-ratio:9/10)]:mb-0 [@media(max-aspect-ratio:9/10)]:mt-auto [@media(max-aspect-ratio:9/10)]:pb-10">
+      <div class="w-fit max-w-2xl" data-hero-copy>
+        <h1 class="text-4xl font-semibold leading-[0.98] tracking-[-0.03em] sm:text-5xl lg:text-6xl xl:text-7xl">Working <span class="text-[#0b7a9a]">capital.</span><br>Built for <span class="text-[#0b7a9a]">growth.</span></h1>
+        <p class="mt-6 max-w-md text-lg text-black/70">Fast, flexible funding for cash flow, inventory, payroll, and more. Apply in minutes and get a decision in as fast as 24 hours.</p>
+        <GlassButton href="/apply" arrow class="mt-10 max-sm:[@media(max-aspect-ratio:9/10)]:w-full">Apply for funding</GlassButton>
+      </div>
+    </div>
   </section>
 
   <section class="mx-auto grid w-[calc(100%-2rem)] max-w-[1300px] my-[4rem] grid-cols-1 md:min-h-176 md:grid-cols-[1fr_2fr] md:w-[calc(100%-8rem)]">
