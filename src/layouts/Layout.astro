@@ -15,7 +15,9 @@ const SITE_NAME = "Ventra Fund";
 const pageTitle = title ? `${title} | ${SITE_NAME}` : SITE_NAME;
 // Every page shares one link-preview image; scripts/og-image.html is its source. Scrapers need an absolute
 // URL, which comes from `site` in astro.config.mjs.
-const ogImage = new URL("/og-image.jpg", Astro.site ?? Astro.url).href;
+// TEMPORARY, for checking link previews on the hero-3d branch preview: points at that deploy's own image
+// instead of production's. Revert to `Astro.site ?? Astro.url` before merging to main.
+const ogImage = new URL("/og-image.jpg", "https://hero-3d-site.ventrafund.workers.dev").href;
 
 // The admin pages and the signing page stand apart from the public site: no nav.
 const currentPath = Astro.url.pathname.replace(/\/+$/, "") || "/";
