@@ -9,7 +9,6 @@ import DealFlow from "@/components/DealFlow.astro";
 import WeekStrip from "@/components/WeekStrip.astro";
 import CtaBand from "@/components/page/CtaBand.astro";
 import { dayList, isoProgram, shortDays, underwriterAvailability } from "@/data/iso-program";
-import { fundingProducts, productSlug } from "@/data/funding-products";
 
 const { commissionDays, underwriterDays, underwriterHours, renewAtPercent, bonusAt, stips } = isoProgram;
 
@@ -26,6 +25,9 @@ const heroPoints = [
 const card = "@container flex min-h-80 flex-col justify-end border border-border bg-card p-8 sm:p-10 lg:p-14";
 const stat = "text-[clamp(2.25rem,22cqi,3.75rem)] font-medium leading-[1.02] tracking-[-0.04em] lg:text-7xl";
 const note = "mt-4 text-xl text-muted-foreground";
+
+// The page's column: the hero copy and every section below it share this width, so their left edges line up.
+const column = "mx-auto w-[calc(100%-2rem)] max-w-[1000px] md:w-[calc(100%-8rem)]";
 ---
 
 <Layout>
@@ -35,7 +37,7 @@ const note = "mt-4 text-xl text-muted-foreground";
        Its fog runs on past the bottom into the next section, so the hero clips only sideways. -->
   <section class="relative isolate flex min-h-svh flex-col overflow-x-clip text-[#000305]">
     <HeroScene />
-    <div class="mx-auto my-auto w-[calc(100%-2rem)] max-w-[1300px] py-16 md:w-[calc(100%-8rem)] [@media(max-aspect-ratio:9/10)]:mb-0 [@media(max-aspect-ratio:9/10)]:mt-auto [@media(max-aspect-ratio:9/10)]:pb-10">
+    <div class:list={[column, "my-auto py-16 [@media(max-aspect-ratio:9/10)]:mb-0 [@media(max-aspect-ratio:9/10)]:mt-auto [@media(max-aspect-ratio:9/10)]:pb-10"]}>
       <div class="w-fit max-w-2xl" data-hero-copy>
         <h1 class="text-4xl font-semibold leading-[0.98] tracking-[-0.03em] sm:text-5xl lg:text-6xl xl:text-7xl">ISO-only <br class="hidden md:inline" /><span class="text-[#0b7a9a]">funding</span></h1>
         <HeroPoints points={heroPoints} class="mt-6 max-w-md" />
@@ -45,7 +47,7 @@ const note = "mt-4 text-xl text-muted-foreground";
   </section>
 
   <!-- relative: paints over the hero's fog, which reaches into the top of this section -->
-  <section class="relative mx-4 pt-16 sm:mx-8 sm:pt-24">
+  <section class:list={[column, "relative pt-16 sm:pt-24"]}>
     <h2 class="text-4xl font-bold">It's simple,<br />we don't go direct-to-merchant.</h2>
     <div class="mt-8 grid gap-4 md:grid-cols-2">
       <GlareCard class={card}>
@@ -120,26 +122,7 @@ const note = "mt-4 text-xl text-muted-foreground";
     </div>
   </section>
 
-  <section class="mx-4 mt-24 sm:mx-8 lg:mt-32">
-    <div class="flex flex-wrap items-end justify-between gap-x-8 gap-y-4 border-b border-border pb-8">
-      <h2 class="text-4xl font-bold">What you can submit</h2>
-      <a href="/capital" class="text-base font-medium underline-offset-4 hover:underline">Compare products</a>
-    </div>
-    <ul class="list-none">
-      {fundingProducts.map((p) => (
-        <li>
-          <a href={`/capital/${productSlug(p)}`} class="group grid grid-cols-[1fr_auto] items-baseline gap-x-8 gap-y-1 border-b border-border py-6 md:grid-cols-[minmax(0,2fr)_minmax(0,1fr)_minmax(0,1fr)_auto]">
-            <span class="text-2xl font-medium tracking-[-0.02em] md:text-3xl">{p.title}</span>
-            <span class="hidden text-muted-foreground md:inline">{p.category}</span>
-            <span class="order-last col-span-2 text-muted-foreground md:order-none md:col-span-1">{p.amount}</span>
-            <span class="text-xl transition-transform group-hover:translate-x-1" aria-hidden="true">→</span>
-          </a>
-        </li>
-      ))}
-    </ul>
-  </section>
-
-  <CtaBand title="Stop chasing your funder." text="" class="mt-8 lg:mt-12" />
+  <CtaBand title="Stop chasing your funder." text="" lens class="mt-8 lg:mt-12" />
 </main>
   <Footer />
 </Layout>

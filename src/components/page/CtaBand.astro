@@ -1,8 +1,9 @@
 ---
 // Closing call to action, the same on every page unless the copy is overridden: a big centred line
 // and two pill buttons (after the footer call to action on Main Capital's site). Pass `text=""` for
-// the headline alone.
+// the headline alone, and `lens` for Main Capital's logo hover on the headline (InvertLens).
 import PillLink from "./PillLink.astro";
+import InvertLens from "@/components/InvertLens.astro";
 import { dayList, isoProgram } from "@/data/iso-program";
 
 interface Link {
@@ -17,6 +18,7 @@ interface Props {
   label?: string;
   /** The outlined second button; pass `null` to drop it. */
   secondary?: Link | null;
+  lens?: boolean;
   class?: string;
 }
 
@@ -26,13 +28,20 @@ const {
   href = "/partner",
   label = "Onboard now",
   secondary = { href: "/who-we-fund", label: "View guidelines" },
+  lens = false,
   class: className,
 } = Astro.props;
+
+const titleClass = "text-[clamp(2.5rem,6vw,5.5rem)] font-medium leading-[1.02] tracking-[-0.04em] text-balance";
 ---
 
 <section class:list={["w-full", className]}>
   <div class="mx-auto flex max-w-4xl flex-col items-center px-6 py-24 text-center lg:py-32">
-    <h2 class="text-[clamp(2.5rem,6vw,5.5rem)] font-medium leading-[1.02] tracking-[-0.04em] text-balance">{title}</h2>
+    {lens ? (
+      <InvertLens><h2 class={titleClass}>{title}</h2></InvertLens>
+    ) : (
+      <h2 class={titleClass}>{title}</h2>
+    )}
     {text && <p class="mt-6 max-w-2xl text-lg text-foreground/70 text-pretty">{text}</p>}
     <div class="mt-10 flex flex-wrap justify-center gap-3">
       <PillLink href={href}>{label}</PillLink>

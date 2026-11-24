@@ -1,0 +1,81 @@
+---
+// Public site header, the same nav as Main Capital's (~/Projects/capital/themaincapital, src/layouts/Layout.astro):
+// wordmark, the menu in the middle, Dashboard on the right. It sits over the top of the page rather than
+// taking space, so the home hero's sky runs up behind it; the content pages' top padding (pt-30) clears it.
+// It scrolls away with the page.
+//
+// Links with no Ventra page yet go to "#": Our Assurances, API Docs and Syndicate.
+import {
+  NavigationMenu,
+  NavigationMenuContent,
+  NavigationMenuIndicator,
+  NavigationMenuItem,
+  NavigationMenuLink,
+  NavigationMenuList,
+  NavigationMenuTrigger,
+} from "@/ui/navigation-menu";
+
+// The plain links next to the dropdown, as Main Capital styles them.
+const topLink =
+  "cn-navigation-menu-trigger group/navigation-menu-trigger inline-flex h-9 w-max items-center justify-center outline-none disabled:pointer-events-none";
+
+const links = [
+  { href: "#", label: "API Docs" },
+  { href: "/about", label: "About Us" },
+  { href: "/careers", label: "Careers" },
+  { href: "#", label: "Syndicate" },
+  { href: "/contact", label: "Contact" },
+];
+
+const isoLinks = [
+  { href: "/who-we-fund", title: "Guidelines", text: "What we fund" },
+  { href: "#", title: "Our Assurances", text: "Contractual obligations" },
+  { href: "/why-us/faq", title: "FAQs", text: "Common questions" },
+];
+---
+
+<header class="absolute inset-x-0 top-0 z-10 grid grid-cols-[1fr_auto_1fr] items-center gap-4 px-6 py-4">
+  <a href="/" class="justify-self-start" aria-label="Ventra Fund home">
+    <img src="/ventrafund-wordmark.svg" alt="" width="4060" height="522" class="h-6 w-auto dark:invert" />
+  </a>
+  <NavigationMenu>
+    <NavigationMenuList>
+      <NavigationMenuItem value="iso-information">
+        <NavigationMenuTrigger>ISO Information</NavigationMenuTrigger>
+        <NavigationMenuContent>
+          <div class="grid w-[480px] grid-cols-[1fr_200px] gap-2 p-2">
+            <div class="row-span-3">
+              <NavigationMenuLink
+                href="/partner"
+                class="flex h-full flex-col items-start rounded-md bg-gradient-to-b from-muted/50 to-muted p-4 no-underline"
+              >
+                <div class="mb-2 text-lg font-medium">Onboard with us</div>
+                <p class="text-sm text-muted-foreground">Access our CRM, calculate commission, automated pre-underwriting analysis.</p>
+              </NavigationMenuLink>
+            </div>
+            {isoLinks.map(({ href, title, text }) => (
+              <NavigationMenuLink href={href}>
+                <div class="flex flex-col gap-1">
+                  <div class="leading-none font-medium">{title}</div>
+                  <div class="line-clamp-2 text-muted-foreground">{text}</div>
+                </div>
+              </NavigationMenuLink>
+            ))}
+          </div>
+        </NavigationMenuContent>
+      </NavigationMenuItem>
+      {links.map(({ href, label }) => (
+        <NavigationMenuItem>
+          <NavigationMenuLink href={href} class={topLink}>{label}</NavigationMenuLink>
+        </NavigationMenuItem>
+      ))}
+      <NavigationMenuIndicator />
+    </NavigationMenuList>
+  </NavigationMenu>
+  <a
+    href="/partner/login"
+    class="inline-flex h-9 items-center justify-center justify-self-end rounded-3xl bg-primary px-4.5 text-sm font-medium text-primary-foreground transition-all outline-none hover:bg-primary/90 focus-visible:ring-3 focus-visible:ring-ring/30"
+  >
+    Dashboard
+  </a>
+</header>

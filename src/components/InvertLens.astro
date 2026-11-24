@@ -1,0 +1,235 @@
+---
+// Main Capital's hover over its hero logo, for text: hovering the text opens a card the size of it,
+// centred on the pointer and trailing it, that inverts everything beneath it and stretches with the
+// pointer's speed, while the text leans toward the pointer. On leave the card shrinks to a dot and
+// fades. Mouse and pen only; with reduced motion the card snaps to the pointer and nothing leans.
+//
+// One change from Main Capital: there the mark is a logo image, so its box is both the hover area and
+// the card's size. A wrapped headline's box runs the whole column width, so here the script measures
+// the text's own line boxes for both.
+interface Props {
+  class?: string;
+}
+
+const { class: className } = Astro.props;
+---
+
+<div class:list={["invert-lens", className]} data-invert-lens>
+  <slot />
+</div>
+<!-- A sibling, not a child: the wrapper leans with a translate, which would pin this fixed layer to it. -->
+<div class="invert-lens-cursor" aria-hidden="true" data-invert-lens-cursor>
+  <div class="invert-lens-shape"></div>
+</div>
+
+<style>
+  .invert-lens-cursor {
+    position: fixed;
+    top: 0;
+    left: 0;
+    z-index: 1000;
+    pointer-events: none;
+  }
+
+  .invert-lens-shape {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 16px;
+    height: 16px;
+    translate: -50% -50%;
+    border-radius: 100px;
+    background: #000;
+    opacity: 0;
+    transition:
+      width 0.4s ease,
+      height 0.4s ease,
+      border-radius 0.4s ease,
+      background-color 0.4s ease,
+      opacity 0.2s ease 0.3s; /* on leave: shrink back to a dot, then fade */
+  }
+
+  .invert-lens-cursor[data-active] .invert-lens-shape {
+    width: var(--lens-w);
+    height: var(--lens-h);
+    border-radius: 0;
+    background: rgb(255 255 255 / 0.1);
+    -webkit-backdrop-filter: invert(100%) contrast(150%);
+    backdrop-filter: invert(100%) contrast(150%);
+    opacity: 1;
+    transition-delay: 0s;
+  }
+
+  @media (hover: none), (pointer: coarse) {
+    .invert-lens-cursor {
+      display: none;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .invert-lens-shape {
+      transition: none;
+    }
+  }
+</style>
+
+<script>
+  // Ported from Main Capital's hero mark script, itself a GSAP codepen redone with plain rAF.
+  const finePointer = matchMedia("(hover: hover) and (pointer: fine)");
+  const reducedMotion = matchMedia("(prefers-reduced-motion: reduce)");
+  const clamp = (min: number, max: number, v: number) => Math.min(max, Math.max(min, v));
+  const MAX_LEAN = 24; // px the text may drift toward the pointer
+
+  interface TextRect {
+    left: number;
+    top: number;
+    right: number;
+    bottom: number;
+    /** The tallest line box, for the card's margin. */
+    line: number;
+  }
+
+  // The union of the text's line boxes. Unlike the element's own box, it hugs wrapped, centred lines.
+  const measureText = (root: Element): TextRect | null => {
+    const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
+    const range = document.createRange();
+    const rect = { left: Infinity, top: Infinity, right: -Infinity, bottom: -Infinity, line: 0 };
+    for (let node = walker.nextNode(); node; node = walker.nextNode()) {
+      range.selectNodeContents(node);
+      for (const r of range.getClientRects()) {
+        if (!r.width || !r.height) continue;
+        rect.left = Math.min(rect.left, r.left);
+        rect.top = Math.min(rect.top, r.top);
+        rect.right = Math.max(rect.right, r.right);
+        rect.bottom = Math.max(rect.bottom, r.bottom);
+        rect.line = Math.max(rect.line, r.height);
+      }
+    }
+    return rect.line ? rect : null;
+  };
+
+  for (const mark of document.querySelectorAll<HTMLElement>("[data-invert-lens]")) {
+    const cursor = mark.nextElementSibling;
+    const shape = cursor?.firstElementChild;
+    if (!(cursor instanceof HTMLElement) || !(shape instanceof HTMLElement)) continue;
+
+    const pointer = { x: 0, y: 0 };
+    const pos = { x: 0, y: 0 }; // trailing card position
+    const lean = { x: 0, y: 0 };
+    const leanTarget = { x: 0, y: 0 };
+    const warp = { sx: 1, sy: 1, kx: 0, ky: 0 };
+    let onScreen = false; // only then are pointer moves worth hit-testing
+    let hasPointer = false; // a mouse or pen is over the page
+    let hovering = false;
+    let leftAt = 0;
+    let frame = 0;
+    let last = 0;
+
+    // Aim from the text's resting centre (minus the current lean) so the pull stays anchored.
+    const aim = (rect: TextRect) => {
+      if (reducedMotion.matches) return;
+      const dx = pointer.x - ((rect.left + rect.right) / 2 - lean.x);
+      const dy = pointer.y - ((rect.top + rect.bottom) / 2 - lean.y);
+      const k = Math.min(1, MAX_LEAN / (Math.hypot(dx, dy) || 1));
+      leanTarget.x = dx * k;
+      leanTarget.y = dy * k;
+    };
+
+    const tick = (now: number) => {
+      const dt = Math.min(now - last, 64); // ms, clamped so a stalled tab doesn't jump
+      last = now;
+      const still = reducedMotion.matches;
+      // Exponential easing tuned to match the codepen's GSAP tweens:
+      // expo.out over 0.95s for the card, power2.out over 1.2s for the lean.
+      const follow = still ? 1 : 1 - Math.exp(-dt * 0.0073);
+      const ease = still ? 1 : 1 - Math.exp(-dt * 0.0022);
+      const blend = still ? 1 : 1 - Math.exp(-dt / 80);
+
+      pos.x += (pointer.x - pos.x) * follow;
+      pos.y += (pointer.y - pos.y) * follow;
+      const vx = pointer.x - pos.x;
+      const vy = pointer.y - pos.y;
+      warp.sx += (1 + Math.min(Math.abs(vx) / 100, 0.18) - warp.sx) * blend;
+      warp.sy += (1 + Math.min(Math.abs(vy) / 100, 0.18) - warp.sy) * blend;
+      warp.kx += (clamp(-4, 4, Math.atan(vx / 100) * vy) - warp.kx) * blend;
+      warp.ky += (clamp(-4, 4, Math.atan(vy / 100) * vx) - warp.ky) * blend;
+      lean.x += (leanTarget.x - lean.x) * ease;
+      lean.y += (leanTarget.y - lean.y) * ease;
+
+      cursor.style.transform = `translate3d(${pos.x}px, ${pos.y}px, 0)`;
+      shape.style.transform = `skew(${warp.kx}deg, ${warp.ky}deg) scale(${warp.sx}, ${warp.sy})`;
+      mark.style.translate = `${lean.x}px ${lean.y}px`;
+
+      // Idle once the card has faded out and the text is back in place.
+      const settled = !hovering && now - leftAt > 700 && Math.abs(lean.x) < 0.05 && Math.abs(lean.y) < 0.05;
+      if (settled) {
+        lean.x = lean.y = 0;
+        mark.style.translate = "";
+        frame = 0;
+        return;
+      }
+      frame = requestAnimationFrame(tick);
+    };
+
+    const enter = (rect: TextRect) => {
+      // Main Capital's margin around its logo, 0.4 of the logo's height, here 0.4 of a line.
+      const pad = rect.line * 0.4;
+      cursor.style.setProperty("--lens-w", `${rect.right - rect.left + pad * 2}px`);
+      cursor.style.setProperty("--lens-h", `${rect.bottom - rect.top + pad * 2}px`);
+      if (!frame) {
+        // Start the card under the pointer rather than sliding in from where it was last.
+        pos.x = pointer.x;
+        pos.y = pointer.y;
+        last = performance.now();
+        frame = requestAnimationFrame(tick);
+      }
+      hovering = true;
+      cursor.setAttribute("data-active", "");
+    };
+
+    const release = () => {
+      hovering = false;
+      leftAt = performance.now();
+      leanTarget.x = leanTarget.y = 0;
+      cursor.removeAttribute("data-active");
+    };
+
+    // Hit-test against the text as it sits now, lean included (as Main Capital's logo box does), so
+    // the text drifting toward the pointer holds the hover a little past its resting edge.
+    const check = () => {
+      const rect = finePointer.matches ? measureText(mark) : null;
+      const inside =
+        !!rect && pointer.x >= rect.left && pointer.x <= rect.right && pointer.y >= rect.top && pointer.y <= rect.bottom;
+      if (rect && inside && !hovering) enter(rect);
+      else if (!inside && hovering) release();
+      if (hovering && rect) aim(rect);
+    };
+
+    window.addEventListener(
+      "pointermove",
+      (e) => {
+        if (e.pointerType === "touch") return;
+        pointer.x = e.clientX;
+        pointer.y = e.clientY;
+        hasPointer = true;
+        if (onScreen) check();
+      },
+      { passive: true },
+    );
+    // Scrolling moves the text under a still pointer.
+    window.addEventListener("scroll", () => onScreen && hasPointer && check(), { passive: true });
+    // The pointer left the window.
+    document.addEventListener("pointerout", (e) => {
+      if (e.relatedTarget || e.pointerType === "touch") return;
+      hasPointer = false;
+      if (hovering) release();
+    });
+    finePointer.addEventListener("change", () => {
+      if (!finePointer.matches && hovering) release();
+    });
+    new IntersectionObserver(([entry]) => {
+      onScreen = entry.isIntersecting;
+      if (!onScreen && hovering) release();
+    }).observe(mark);
+  }
+</script>

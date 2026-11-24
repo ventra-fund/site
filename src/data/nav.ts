@@ -1,5 +1,5 @@
-// Site map: the search page lists these, and the next site nav will be built from them. Every link
-// has a page. The site is written for ISOs and brokers; merchants come to us only through them.
+// Site map: the search page lists these. Every link has a page. (The site header, SiteHeader.astro,
+// keeps its own links, copied from Main Capital's nav.) The site is written for ISOs and brokers; merchants come to us only through them.
 import { fundingProducts, productSlug } from "@/data/funding-products";
 import { industries } from "@/data/industries";
 
