@@ -7,13 +7,14 @@ interface Props extends HTMLAttributes<"ul"> {
 }
 
 const { class: className = "", ...rest } = Astro.props as Props;
+// isolate: a stacking context, so the indicator's -z-1 puts it under the items but not under the page.
 ---
 
 <ul
   {...rest}
   data-slot="navigation-menu-list"
   class={cn(
-    "gap-0 group flex flex-1 list-none items-center justify-center relative",
+    "gap-0 group flex flex-1 list-none items-center justify-center relative isolate",
     className,
   )}
 >

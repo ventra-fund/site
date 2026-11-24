@@ -392,6 +392,21 @@ const {
 <script>
   import { createNavigationMenu } from "@data-slot/navigation-menu";
 
+  // Moving from an open dropdown's trigger to a plain link, the library closes the dropdown, hiding the
+  // indicator, and then shows it on the link in the same task, marked data-instant as for a first
+  // appearance: the pill jumped instead of sliding. If it was visible when that task began, keep the slide.
+  function keepIndicatorSliding(root: HTMLElement) {
+    const indicator = root.querySelector<HTMLElement>('[data-slot="navigation-menu-indicator"]');
+    if (!indicator) return () => {};
+    const observer = new MutationObserver((records) => {
+      if (records[0]?.oldValue === "visible" && indicator.dataset.state === "visible") {
+        indicator.removeAttribute("data-instant");
+      }
+    });
+    observer.observe(indicator, { attributeFilter: ["data-state"], attributeOldValue: true });
+    return () => observer.disconnect();
+  }
+
   // Bind on load and after every ClientRouter navigation, and release the
   // controllers of roots the navigation removed.
   const controllers = new Map<Element, { destroy(): void }>();
@@ -405,7 +420,10 @@ const {
     document
       .querySelectorAll<HTMLElement>('[data-slot="navigation-menu"]')
       .forEach((root) => {
-        if (!controllers.has(root)) controllers.set(root, createNavigationMenu(root));
+        if (controllers.has(root)) return;
+        const menu = createNavigationMenu(root);
+        const release = keepIndicatorSliding(root);
+        controllers.set(root, { destroy: () => (release(), menu.destroy()) });
       });
   }
 

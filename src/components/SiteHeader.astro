@@ -15,9 +15,12 @@ import {
   NavigationMenuTrigger,
 } from "@/ui/navigation-menu";
 
+// The menu's sliding indicator is the only hover/focus/open background: the trigger's and links' own
+// hover:bg-muted, fading in place while the pill slid over them, read as a flicker. Their focus rings stay.
+const noItemBg = "bg-transparent!";
+
 // The plain links next to the dropdown, as Main Capital styles them.
-const topLink =
-  "cn-navigation-menu-trigger group/navigation-menu-trigger inline-flex h-9 w-max items-center justify-center outline-none disabled:pointer-events-none";
+const topLink = `cn-navigation-menu-trigger group/navigation-menu-trigger inline-flex h-9 w-max items-center justify-center outline-none disabled:pointer-events-none ${noItemBg}`;
 
 const links = [
   { href: "#", label: "API Docs" },
@@ -41,7 +44,7 @@ const isoLinks = [
   <NavigationMenu>
     <NavigationMenuList>
       <NavigationMenuItem value="iso-information">
-        <NavigationMenuTrigger>ISO Information</NavigationMenuTrigger>
+        <NavigationMenuTrigger class={noItemBg}>ISO Information</NavigationMenuTrigger>
         <NavigationMenuContent>
           <div class="grid w-[480px] grid-cols-[1fr_200px] gap-2 p-2">
             <div class="row-span-3">
