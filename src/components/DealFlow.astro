@@ -1,6 +1,9 @@
 ---
 // The statuses a deal moves through, as boxes joined by arrows: stacked with downward arrows below lg,
 // one row from lg up. (After the same strip on Main Capital's site.)
+// While it's on screen it loops: the cards' grainy aqua light (GlareCard) glides from the first step to
+// Funded, leaving the steps it passed softly lit, so the strip fills with a gradient toward Funded; the
+// arrows fill in as it goes. Then it all fades back and starts again.
 import { isoProgram } from "@/data/iso-program";
 
 interface Props {
@@ -9,63 +12,391 @@ interface Props {
 }
 
 const { steps = isoProgram.dealSteps, class: className } = Astro.props;
+
+// Spread the steps evenly over the ramp, chart-2 to chart-5 (chart-1 is too pale for a stroke on white).
+const tone = (i: number) => {
+  const pct = steps.length < 2 ? 100 : Math.round((i / (steps.length - 1)) * 100);
+  return `color-mix(in oklch, var(--chart-2), var(--chart-5) ${pct}%)`;
+};
 ---
 
-<ol class:list={["deal-flow list-none", className]} aria-label="Deal status steps">
-  {steps.map((step) => (
-    <li class="deal-flow-step border border-border bg-card">
-      <span class="deal-flow-line" aria-hidden="true"></span>
-      <span class="deal-flow-label">{step}</span>
-      <span class="deal-flow-line" aria-hidden="true"></span>
-    </li>
-  ))}
-</ol>
+<div class:list={["deal-flow-stage", className]} data-deal-flow>
+  <ol class="deal-flow list-none" aria-label="Deal status steps">
+    {steps.map((step, i) => (
+      <li class="deal-flow-step border border-border bg-card" style={`--i: ${i}; --tone: ${tone(i)}`}>
+        <span class="deal-flow-line" aria-hidden="true"></span>
+        <span class="deal-flow-label">{step}</span>
+        <span class="deal-flow-line" aria-hidden="true"></span>
+      </li>
+    ))}
+  </ol>
+</div>
+
+<script>
+  // One clock drives the loop: each run sets data-play on the list, which starts the arrows' staggered
+  // CSS transitions, and moves the light (a WebGL canvas behind the labels and arrows) along in step
+  // with them. The loop starts when half the strip is on screen and stops once it's off screen, so it
+  // always comes back from the start. With reduced motion the strip is drawn once, finished, and holds.
+  // Without JS there's no light, and the CSS shows the arrows finished.
+  const HOLD_MS = 1500; // the light resting on the last step
+  const DARK_MS = 300; // nothing lit, after the fade and before the next run
+  const FADE_IN_MS = 350;
+  const STRENGTH = 0.3; // peak opacity of the light before grain, as on the cards
+  const EDGE = 0.85; // peak opacity of the lit border, as on the cards
+  const MAX_STEPS = 8; // boxes the shader knows about
+  const reducedMotion = matchMedia("(prefers-reduced-motion: reduce)");
+
+  const VERTEX = `
+    attribute vec2 a_pos;
+    void main() { gl_Position = vec4(a_pos, 0.0, 1.0); }
+  `;
+
+  // The cards' light (same grain, same falloff), stretched into a band along the flow. Ahead of the
+  // head it falls off like the card spotlight; behind it a trail stays lit, rising from the first step
+  // toward the head. Only the boxes are lit: inside, grainy light in --glow-color; on their 1px border,
+  // a smooth one in --glow-edge-color.
+  const FRAGMENT = `
+    #ifdef GL_FRAGMENT_PRECISION_HIGH
+    precision highp float;
+    #else
+    precision mediump float;
+    #endif
+
+    uniform vec2 u_res;              // canvas size, device px
+    uniform float u_dpr;
+    uniform vec4 u_boxes[${MAX_STEPS}]; // left, top, right, bottom, CSS px
+    uniform int u_count;
+    uniform vec2 u_head;             // CSS px from the top-left
+    uniform vec2 u_axis;             // (1, 0) for a row, (0, 1) for a column
+    uniform vec2 u_radius;           // falloff along and across the flow, CSS px
+    uniform float u_start;           // where the flow begins, along the axis
+    uniform float u_level;           // fade, 0..1
+    uniform vec3 u_color;
+    uniform vec3 u_edge;
+
+    float hash(vec2 p) {
+      vec3 p3 = fract(vec3(p.xyx) * 0.1031);
+      p3 += dot(p3, p3.yzx + 33.33);
+      return fract((p3.x + p3.y) * p3.z);
+    }
+
+    void main() {
+      vec2 px = vec2(gl_FragCoord.x, u_res.y - gl_FragCoord.y) / u_dpr;
+      float inside = 0.0;
+      float border = 0.0;
+      for (int i = 0; i < ${MAX_STEPS}; i++) {
+        if (i >= u_count) break;
+        vec4 b = u_boxes[i];
+        if (px.x >= b.x && px.x < b.z && px.y >= b.y && px.y < b.w) {
+          inside = 1.0;
+          float e = min(min(px.x - b.x, b.z - px.x), min(px.y - b.y, b.w - px.y));
+          border = 1.0 - step(1.0, e);
+        }
+      }
+      if (inside == 0.0 || u_level <= 0.0) {
+        gl_FragColor = vec4(0.0);
+        return;
+      }
+
+      vec2 d = px - u_head;
+      float along = dot(d, u_axis);
+      float across = dot(d, u_axis.yx);
+      float spread = exp(-3.0 * across * across / (u_radius.y * u_radius.y));
+      float glow = exp(-3.0 * along * along / (u_radius.x * u_radius.x)) * spread;
+      float travelled = max(dot(u_head, u_axis) - u_start, 1.0);
+      float progress = clamp((dot(px, u_axis) - u_start) / travelled, 0.0, 1.0);
+      float trail = step(along, 0.0) * mix(0.2, 0.45, progress) * spread;
+      float light = max(glow, trail) * u_level;
+
+      // Grain is fixed to the strip, one cell per CSS px, as on the cards.
+      float grain = hash(floor(px));
+      float a = mix(${STRENGTH.toFixed(2)} * light * (0.3 + 1.4 * grain), ${EDGE.toFixed(2)} * light, border);
+      gl_FragColor = vec4(mix(u_color, u_edge, border) * a, a);
+    }
+  `;
+
+  // Resolve any CSS color (oklch included) to 0..1 sRGB by painting it on a 2D canvas.
+  const swatch = document.createElement("canvas").getContext("2d", { willReadFrequently: true });
+  const toRgb = (color: string): [number, number, number] => {
+    if (!swatch) return [0, 0, 0];
+    swatch.fillStyle = "#000";
+    swatch.fillStyle = color;
+    swatch.fillRect(0, 0, 1, 1);
+    const [r, g, b] = swatch.getImageData(0, 0, 1, 1).data;
+    return [r / 255, g / 255, b / 255];
+  };
+
+  // The light, on a canvas over the boxes' backgrounds. draw(at, level): `at` is the head's position
+  // in steps (0 = first box's centre, 1 = the second's, ...), `level` the fade. Redraws itself on resize.
+  const mountLight = (stage: HTMLElement, list: HTMLElement, steps: HTMLElement[]) => {
+    const canvas = document.createElement("canvas");
+    canvas.className = "deal-flow-light";
+    canvas.setAttribute("aria-hidden", "true");
+    const gl = canvas.getContext("webgl", { antialias: false, depth: false });
+    if (!gl) return null;
+
+    const compile = (type: number, source: string) => {
+      const shader = gl.createShader(type)!;
+      gl.shaderSource(shader, source);
+      gl.compileShader(shader);
+      return shader;
+    };
+    const program = gl.createProgram()!;
+    gl.attachShader(program, compile(gl.VERTEX_SHADER, VERTEX));
+    gl.attachShader(program, compile(gl.FRAGMENT_SHADER, FRAGMENT));
+    gl.linkProgram(program);
+    if (!gl.getProgramParameter(program, gl.LINK_STATUS)) return null;
+    gl.useProgram(program);
+
+    // One oversized triangle covers the whole canvas.
+    gl.bindBuffer(gl.ARRAY_BUFFER, gl.createBuffer());
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 3, -1, -1, 3]), gl.STATIC_DRAW);
+    const aPos = gl.getAttribLocation(program, "a_pos");
+    gl.enableVertexAttribArray(aPos);
+    gl.vertexAttribPointer(aPos, 2, gl.FLOAT, false, 0, 0);
+
+    const u = (name: string) => gl.getUniformLocation(program, name);
+    const uRes = u("u_res");
+    const uDpr = u("u_dpr");
+    const uBoxes = u("u_boxes");
+    const uCount = u("u_count");
+    const uHead = u("u_head");
+    const uAxis = u("u_axis");
+    const uRadius = u("u_radius");
+    const uStart = u("u_start");
+    const uLevel = u("u_level");
+    const stageStyle = getComputedStyle(stage);
+    gl.uniform3f(u("u_color"), ...toRgb(stageStyle.getPropertyValue("--glow-color")));
+    gl.uniform3f(u("u_edge"), ...toRgb(stageStyle.getPropertyValue("--glow-edge-color")));
+
+    let dpr = 1;
+    let lost = false;
+    let centres: [number, number][] = [];
+    let state = { at: 0, level: 0 };
+
+    // Box geometry, in CSS px from the stage's top-left: where the head goes, and how far the light reaches.
+    const measure = () => {
+      const origin = stage.getBoundingClientRect();
+      const rects = steps.slice(0, MAX_STEPS).map((step) => {
+        const r = step.getBoundingClientRect();
+        return [r.left - origin.left, r.top - origin.top, r.right - origin.left, r.bottom - origin.top];
+      });
+      if (!rects.length) return;
+      const column = getComputedStyle(list).flexDirection === "column";
+      const [left, top, right, bottom] = rects[0];
+      const along = column ? bottom - top : right - left;
+      const across = column ? right - left : bottom - top;
+      centres = rects.map(([l, t, r, b]) => [(l + r) / 2, (t + b) / 2]);
+      const pitch = centres.length > 1 ? Math.hypot(centres[1][0] - centres[0][0], centres[1][1] - centres[0][1]) : along;
+
+      const boxes = new Float32Array(MAX_STEPS * 4);
+      boxes.set(rects.flat());
+      gl.uniform4fv(uBoxes, boxes);
+      gl.uniform1i(uCount, rects.length);
+      gl.uniform2f(uAxis, column ? 0 : 1, column ? 1 : 0);
+      gl.uniform2f(uRadius, pitch * 1.1, across * 1.5);
+      gl.uniform1f(uStart, column ? top : left);
+    };
+
+    const render = () => {
+      if (lost) return;
+      if (state.level <= 0 || !centres.length) {
+        gl.clear(gl.COLOR_BUFFER_BIT);
+        return;
+      }
+      const last = centres.length - 1;
+      const at = Math.min(Math.max(state.at, 0), last);
+      const i = Math.min(Math.floor(at), Math.max(last - 1, 0));
+      let f = last ? at - i : 0;
+      if (i === last - 1) f = 1 - (1 - f) ** 2; // land softly on the last step
+      const [x0, y0] = centres[i];
+      const [x1, y1] = centres[Math.min(i + 1, last)];
+      gl.uniform2f(uHead, x0 + (x1 - x0) * f, y0 + (y1 - y0) * f);
+      gl.uniform1f(uLevel, state.level);
+      gl.uniform2f(uRes, canvas.width, canvas.height);
+      gl.uniform1f(uDpr, dpr);
+      gl.drawArrays(gl.TRIANGLES, 0, 3);
+    };
+
+    new ResizeObserver(([entry]) => {
+      dpr = Math.min(devicePixelRatio, 2);
+      canvas.width = Math.round(entry.contentRect.width * dpr);
+      canvas.height = Math.round(entry.contentRect.height * dpr);
+      gl.viewport(0, 0, canvas.width, canvas.height);
+      measure();
+      render();
+    }).observe(stage);
+
+    canvas.addEventListener("webglcontextlost", () => {
+      lost = true;
+      canvas.remove();
+    });
+
+    stage.prepend(canvas);
+
+    return {
+      draw(at: number, level: number) {
+        state = { at, level };
+        render();
+      },
+    };
+  };
+
+  for (const stage of document.querySelectorAll<HTMLElement>("[data-deal-flow]")) {
+    const list = stage.querySelector<HTMLElement>(".deal-flow")!;
+    const steps = [...list.children] as HTMLElement[];
+    // The timings the CSS animates with, in seconds there.
+    const style = getComputedStyle(list);
+    const ms = (name: string, fallback: number) => (parseFloat(style.getPropertyValue(name)) || fallback) * 1000;
+    const beat = ms("--beat", 0.45);
+    const reset = ms("--reset", 0.6);
+    const last = steps.length - 1;
+    // The last arrow finishes as the light reaches the last step, at (steps - 1) beats; then it rests there.
+    const lit = last * beat + HOLD_MS;
+    const cycle = lit + reset + DARK_MS;
+
+    // The canvas (a WebGL context) is made the first time the strip comes into view.
+    let light: ReturnType<typeof mountLight> | undefined;
+    let frame = 0;
+    let start = 0;
+
+    const setPlay = (on: boolean) => {
+      if (list.hasAttribute("data-play") !== on) list.toggleAttribute("data-play", on);
+    };
+    const tick = (now: number) => {
+      if (reducedMotion.matches) return still();
+      const t = (now - start) % cycle;
+      const playing = t < lit;
+      setPlay(playing);
+      const level = playing ? Math.min(1, t / FADE_IN_MS) : Math.max(0, 1 - (t - lit) / reset);
+      light?.draw(Math.min(t, lit) / beat, level);
+      frame = requestAnimationFrame(tick);
+    };
+    // Reduced motion: the finished strip, held.
+    const still = () => {
+      frame = 0;
+      setPlay(true);
+      light?.draw(last, 1);
+    };
+    const begin = () => {
+      if (light === undefined) light = mountLight(stage, list, steps);
+      if (reducedMotion.matches) return still();
+      start = performance.now();
+      frame = requestAnimationFrame(tick);
+    };
+    const end = () => {
+      cancelAnimationFrame(frame);
+      frame = 0;
+      setPlay(false);
+      light?.draw(0, 0);
+    };
+
+    new IntersectionObserver(
+      ([entry]) => {
+        if (!entry.isIntersecting) end();
+        else if (entry.intersectionRatio >= 0.5 && !frame) begin();
+      },
+      { threshold: [0, 0.5] },
+    ).observe(stage);
+  }
+</script>
 
 <style>
+  /* The stage holds the light's canvas behind the list. Paint order inside it: the boxes' backgrounds
+     and borders, then the light over them (z-index 1), then labels and arrows (z-index 2). */
+  .deal-flow-stage {
+    /* The cards' palette (GlareCard): the hero's cyan glow for the light, its deeper teal for the border. */
+    --glow-color: #1ac8eb;
+    --glow-edge-color: #2b97ba;
+    position: relative;
+    isolation: isolate;
+  }
+  .deal-flow-stage > :global(.deal-flow-light) {
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+  }
+
   /* Arrows run label to label, over the box borders and the gap. Each label has a line on either
      side: a step's outgoing line and the next step's incoming one each reach halfway across the gap,
      so together they read as one arrow, with the head on the incoming half. The unused lines at the
      two ends stay hidden but keep their space, so every label stays centred.
-     Each line is a band wider than the stroke: its top background layer draws the stroke, and the
-     layer beneath lays a short background-coloured fade over the box border where the arrow crosses
-     it, so the border dissolves around the arrow instead of meeting it. --border-at places that fade. */
+     Each line is a band wider than the stroke. Its background draws the stroke in grey (the track) over
+     a short background-coloured fade across the box border where the arrow crosses it, so the border
+     (and the light on it) dissolves around the arrow instead of meeting it; --border-at places that
+     fade. Its ::before is the same stroke in the step's tone, which draws in over the track. */
   .deal-flow {
     --gap: 1rem;
     --reach: calc(var(--gap) / 2 + 1px); /* half the gap, plus the border */
     --stroke: 1.5px;
     --cover: 4rem; /* length of border faded out around each arrow */
+    --beat: 0.45s; /* time from one step lighting up to the next (the script reads this) */
+    --reset: 0.6s; /* time the strip takes to fade back between runs (the script reads this) */
     display: flex;
     flex-direction: column;
     gap: var(--gap);
   }
   .deal-flow-step {
+    --at: calc(var(--i) * var(--beat)); /* when the light reaches this step */
     display: flex;
     flex-direction: column;
     align-items: center;
   }
   .deal-flow-label {
+    position: relative;
+    z-index: 2;
     padding: 0.5rem 1rem;
     text-align: center;
   }
+  .deal-flow-step:last-child .deal-flow-label {
+    color: var(--tone);
+    font-weight: 600;
+  }
   .deal-flow-line {
-    --stripe: linear-gradient(currentColor, currentColor);
+    --track: linear-gradient(var(--muted-foreground), var(--muted-foreground));
     --fade: linear-gradient(to right, transparent, var(--background) 40% 60%, transparent);
     position: relative;
+    z-index: 2;
     flex: none;
     width: var(--cover);
     height: calc(1rem + var(--reach));
-    color: var(--muted-foreground);
+    color: var(--tone); /* the arrowhead */
     background:
-      var(--stripe) center / var(--stroke) 100% no-repeat,
+      var(--track) center / var(--stroke) 100% no-repeat,
       var(--fade) var(--border-at) / 100% 3px no-repeat;
   }
+  .deal-flow-line::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(var(--tone), var(--tone)) center / var(--stroke) 100% no-repeat;
+    scale: 1;
+    transform-origin: top;
+  }
+  /* Incoming half: draws in from the middle of the gap just before the light reaches its step, ending
+     fast where the outgoing half below started fast, so the two halves read as one stroke. */
   .deal-flow-line:first-child {
     --border-at: left 0 top calc(var(--gap) / 2 - 1px);
     margin-top: calc(-1 * var(--reach));
+    transition: color 0.15s ease calc(var(--at) - 0.05s);
   }
+  .deal-flow-line:first-child::before {
+    transition:
+      scale 0.17s ease-out calc(var(--at) - 0.17s),
+      opacity 0s;
+  }
+  /* Outgoing half: draws in just after the light reaches its step. */
   .deal-flow-line:last-child {
     --border-at: left 0 bottom calc(var(--gap) / 2 - 1px);
     margin-bottom: calc(-1 * var(--reach));
+  }
+  .deal-flow-line:last-child::before {
+    transition:
+      scale 0.18s ease-in calc(var(--at) + 0.1s),
+      opacity 0s;
   }
   .deal-flow-step:first-child .deal-flow-line:first-child,
   .deal-flow-step:last-child .deal-flow-line:last-child {
@@ -101,8 +432,12 @@ const { steps = isoProgram.dealSteps, class: className } = Astro.props;
       width: auto;
       height: var(--cover);
       background:
-        var(--stripe) center / 100% var(--stroke) no-repeat,
+        var(--track) center / 100% var(--stroke) no-repeat,
         var(--fade) var(--border-at) / 3px 100% no-repeat;
+    }
+    .deal-flow-line::before {
+      background-size: 100% var(--stroke);
+      transform-origin: left;
     }
     .deal-flow-line:first-child {
       --border-at: left calc(var(--gap) / 2 - 1px) top 0;
@@ -120,6 +455,29 @@ const { steps = isoProgram.dealSteps, class: className } = Astro.props;
       border-top: var(--stroke) solid;
       border-bottom: 0;
       translate: 0 -50%;
+    }
+  }
+
+  /* The grey state each run starts from and fades back to: grey arrowheads, no tone strokes. Only when
+     a script is there to run the loop and motion is welcome; otherwise the arrows stay finished. Its
+     transitions are the fade back: all at once, the strokes fading out before they shrink away, ready
+     to draw in again. Setting data-play lets the staggered ones above run. */
+  @media (scripting: enabled) and (prefers-reduced-motion: no-preference) {
+    .deal-flow:not([data-play]) .deal-flow-line::before {
+      opacity: 0;
+      scale: 1 0;
+      transition:
+        opacity var(--reset) ease,
+        scale 0s var(--reset);
+    }
+    .deal-flow:not([data-play]) .deal-flow-line {
+      color: var(--muted-foreground);
+      transition: color var(--reset) ease;
+    }
+    @media (min-width: 64rem) {
+      .deal-flow:not([data-play]) .deal-flow-line::before {
+        scale: 0 1;
+      }
     }
   }
 </style>
