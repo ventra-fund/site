@@ -1,16 +1,23 @@
 // Renders scripts/og-image.html to public/og-image.jpg (1200 × 630) in a headless Chromium browser, driven
-// over the DevTools protocol (Node's built-in WebSocket, no dependencies). Brave's `--screenshot` flag hangs,
-// and this way the capture also waits for Inter to load.
+// over the DevTools protocol (Node's built-in WebSocket). Brave's `--screenshot` flag hangs, and this way
+// the capture waits until the page says it's ready: Inter loaded and the hero's 3D scene drawn.
+//
+// The page mounts the real hero scene (src/lib/hero-scene), so it's served from a throwaway local server
+// rather than opened from disk: that gives it three from node_modules and the scene's modules as
+// JavaScript (transpiled here with the project's TypeScript), with no build step.
 // Usage: node scripts/render-og-image.mjs   (set CHROME_PATH to use a browser other than the ones below)
 import { spawn } from "node:child_process";
 import { existsSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { readFile } from "node:fs/promises";
+import { createServer } from "node:http";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { extname, join, relative, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
+import ts from "typescript";
 
 const WIDTH = 1200;
 const HEIGHT = 630;
-const source = new URL("og-image.html", import.meta.url).href;
+const repo = fileURLToPath(new URL("..", import.meta.url));
 // JPEG, not PNG: the grain makes a PNG ~340 KB, past the ~300 KB some apps (WhatsApp) will unfurl.
 const output = fileURLToPath(new URL("../public/og-image.jpg", import.meta.url));
 
@@ -22,14 +29,48 @@ const browserPath = [
 ].find((path) => path && existsSync(path));
 if (!browserPath) throw new Error("No Chromium browser found; set CHROME_PATH.");
 
+const contentTypes = {
+  ".html": "text/html",
+  ".js": "text/javascript",
+  ".ts": "text/javascript",
+  ".woff2": "font/woff2",
+  ".glb": "model/gltf-binary",
+};
+// All the page loads, and nothing else (the repo also holds secrets in .env).
+const served = [
+  "scripts/og-image.html",
+  "node_modules/three/build/",
+  "node_modules/@fontsource-variable/inter/files/",
+  "src/lib/hero-scene/",
+  "src/assets/hero/",
+];
+const server = createServer(async (request, response) => {
+  try {
+    let path = relative(repo, resolve(repo, "." + decodeURIComponent(new URL(request.url, "http://localhost").pathname)));
+    if (!served.some((allowed) => path.startsWith(allowed))) throw new Error(`not served: ${path}`);
+    // The scene's modules import each other without an extension (`./fog`).
+    if (!extname(path)) path += ".ts";
+    path = join(repo, path);
+    let body = await readFile(path);
+    if (path.endsWith(".ts")) {
+      body = ts.transpileModule(body.toString(), {
+        compilerOptions: { module: ts.ModuleKind.ESNext, target: ts.ScriptTarget.ES2022 },
+      }).outputText;
+    }
+    response.writeHead(200, { "content-type": contentTypes[extname(path)] ?? "application/octet-stream" }).end(body);
+  } catch {
+    response.writeHead(404).end();
+  }
+});
+await new Promise((resolve) => server.listen(0, "127.0.0.1", resolve));
+const source = `http://127.0.0.1:${server.address().port}/scripts/og-image.html`;
+
 // A throwaway profile, so this never touches (or collides with) a browser that's already open.
 const profile = mkdtempSync(join(tmpdir(), "og-image-"));
 const browser = spawn(browserPath, [
   "--headless=new",
   `--user-data-dir=${profile}`,
   "--remote-debugging-port=0",
-  // The page loads Inter from node_modules over file://, which Chromium otherwise blocks for fonts.
-  "--allow-file-access-from-files",
   "--hide-scrollbars",
   "about:blank",
 ]);
@@ -88,12 +129,15 @@ try {
   await send("Page.navigate", { url: source }, sessionId);
   await loaded;
 
-  const { result } = await send(
+  // og-image.html sets this up: Inter loaded and the scene drawn, or why not.
+  const { exceptionDetails } = await send(
     "Runtime.evaluate",
-    { expression: "document.fonts.ready.then(() => document.fonts.check('700 84px Inter'))", awaitPromise: true, returnByValue: true },
+    { expression: "window.ogImageReady", awaitPromise: true, returnByValue: true },
     sessionId,
   );
-  if (!result.value) throw new Error("Inter didn't load; run `pnpm install` so node_modules/@fontsource-variable/inter exists.");
+  if (exceptionDetails) {
+    throw new Error(`og-image.html failed: ${exceptionDetails.exception?.description ?? exceptionDetails.text}`);
+  }
 
   const { data } = await send(
     "Page.captureScreenshot",
@@ -109,4 +153,6 @@ try {
   browser.kill();
   await exited;
   rmSync(profile, { recursive: true, force: true });
+  server.closeAllConnections();
+  server.close();
 }
