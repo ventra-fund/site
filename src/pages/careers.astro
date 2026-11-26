@@ -2,28 +2,21 @@
 import PageShell from "@/components/page/PageShell.astro";
 import PageHero from "@/components/page/PageHero.astro";
 import Section from "@/components/page/Section.astro";
-import NumberedGrid from "@/components/page/NumberedGrid.astro";
 import CheckList from "@/components/page/CheckList.astro";
 import ContactReveal from "@/components/ContactReveal.astro";
 import { photos } from "@/data/photos";
 import ChevronDown from "@lucide/astro/icons/chevron-down";
 import PillLink from "@/components/page/PillLink.astro";
 import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from "@/ui/accordion";
-import { careerBenefits, values } from "@/data/company";
+import { careerBenefits } from "@/data/company";
 import { openings } from "@/data/careers";
 ---
 
 <PageShell title="Careers">
-  <PageHero eyebrow="Careers" title="Build the funder brokers want to work with" cta={{ href: "#openings", label: "View open positions" }} image={photos.teamWhiteboard}>
-    <p>We're building a team of smart, broker-focused people who want their work to matter to real businesses and real communities.</p>
-  </PageHero>
+  <PageHero title="Build the funder brokers want to work with" cta={{ href: "#openings", label: "View open positions" }} image={photos.teamWhiteboard} />
 
   <Section title="Why work at Ventra Fund" tone="muted">
     <CheckList items={careerBenefits} columns={2} />
-  </Section>
-
-  <Section title="What we value">
-    <NumberedGrid items={values} columns={4} />
   </Section>
 
   <Section id="openings" title="Open positions" tone="muted">
