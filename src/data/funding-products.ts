@@ -33,72 +33,24 @@ export const fundingProducts: FundingProduct[] = [
     },
   },
   {
-    title: "Term Financing",
-    category: "Fixed Financing",
-    description: "Your merchant gets the full amount up front and repays it in equal installments over a set term. The cost is fixed at signing, so it's an easy offer to explain.",
-    bestFor: "Merchants with a planned purchase, like equipment or expansion",
-    amountLabel: "Funding Amount",
-    amount: "$10K – $5M",
-    timeToFund: "1 – 3 days",
-    termLength: "6 – 60 months",
-    repayment: "Fixed monthly",
-    requirements: {
-      creditScore: "600",
-      monthlyRevenue: "$10k+",
-      timeInBusiness: "1+ year",
-    },
-  },
-  {
-    title: "Lines of Credit",
-    category: "Flexible Capital",
-    description: "A limit your merchant draws on when they need it, repays and draws again. They pay only on what they've drawn.",
-    bestFor: "Merchants with cash flow gaps and irregular costs",
-    amountLabel: "Credit Limit",
-    amount: "Up to $250K",
-    timeToFund: "As fast as 24 hrs",
-    termLength: "Revolving",
-    repayment: "Pay as you draw",
-    requirements: {
-      creditScore: "580",
-      monthlyRevenue: "$8k+",
-      timeInBusiness: "6+ months",
-    },
-  },
-  {
     title: "Consolidations",
-    category: "Debt Restructuring",
-    description: "One new facility that pays off your merchant's open positions. They make a single payment, usually at a lower combined cost.",
+    category: "Stacked Positions",
+    description: "One new advance that pays off your merchant's open positions. They make a single remittance, usually at a lower combined cost.",
     bestFor: "Merchants carrying two or more open positions",
     amountLabel: "Funding Amount",
     amount: "$25K – $2M",
     timeToFund: "2 – 4 days",
     termLength: "6 – 36 months",
-    repayment: "Single payment",
+    repayment: "Single remittance",
     requirements: {
       creditScore: "500",
       monthlyRevenue: "$10k+",
       timeInBusiness: "1+ year",
     },
   },
-  {
-    title: "Cash Credit (CC)",
-    category: "Revolving Facility",
-    description: "A revolving account secured by your merchant's inventory, receivables or other business assets. They pay only on what's outstanding.",
-    bestFor: "Merchants with inventory or receivables to draw against",
-    amountLabel: "Funding Amount",
-    amount: "$15K – $975K",
-    timeToFund: "3 – 5 days",
-    termLength: "1 – 12 months",
-    repayment: "Interest-only",
-    requirements: {
-      creditScore: "580",
-      monthlyRevenue: "$15k+",
-      timeInBusiness: "2+ years",
-    },
-  },
 ];
 
-/** URL segment for a product's page under /capital, e.g. "Cash Credit (CC)" → "cash-credit". */
+/** URL segment for a product's page under /capital, e.g. "Merchant Cash Advances" → "merchant-cash-advances". */
 export const productSlug = (p: Pick<FundingProduct, "title">) =>
   p.title.toLowerCase().replace(/\([^)]*\)/g, "").trim().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
 

@@ -19,7 +19,7 @@ export const openings: Opening[] = [
   //   title: "Sales Representative",
   //   team: "Sales",
   //   highlight: "Commission-only, in person",
-  //   intro: "Be the day-to-day contact for the brokers who send us deals, and bring new brokers on board. No lending background required.",
+  //   intro: "Be the day-to-day contact for the brokers who send us deals, and bring new brokers on board. No funding background required.",
   //   sections: [
   //     {
   //       title: "What you'll do",
@@ -27,7 +27,7 @@ export const openings: Opening[] = [
   //     },
   //     {
   //       title: "Who it's for",
-  //       text: ["Anyone who communicates clearly and follows through. No experience is required, though past sales or finance experience is preferred and knowledge of small business (SMB) lending is a plus."],
+  //       text: ["Anyone who communicates clearly and follows through. No experience is required, though past sales or finance experience is preferred and knowledge of merchant cash advances is a plus."],
   //     },
   //     {
   //       title: "Pay",

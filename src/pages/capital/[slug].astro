@@ -1,6 +1,6 @@
 ---
 // One page per product an ISO can submit: what it is, three headline facts, how the ISO gets paid on
-// it, why it places well, a comparison to share with the merchant, when to submit it, FAQs.
+// it, why it places well, a comparison to share with the merchant (where it has one), when to submit it, FAQs.
 import PageShell from "@/components/page/PageShell.astro";
 import PageHero from "@/components/page/PageHero.astro";
 import Section from "@/components/page/Section.astro";
@@ -59,9 +59,11 @@ const others = productPages.filter((p) => p.slug !== page.slug);
     <CheckList items={page.advantages} columns={2} />
   </Section>
 
-  <Section title={page.comparison.title} intro="What to tell your merchant when they're weighing up their options." tone="muted">
-    <CompareTable them={page.comparison.them} rows={page.comparison.rows} />
-  </Section>
+  {page.comparison && (
+    <Section title={page.comparison.title} intro="What to tell your merchant when they're weighing up their options." tone="muted">
+      <CompareTable them={page.comparison.them} rows={page.comparison.rows} />
+    </Section>
+  )}
 
   <Section title="When to submit it">
     <div class="grid gap-10 md:grid-cols-2 lg:grid-cols-3">
@@ -96,7 +98,7 @@ const others = productPages.filter((p) => p.slug !== page.slug);
     </div>
   </Section>
 
-  <Section title="Other products you can submit">
+  <Section title={others.length === 1 ? "Another product you can submit" : "Other products you can submit"}>
     <ul class="grid list-none grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
       {others.map((o) => (
         <li>

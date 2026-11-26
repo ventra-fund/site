@@ -32,11 +32,11 @@ export const industries: Industry[] = [
     usesImage: photos.restaurantServer,
     underwriting: [
       { title: "Seasonal traffic", text: "Patio season and holidays bring the rush; January and February don't. Steady deposits through the dips count for more than the peak." },
-      { title: "Daily card sales", text: "Card volume makes remittances easy to size, which is why advances suit most restaurant files." },
-      { title: "Urgent repairs", text: "A walk-in cooler or range going down can't wait for a bank's timeline. A decision within a day can." },
+      { title: "Daily card sales", text: "Card volume makes remittances easy to size, which is why advances suit restaurant files so well." },
+      { title: "Urgent repairs", text: "A walk-in cooler or range going down can't wait weeks. A decision within a day means it doesn't have to." },
     ],
     uses: ["Kitchen equipment repair or replacement", "Renovations and patio build-outs", "Inventory ahead of busy seasons", "Payroll through slow months", "Opening a second location"],
-    products: ["merchant-cash-advances", "term-financing", "lines-of-credit"],
+    products: ["merchant-cash-advances"],
     example: "A bistro you work with loses its walk-in in July. An advance replaces it within days, with remittances tied to daily card sales so a slow Tuesday doesn't strain the merchant.",
   },
   {
@@ -53,7 +53,7 @@ export const industries: Industry[] = [
       { title: "Supplier terms", text: "Bulk discounts reward paying upfront, a clear and common use of funds." },
     ],
     uses: ["Seasonal inventory", "Store remodels and fixtures", "Point-of-sale and e-commerce upgrades", "Marketing campaigns", "New locations"],
-    products: ["merchant-cash-advances", "lines-of-credit", "cash-credit"],
+    products: ["merchant-cash-advances"],
     example: "A toy store you work with stocks up in September for the holidays, then repays from the November and December sales that stock produces.",
   },
   {
@@ -67,11 +67,11 @@ export const industries: Industry[] = [
     underwriting: [
       { title: "Slow receivables", text: "Net-30 to net-90 terms make deposits lumpy. We look at the pattern across jobs, not a single quiet month." },
       { title: "Upfront materials", text: "Lumber, steel and supplies are due before work starts, a clear and common use of funds." },
-      { title: "Equipment costs", text: "Machinery is expensive to buy, rent or repair. Larger, planned purchases suit term financing." },
+      { title: "Equipment costs", text: "Machinery is expensive to buy, rent or repair, and a breakdown mid-job can't wait weeks for funding." },
     ],
     uses: ["Materials for new contracts", "Payroll while waiting on invoices", "Equipment purchases and repairs", "Bonding and mobilization costs", "Taking on larger projects"],
-    products: ["lines-of-credit", "term-financing", "merchant-cash-advances"],
-    example: "A roofing contractor you work with is waiting 60 days on a commercial job. A line of credit lets them start the next one now and repay when the first invoice clears.",
+    products: ["merchant-cash-advances"],
+    example: "A roofing contractor you work with is waiting 60 days on a commercial job. An advance lets them start the next one now, with remittances that ease off while they wait on the first invoice.",
   },
   {
     slug: "healthcare",
@@ -83,12 +83,12 @@ export const industries: Industry[] = [
     usesImage: photos.practiceFrontOffice,
     underwriting: [
       { title: "Reimbursement timing", text: "Insurance claims can take weeks to pay out. We read deposits with that lag in mind." },
-      { title: "Costly equipment", text: "Imaging, chairs and diagnostic tools are major purchases that suit a fixed payment." },
+      { title: "Costly equipment", text: "Imaging, chairs and diagnostic tools are major purchases, and a broken one stops appointments until it's replaced." },
       { title: "Growth costs", text: "Adding a provider or a location needs capital before the revenue it brings." },
     ],
     uses: ["Medical and dental equipment", "Practice expansion and build-outs", "Hiring providers and staff", "Covering reimbursement gaps", "Technology and software upgrades"],
-    products: ["term-financing", "lines-of-credit", "cash-credit"],
-    example: "A dental practice you work with is adding a second operatory. Term financing covers the equipment with a fixed monthly payment the practice can plan around from day one.",
+    products: ["merchant-cash-advances"],
+    example: "A dental practice you work with is adding a second operatory. An advance covers the equipment within days, and remittances come from the patient revenue the new room brings in.",
   },
   {
     slug: "trucking",
@@ -104,8 +104,8 @@ export const industries: Industry[] = [
       { title: "Stacked positions", text: "Trucking files often carry several advances. Pre-approval reads the stack, and a consolidation can replace it." },
     ],
     uses: ["Repairs and maintenance", "Fuel and insurance costs", "Adding trucks or trailers", "Covering slow-paying loads", "Consolidating existing advances"],
-    products: ["merchant-cash-advances", "consolidations", "lines-of-credit"],
-    example: "An owner-operator you work with needs a major engine repair. An advance has the truck back on the road within the week, instead of weeks of lost loads waiting on a bank.",
+    products: ["merchant-cash-advances", "consolidations"],
+    example: "An owner-operator you work with needs a major engine repair. An advance has the truck back on the road within the week, instead of weeks of lost loads.",
   },
 ];
 
@@ -116,4 +116,4 @@ export const moreIndustries = [
 ];
 
 /** What we can't fund, shown so ISOs don't spend time submitting it. */
-export const notFunded = ["Startups under six months old", "Personal or consumer loans", "Non-profits", "Grants or government relief programs"];
+export const notFunded = ["Startups under six months old", "Personal or consumer use", "Non-profits"];

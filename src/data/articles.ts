@@ -104,7 +104,7 @@ export const articles: Article[] = [
       { type: "p", text: "Total deposits are not revenue. Before we size a deal, we take out money that didn't come from customers:" },
       { type: "list", items: [
         "Transfers between the merchant's own accounts",
-        "Proceeds from loans, advances or other financing",
+        "Proceeds from other funding, such as an existing advance",
         "Owner injections and personal deposits",
         "Refunds, reversals and other one-time credits",
       ] },
@@ -155,7 +155,7 @@ export const articles: Article[] = [
     ],
     faq: [
       { q: "Do I need to list positions the merchant plans to pay off?", a: "Yes. List every open position, including any the merchant plans to pay off with the new funds, and tell us which ones." },
-      { q: "Can a consolidation cover positions from several funders?", a: "Yes, that's the usual case: one new facility pays off the existing advances and the merchant makes one payment." },
+      { q: "Can a consolidation cover positions from several funders?", a: "Yes, that's the usual case: one new advance pays off the existing advances and the merchant makes one payment." },
     ],
   },
   {

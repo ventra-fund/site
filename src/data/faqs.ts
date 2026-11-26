@@ -126,43 +126,7 @@ export const faqGroups: FaqGroup[] = [
         q: "What are the pros and cons for the merchant?",
         a: ["An advance trades a higher cost for speed and flexibility."],
         pros: ["Remittances move with sales", "Fast decisions, often within a day", "Credit history matters less than revenue"],
-        cons: ["Usually costs more than term financing", "Remittances are frequent, typically daily or weekly", "Not designed for long-term financing"],
-      },
-    ],
-  },
-  {
-    id: "term-financing",
-    title: "Term Financing",
-    items: [
-      {
-        q: "How does term financing work?",
-        a: ["Your merchant gets the full amount up front and repays it in equal installments over a set term. The cost is fixed at signing."],
-      },
-      {
-        q: "What are the pros and cons for the merchant?",
-        a: ["Term financing suits planned, one-time investments."],
-        pros: ["Predictable fixed payments", "Lower cost than most short-term options", "Longer terms available"],
-        cons: ["Payments don't flex with revenue", "Stricter credit and time-in-business requirements", "May require collateral for larger amounts"],
-      },
-      {
-        q: "Can the merchant pay term financing off early?",
-        a: ["Yes. Many term products carry prepayment discounts, so paying early lowers the total cost. The contract spells out how."],
-      },
-    ],
-  },
-  {
-    id: "lines-of-credit",
-    title: "Lines of Credit",
-    items: [
-      {
-        q: "How is a line of credit different from term financing?",
-        a: ["Term financing pays out once. A line gives the merchant a limit to draw from, repay and draw again, paying only on what's drawn."],
-      },
-      {
-        q: "What are the pros and cons for the merchant?",
-        a: ["A line works best as a standing safety net."],
-        pros: ["Draw only what's needed, when it's needed", "Pay only on the outstanding balance", "Reusable as it's repaid"],
-        cons: ["Smaller limits than term financing", "Pricing can change over time", "Easy to lean on for costs that should be planned"],
+        cons: ["A higher total cost, in exchange for speed", "Remittances are frequent, typically daily or weekly", "Built for short-term needs"],
       },
     ],
   },
@@ -172,29 +136,13 @@ export const faqGroups: FaqGroup[] = [
     items: [
       {
         q: "What does a consolidation do?",
-        a: ["It replaces several open advances or loans with one new facility. We pay off the balances and the merchant makes a single payment, often at a lower combined cost."],
+        a: ["It replaces several open advances with one new advance. We pay off the balances and the merchant makes a single payment, often at a lower combined cost."],
       },
       {
         q: "What are the pros and cons for the merchant?",
         a: ["Consolidation simplifies, but compare the totals carefully."],
         pros: ["One payment instead of several", "Often a lower blended cost", "Can free up daily cash flow"],
         cons: ["A longer term can raise total cost", "Requires at least a year in business", "Not every existing position can be paid off"],
-      },
-    ],
-  },
-  {
-    id: "cash-credit",
-    title: "Cash Credit",
-    items: [
-      {
-        q: "What is cash credit?",
-        a: ["A revolving credit account secured by business assets like inventory or receivables. The merchant draws up to the limit, repays and draws again, paying only on what's outstanding."],
-      },
-      {
-        q: "What are the pros and cons for the merchant?",
-        a: ["Cash credit is built for steady, day-to-day working capital."],
-        pros: ["Pay only on the amount used", "Large limits for asset-backed businesses", "Reusable throughout the term"],
-        cons: ["Secured against business assets", "Longer underwriting than an advance", "Requires two or more years in business"],
       },
     ],
   },
