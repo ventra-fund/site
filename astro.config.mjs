@@ -95,6 +95,10 @@ export default defineConfig({
       // The address job applicants write to, shown on /careers. Secret for the same reason as the
       // phone number: only /api/contact/reveal reads it, behind Turnstile.
       CONTACT_CAREERS_EMAIL: envField.string({ context: "server", access: "secret", optional: true }),
+      // The ISO inboxes shown on /our-assurances: questions about the terms, and deal submissions.
+      // Secret for the same reason: only /api/contact/reveal reads them, behind Turnstile.
+      CONTACT_PARTNERS_EMAIL: envField.string({ context: "server", access: "secret", optional: true }),
+      CONTACT_SUBMISSIONS_EMAIL: envField.string({ context: "server", access: "secret", optional: true }),
     },
   },
   integrations: [],

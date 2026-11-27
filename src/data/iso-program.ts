@@ -27,8 +27,9 @@ export const isoProgram = {
   renewAtPercent: 40,
   /** Funded volume that earns the bonus. There is no volume minimum. */
   bonusAt: "$100k",
-  /** Most points an ISO can add to a deal. */
-  maxPoints: 12,
+  /** Most points an ISO can add to a deal. 14 confirmed for Ventra (ISO Contractual Obligations
+   * draft, 2026-11-27); /our-assurances states it as a contractual term. */
+  maxPoints: 14,
   /** The statuses an ISO sees a deal move through. */
   dealSteps: ["Received", "Approved", "Contract sent", "Signed", "Funded"],
   /** What a submission needs. Placeholder list: confirm the real stips. */

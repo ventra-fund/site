@@ -1,15 +1,335 @@
 ---
+// The ISO Contractual Obligations page: Ventra's commitments to ISOs, stated as the terms the ISO
+// Contractual Commitments Schedule repeats word for word. Source: "Ventra Fund — ISO Contractual
+// Obligations (Draft)", 2026-11-27, brought in line with the home page's promises the same day:
+// every merchant stays the ISO's with no time limit, funded or declined; no marketing to or contact
+// with the merchant on our own; the verification call in the ISO's name; the file is never shopped;
+// a reason with every decline; no volume minimum. Keep the two in step: a promise made on the home
+// page belongs here too. Counsel reviews the full page before launch.
+//
+// Still open (the text below uses the proposed answer):
+// - 1.3 Contact after funding: kept to servicing, collection and required notices.
+// - 1.5 Another ISO submits the same merchant: open decision in the draft.
+// - 3.4 Payout timing: taken from the earlier Ventra draft, to confirm.
+// - 3.6 The home page's volume bonus has no terms yet, so the contract doesn't promise it.
+// - 4.1 Standard-funding clawback window: confirm "whichever ends first".
+// - Who we are: formation state (the earlier draft says New York), registration number, address.
 import PageShell from "@/components/page/PageShell.astro";
 import PageHero from "@/components/page/PageHero.astro";
 import Section from "@/components/page/Section.astro";
+import FaqList from "@/components/page/FaqList.astro";
+import ProseBlocks, { type Block } from "@/components/page/ProseBlocks.astro";
+import CtaBand from "@/components/page/CtaBand.astro";
+import GlareCard from "@/components/GlareCard.astro";
+import ContactReveal from "@/components/ContactReveal.astro";
+import type { Faq } from "@/data/faqs";
+import { dayList, isoProgram } from "@/data/iso-program";
+
+const { maxPoints, renewAtPercent, commissionDays } = isoProgram;
+
+/** Bump both, and add a row to `versions`, on every change to the terms. */
+const version = "1.0";
+const effective = { iso: "2026-11-27", label: "November 27, 2026" };
+const updated = effective;
+
+const versions = [{ version, date: effective.label, change: "First published" }];
+
+// TODO: confirm with Ventra Fund LLC's formation documents. Unknowns stay visible until filled in.
+const entity = { state: "New York", registration: "[registration no.]", address: "[principal address]" };
+
+const clauseId = (n: string) => `clause-${n.replace(".", "-")}`;
+
+/** The eight promises up top, each pointing at the clause that binds it. */
+const commitments = [
+  { text: "Every merchant you submit stays yours, funded or declined, with no time limit.", clause: "1.1" },
+  { text: "We never market to your merchants or contact them on our own. The verification call is made in your name.", clause: "1.3" },
+  { text: "You earn the same commission on every renewal, with no time limit.", clause: "2.1" },
+  { text: `We pay up to ${maxPoints} points, and we confirm your commission in writing before funding.`, clause: "3.1" },
+  { text: "A confirmed commission is never reduced afterward.", clause: "3.3" },
+  { text: "Commissions are reversed only for the specific events listed on this page.", clause: "4.1" },
+  { text: "We never ACH-debit your account to recover a commission.", clause: "4.5" },
+  { text: "Your earned commissions and renewal rights survive the end of our agreement.", clause: "5.1" },
+];
+
+const definitions = [
+  { term: "Complete submission", text: "An application, signed by the merchant, with the bank statements Ventra requires. You receive a timestamped e-mail receipt, and its time starts protection." },
+  { term: "Funding", text: "Any purchase of future receivables by Ventra from a merchant, including renewals, refinances and consolidations." },
+  { term: "Point", text: "1% of the purchase price paid to the merchant (the funded amount)." },
+  { term: "Purchased Amount", text: "The total the merchant agrees to remit under its Ventra merchant agreement." },
+];
+
+interface Clause {
+  n: string;
+  title: string;
+  body: Block[];
+}
+
+interface Part {
+  id: string;
+  title: string;
+  /** Text under the heading, for a part without numbered clauses. */
+  body?: Block[];
+  clauses?: Clause[];
+}
+
+const parts: Part[] = [
+  {
+    id: "merchant-protection",
+    title: "Merchant protection",
+    clauses: [
+      { n: "1.1", title: "Every merchant stays yours", body: ["A merchant is protected to you from your complete submission, with no time limit. Protection applies whether we fund the merchant, decline it, or haven't acted yet, and it doesn't end when a funded merchant pays off."] },
+      { n: "1.2", title: "No circumvention", body: ["Ventra will not solicit or fund a merchant protected to you except through you. This covers our employees, affiliates, and other sales agents. If we fund a protected merchant through anyone else, we owe you the commission you would have earned."] },
+      // Open: after funding, contact is kept to running the deal. The home page says "never contact
+      // them on our own"; a funder still has to collect and give the notices the law requires.
+      {
+        n: "1.3",
+        title: "We never contact your merchant on our own",
+        body: [
+          "We never market to a protected merchant or contact it on our own. Before funding, the only call it gets is the verification call, made in your name.",
+          "Once it is funded, we contact it only to service and collect that funding, or to give notices its agreement or the law requires. If a merchant contacts us first, we answer its questions but still offer new funding only through you.",
+        ],
+      },
+      { n: "1.4", title: "Your file stays with us", body: ["We never shop your file to other funders, and it never leaves our team."] },
+      // Open decision in the draft: the outside advice did not settle this one.
+      { n: "1.5", title: "Another ISO submits the same merchant", body: ["A later submission by another ISO does not move protection away from you. Protection moves only if the merchant signs a broker-of-record letter naming another ISO. We will e-mail you a copy within 2 business days of receiving it."] },
+      { n: "1.6", title: "A merchant changes brokers", body: ["A broker-of-record change affects only fundings after the change. It never reduces commission you earned before it."] },
+    ],
+  },
+  {
+    id: "renewals",
+    title: "Renewals and repeat funding",
+    clauses: [
+      { n: "2.1", title: "Same commission, no time limit", body: ["Every later funding of a merchant protected to you under 1.1 is credited to you, at the same commission as the first funding. This includes renewals, repeat fundings, refinances and consolidations. Your renewal rights never expire."] },
+      { n: "2.2", title: "Calculated on net new funds", body: ["Renewal commission is calculated on the cash paid to the merchant after any Ventra balance is paid off. Example: a $100,000 renewal that pays off a $40,000 Ventra balance pays commission on $60,000."] },
+      { n: "2.3", title: "Eligibility", body: [`A merchant can renew once it has paid in ${renewAtPercent}% of its current Purchased Amount, subject to our underwriting.`] },
+      { n: "2.4", title: "Renewals are not stacking", body: ["Offering your merchant a Ventra renewal never breaches your agreement's stacking or competing-product restrictions. You may offer renewals at any time."] },
+    ],
+  },
+  {
+    id: "commission",
+    title: "Commission",
+    clauses: [
+      { n: "3.1", title: `Up to ${maxPoints} points`, body: [`Ventra pays up to ${maxPoints} points per funding. The points on a given deal depend on the paper grade and factor rate we approve. Buy rates and pricing are shared privately with each approval, not published here.`] },
+      { n: "3.2", title: "Written confirmation before funding", body: ["Before each deal funds, we e-mail you the paper grade, factor rate, and your commission in points and in dollars. That e-mail is your commission record."] },
+      { n: "3.3", title: "No retroactive cuts", body: ["A confirmed commission is never reduced, except through a clawback under section 4. Changes to our general commission schedule take effect after 10 days' e-mail notice and apply only to submissions made after that date."] },
+      // To confirm: taken from the earlier Ventra draft. The table assumes Monday and Wednesday payouts.
+      {
+        n: "3.4",
+        title: "When commission is paid",
+        body: [
+          `Commission is payable once the merchant makes 3 Clear Payments (daily remittance) or 1 Clear Payment (weekly remittance). A Clear Payment is a scheduled payment collected in full and not returned, reversed, stopped or rejected. We pay by ACH every ${dayList(commissionDays)}:`,
+          {
+            table: {
+              head: ["Payout threshold reached by", "Paid on"],
+              rows: [
+                ["End of business Friday", "The following Monday"],
+                ["End of business Tuesday", "That Wednesday"],
+              ],
+            },
+          },
+          "If a payment day is a bank holiday, we pay the next business day. If the merchant defaults before reaching the threshold, no commission is owed on that funding.",
+        ],
+      },
+      { n: "3.5", title: "Statements", body: ["Each payout comes with a statement listing every commission paid, pending, or under clawback. You have 30 days after a payment to dispute its calculation."] },
+      // The home page also offers a bonus at isoProgram.bonusAt funded; add it here once it has terms.
+      { n: "3.6", title: "No volume minimum", body: ["Your agreement has no volume minimum. Sending us fewer deals never reduces your commission or your protection."] },
+    ],
+  },
+  {
+    id: "clawbacks",
+    title: "Clawbacks",
+    clauses: [
+      {
+        n: "4.1",
+        title: "The complete list",
+        body: [
+          "Ventra may reverse a paid commission only for these four events. Nothing else, including a merchant's later business problems, creates a clawback.",
+          {
+            table: {
+              head: ["Event", "Window"],
+              rows: [
+                // To confirm: "whichever ends first".
+                ["Merchant defaults on a standard funding", "Within 30 days of funding, or before 20% of the Purchased Amount is collected, whichever ends first"],
+                ["Merchant defaults on a Reverse Consolidation", "Within 60 days of funding"],
+                ["The ISO or its staff submitted documents they knew were false or altered", "Any time"],
+                ["The ISO caused the default, for example by stacking the merchant or steering it to debt settlement", "Any time"],
+              ],
+            },
+          },
+        ],
+      },
+      { n: "4.2", title: "What counts as a default", body: ["A default is a default as defined in the merchant's Ventra agreement. A payment adjustment, restructuring, or reconciliation we agree to with the merchant is not a default and does not trigger a clawback."] },
+      { n: "4.3", title: "Written notice", body: ["Before recovering anything, we send you written notice that names the deal, the event, the provision relied on, the amount, and the supporting records."] },
+      { n: "4.4", title: "10 business days to dispute", body: ["You may dispute the notice within 10 business days. We recover nothing while a timely dispute is open, and we answer it in writing."] },
+      { n: "4.5", title: "How we recover", body: ["We recover only by offset against your future commissions or by a repayment plan you agree to. We never ACH-debit your account, and our ISO agreement contains no debit authorization."] },
+    ],
+  },
+  {
+    id: "termination",
+    title: "Termination",
+    clauses: [
+      { n: "5.1", title: "What survives", body: ["If either party ends the agreement without cause, you keep every earned commission, your protection on every merchant you submitted (section 1), and your renewal commissions on merchants you originated (section 2)."] },
+      { n: "5.2", title: "Termination for cause", body: ["Ventra may end the agreement immediately for cause, which means only: fraud or knowingly false submissions; stacking a Ventra merchant; charging merchants undisclosed fees; or a material breach not cured within 15 days of written notice. After termination for cause, commissions already paid stay paid, except as section 4 allows. Unpaid and future commissions on the affected merchants end."] },
+    ],
+  },
+  {
+    id: "changes",
+    title: "Changes to these commitments",
+    body: ["Ventra will not reduce your merchant protection, renewal rights, clawback limits, or confirmed commissions without your written consent. We may change the commission schedule and payout timing only as section 3.3 allows. Every change to this page gets a new version number and an entry in the version history below."],
+  },
+  {
+    id: "your-responsibilities",
+    title: "Your responsibilities",
+    body: [
+      "These commitments assume you:",
+      {
+        list: [
+          "Submit accurate, complete applications and unaltered documents.",
+          "Get the merchant's authorization for every submission and credit check.",
+          "Describe Ventra's products and terms accurately, and deliver our disclosures and contracts unaltered.",
+          "Follow the commercial financing disclosure, broker registration, telemarketing, e-mail and privacy laws that apply to you.",
+          "Do not stack Ventra merchants or interfere with their obligations to Ventra.",
+          "Use only approved Ventra marketing materials and branding.",
+        ],
+      },
+      "Ventra keeps full authority to approve, decline or change any transaction before funding. Every decline comes with the reason, and if you think we got something wrong, we'll take another look.",
+    ],
+  },
+  {
+    id: "your-data",
+    title: "Your data and your clients",
+    body: [
+      {
+        list: [
+          "Your lead lists, CRM data and marketing assets stay yours. We will not sell them or use them to market to merchants protected to you.",
+          "You may keep your clients and offer them other products, as long as you don't stack a merchant while it has a Ventra balance.",
+          "We use merchant information only to underwrite, fund, service, collect, comply with law, and pay you.",
+        ],
+      },
+    ],
+  },
+];
+
+const faqs: Faq[] = [
+  { q: "Can Ventra go around me to fund a merchant I submitted?", a: ["No. Every merchant you submit stays yours, funded or declined, with no time limit. If we fund a protected merchant through anyone else, we still owe you the commission."] },
+  { q: "Will Ventra contact my merchant?", a: ["Never to market to them, and never on our own. Before funding, the only call is the verification call, made in your name. After funding, we contact the merchant only to service and collect that funding."] },
+  { q: "Do I get paid on renewals?", a: ["Yes. Every renewal of a merchant you originated is credited to you at the same commission as the first funding, on net new funds, with no time limit."] },
+  { q: "What is the maximum commission?", a: [`Up to ${maxPoints} points (${maxPoints}% of the funded amount). The exact points are confirmed by e-mail before each deal funds.`] },
+  { q: "Does Ventra publish its buy rates?", a: ["No. Buy rates and pricing are shared privately with each approval."] },
+  { q: "Can Ventra lower a commission after confirming it?", a: ["No. A confirmed commission is never reduced, except for a clawback event listed in section 4."] },
+  { q: "When can Ventra claw back a commission?", a: ["Only for the four events in section 4.1: an early default inside the stated window, an early Reverse Consolidation default, ISO document fraud, or an ISO-caused default."] },
+  { q: "Will Ventra debit my bank account?", a: ["No. Recovery is only by offset or an agreed repayment plan."] },
+  { q: "What happens if our agreement ends?", a: ["Without cause, you keep earned commissions, protection on every merchant you submitted, and renewal commissions on the merchants you originated."] },
+  { q: "Where are these terms in my contract?", a: ["In the ISO Contractual Commitments Schedule, which every Ventra ISO agreement incorporates."] },
+];
+
+const toc = [
+  ...parts.map((p, i) => ({ id: p.id, label: `${i + 1}. ${p.title}` })),
+  { id: "faq", label: "Frequently asked questions" },
+  { id: "version-history", label: "Version history" },
+];
+
+const h2 = "text-2xl font-bold tracking-[-0.02em]";
+const link = "font-medium text-foreground underline underline-offset-4";
 ---
 
-<PageShell title="Our Assurances">
-  <PageHero eyebrow="For ISOs" title="Our Assurances">
-    <p>Contractual obligations that keep your merchants yours.</p>
+<PageShell title="ISO Contractual Obligations">
+  <PageHero eyebrow="Our Assurances" title="ISO Contractual Obligations">
+    <p>Ventra Fund makes eight commitments to every ISO it works with. These terms are written into our ISO Sales Agent Agreement, not just advertised.</p>
+    <p class="text-sm">
+      Ventra Fund · Version {version} · Effective <time datetime={effective.iso}>{effective.label}</time> · Last updated <time datetime={updated.iso}>{updated.label}</time>
+    </p>
   </PageHero>
 
   <Section>
-    <p class="text-lg text-black text-wrap">More detail is coming soon.</p>
+    <ol class="grid list-none grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      {commitments.map(({ text, clause }, i) => (
+        <li class="flex">
+          <GlareCard class="flex w-full flex-col border border-border bg-card p-6">
+            <span class="text-sm text-muted-foreground tabular-nums">{String(i + 1).padStart(2, "0")}</span>
+            <p class="mt-8 text-lg font-medium leading-snug tracking-[-0.01em]">{text}</p>
+            <a href={`#${clauseId(clause)}`} class="mt-auto pt-6 text-sm font-medium text-muted-foreground underline-offset-4 hover:text-foreground hover:underline">Section {clause} →</a>
+          </GlareCard>
+        </li>
+      ))}
+    </ol>
   </Section>
+
+  <Section tone="muted">
+    <div class="grid gap-12 lg:grid-cols-2">
+      <div class="flex flex-col gap-10">
+        <div class="flex flex-col gap-3">
+          <h2 class={h2}>Who we are</h2>
+          <p class="text-base text-muted-foreground">Ventra Fund LLC, a {entity.state} limited liability company, {entity.registration}, {entity.address}. Ventra funds merchants directly from its own capital and does not broker deals to other funders. It has no sales floor: every deal it funds comes from an ISO.</p>
+        </div>
+        <div class="flex flex-col gap-3">
+          <h2 class={h2}>How this page binds us</h2>
+          <p class="text-base text-muted-foreground">Every Ventra ISO agreement incorporates the ISO Contractual Commitments Schedule, which states these terms word for word. The version of the Schedule in effect when you sign applies to you. A later version applies only if you accept it in writing, unless it only improves your terms. If an individual agreement gives you better terms than this page, your agreement controls.</p>
+        </div>
+      </div>
+      <div class="flex flex-col gap-3">
+        <h2 class={h2}>Definitions used on this page</h2>
+        <dl class="flex flex-col border-t border-border">
+          {definitions.map(({ term, text }) => (
+            <div class="border-b border-border py-4">
+              <dt class="font-semibold text-foreground">{term}</dt>
+              <dd class="mt-1 text-base text-muted-foreground">{text}</dd>
+            </div>
+          ))}
+        </dl>
+      </div>
+    </div>
+  </Section>
+
+  <Section>
+    <div class="grid gap-10 lg:grid-cols-[1fr_3fr]">
+      <nav aria-label="On this page" class="lg:sticky lg:top-36 lg:self-start">
+        <ul class="flex list-none flex-wrap gap-2 lg:flex-col lg:gap-1">
+          {toc.map(({ id, label }) => (
+            <li><a href={`#${id}`} class="block bg-secondary px-3 py-2 text-sm font-medium text-secondary-foreground hover:text-foreground lg:bg-transparent lg:px-0">{label}</a></li>
+          ))}
+        </ul>
+      </nav>
+
+      <div class="flex min-w-0 flex-col gap-16">
+        {parts.map((part, i) => (
+          <section id={part.id} class="flex scroll-mt-36 flex-col gap-6">
+            <h2 class={h2}><span class="text-muted-foreground tabular-nums">{i + 1}.</span> {part.title}</h2>
+            {part.body && <ProseBlocks blocks={part.body} />}
+            {part.clauses && (
+              <ol class="flex list-none flex-col border-t border-border">
+                {part.clauses.map((clause) => (
+                  <li id={clauseId(clause.n)} class="grid scroll-mt-36 gap-x-6 gap-y-2 border-b border-border py-6 sm:grid-cols-[2.5rem_1fr]">
+                    <span class="text-base font-medium text-muted-foreground tabular-nums">{clause.n}</span>
+                    <div class="flex min-w-0 flex-col gap-3">
+                      <h3 class="text-lg font-semibold text-foreground">{clause.title}</h3>
+                      <ProseBlocks blocks={clause.body} />
+                    </div>
+                  </li>
+                ))}
+              </ol>
+            )}
+          </section>
+        ))}
+
+        <section id="faq" class="flex scroll-mt-36 flex-col gap-6">
+          <h2 class={h2}>Frequently asked questions</h2>
+          <FaqList items={faqs} />
+        </section>
+
+        <section id="version-history" class="flex scroll-mt-36 flex-col gap-6">
+          <h2 class={h2}>Version history</h2>
+          <ProseBlocks blocks={[{ table: { head: ["Version", "Date", "Change"], rows: versions.map((v) => [v.version, v.date, v.change]) } }]} />
+          {/* Both addresses sit behind the anti-scrape reveal (docs/contact-reveal.md): neither is in this page. */}
+          <div class="flex flex-col gap-2 text-base text-muted-foreground">
+            <p>Questions about these terms: <ContactReveal contact="partners" /></p>
+            <p>To submit a deal: <ContactReveal contact="submissions" /></p>
+            <noscript><p class="text-sm">Turn on JavaScript to see our email addresses, or <a href="/contact" class={link}>send us a message</a>.</p></noscript>
+          </div>
+        </section>
+      </div>
+    </div>
+  </Section>
+
+  <CtaBand />
 </PageShell>

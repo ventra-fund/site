@@ -1,0 +1,45 @@
+---
+// Paragraphs, bullet lists and simple tables, in the order given: the body of a clause on a
+// terms-style page (/our-assurances). A table's first column reads as each row's label.
+export interface Table {
+  head: string[];
+  rows: string[][];
+}
+export type Block = string | { list: string[] } | { table: Table };
+
+interface Props {
+  blocks: Block[];
+  class?: string;
+}
+
+const { blocks, class: className } = Astro.props;
+---
+
+<div class:list={["flex max-w-3xl flex-col gap-4 text-base text-muted-foreground", className]}>
+  {blocks.map((block) =>
+    typeof block === "string" ? (
+      <p>{block}</p>
+    ) : "list" in block ? (
+      <ul class="flex list-disc flex-col gap-2 pl-5">{block.list.map((li) => <li>{li}</li>)}</ul>
+    ) : (
+      <div class="overflow-x-auto border border-border">
+        <table class="w-full border-collapse text-left text-sm">
+          <thead class="bg-secondary text-xs uppercase tracking-widest text-muted-foreground">
+            <tr>{block.table.head.map((h) => <th scope="col" class="p-4 font-semibold">{h}</th>)}</tr>
+          </thead>
+          <tbody>
+            {block.table.rows.map((row) => (
+              <tr class="border-t border-border">
+                {row.map((cell, i) =>
+                  i === 0
+                    ? <th scope="row" class="p-4 align-top font-medium text-foreground">{cell}</th>
+                    : <td class="p-4 align-top">{cell}</td>
+                )}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    )
+  )}
+</div>

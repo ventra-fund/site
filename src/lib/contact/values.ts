@@ -1,10 +1,10 @@
 // SERVER ONLY. Resolves the actual contact details for the reveal endpoint (src/pages/api/contact/
 // reveal.ts) and nothing else: never import this from a client script, a component, or a prerendered
-// page. The values are not in the repo: `CONTACT_PHONE` and `CONTACT_CAREERS_EMAIL` are secrets in
+// page. The values are not in the repo: `CONTACT_PHONE` and the `CONTACT_*_EMAIL` addresses are secrets in
 // `.env` / `.dev.vars` locally and Worker secrets in production (`wrangler secret put <NAME>`).
 // `pnpm check:contact` fails if a configured value turns up in a committable file or in the build
 // output.
-import { CONTACT_CAREERS_EMAIL, CONTACT_PHONE } from 'astro:env/server';
+import { CONTACT_CAREERS_EMAIL, CONTACT_PARTNERS_EMAIL, CONTACT_PHONE, CONTACT_SUBMISSIONS_EMAIL } from 'astro:env/server';
 import type { ContactKey } from './keys';
 
 export interface ContactValue {
@@ -20,6 +20,11 @@ export function formatPhone(e164: string): string {
   return m ? `(${m[1]}) ${m[2]}-${m[3]}` : e164;
 }
 
+function email(value: string | undefined): ContactValue | null {
+  const raw = value?.trim();
+  return raw ? { display: raw, href: `mailto:${raw}` } : null;
+}
+
 /** The detail for `key`, or null when its secret is unset (the endpoint answers 503). */
 export function contactValue(key: ContactKey): ContactValue | null {
   switch (key) {
@@ -29,10 +34,11 @@ export function contactValue(key: ContactKey): ContactValue | null {
       if (!raw) return null;
       return { display: formatPhone(raw), href: `tel:${raw.replace(/[^\d+]/g, '')}` };
     }
-    case 'careers': {
-      const raw = CONTACT_CAREERS_EMAIL?.trim();
-      if (!raw) return null;
-      return { display: raw, href: `mailto:${raw}` };
-    }
+    case 'careers':
+      return email(CONTACT_CAREERS_EMAIL);
+    case 'partners':
+      return email(CONTACT_PARTNERS_EMAIL);
+    case 'submissions':
+      return email(CONTACT_SUBMISSIONS_EMAIL);
   }
 }

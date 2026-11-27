@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// Guards the contact reveal (docs/contact-reveal.md): the phone number and the careers email must
+// Guards the contact reveal (docs/contact-reveal.md): the phone number and the contact emails must
 // exist only as secrets. Fails if a configured value (VARS below, read from the local .env /
 // .dev.vars files) appears in any file `git add -A` would stage, or in the build output under dist/ when there is one, or if anything
 // but the reveal endpoint imports src/lib/contact/values.ts. Run after `pnpm build` to cover dist/:
@@ -10,7 +10,7 @@ import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs';
 import { join } from 'node:path';
 
 const ENV_FILES = ['.env', '.dev.vars', ...readdirSync('.').filter((f) => /^\.env\..+/.test(f) && f !== '.env.example')];
-const VARS = ['CONTACT_PHONE', 'CONTACT_CAREERS_EMAIL'];
+const VARS = ['CONTACT_PHONE', 'CONTACT_CAREERS_EMAIL', 'CONTACT_PARTNERS_EMAIL', 'CONTACT_SUBMISSIONS_EMAIL'];
 const VALUES_FILE = 'src/lib/contact/values.ts';
 const IMPORTERS = ['src/pages/api/contact/reveal.ts'];
 const BINARY = /\.(png|jpe?g|gif|webp|avif|ico|woff2?|ttf|pdf|zip)$/i;
